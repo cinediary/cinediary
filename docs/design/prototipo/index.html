@@ -1,0 +1,2443 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CineDiary · Protótipo Completo (Espelho Fiel do FrontEnd Mobile v2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,600,100;0,9..144,700,100;1,9..144,600,100;1,9..144,700,100&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Paleta "Diário de Papel" (src/shared/theme/tokens.ts) */
+  --bg:#FAF6F0;--surface:#FFFDF9;--sunken:#F3ECE2;--border:#E6DCCF;--borderStrong:#CBBFB1;
+  --ink900:#2A211C;--ink700:#4F433B;--ink500:#76695F;--ink400:#8E8176;
+  --t100:#F6E1D7;--t300:#E9B8A3;--t500:#C2694B;--t600:#A9553A;--t700:#8C432C;
+  --p100:#FBF0D4;--p300:#F2D58A;--p500:#D9A23A;--p600:#A9761A;--p700:#7D5A12;
+  --s100:#E3EBDD;--s300:#C5D3BC;--s500:#8FA685;--s700:#4A6243;
+  --r100:#F7E4E1;--r300:#EDC7C1;--r500:#D08C86;--r700:#8C4B47;
+  --error:#A23B2E;
+  /* Paleta "Festa" — exclusiva do Match Story */
+  --tomato:#B4532F;--butter:#F4C84B;--plum:#5B2A44;--sage:#A9C49A;--blush:#F2A8A0;--cream:#FFF4E6;
+  --serif:'Fraunces',Georgia,serif;--sans:'Nunito',system-ui,sans-serif;
+  --e1:0 1px 2px rgba(74,52,38,.06);--e2:0 6px 16px rgba(74,52,38,.10);--e3:0 12px 32px rgba(74,52,38,.16);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:#E9E1D6;color:var(--ink900);display:flex;gap:28px;justify-content:center;align-items:flex-start;padding:24px;min-height:100vh}
+button,input,textarea{font-family:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+em{font-style:italic;font-family:var(--serif);font-weight:600}
+
+/* Painel lateral de controle de fluxos e cenários */
+.side{width:340px;position:sticky;top:20px;max-height:calc(100vh - 40px);overflow-y:auto;font-size:13px;padding-right:6px}
+.side::-webkit-scrollbar{width:5px}
+.side::-webkit-scrollbar-thumb{background:var(--borderStrong);border-radius:99px}
+.side h1{font-family:var(--serif);font-size:26px;font-weight:600;margin-bottom:2px}
+.side h1 em{color:var(--t600)}
+.side .sub{color:var(--ink700);margin-bottom:12px;line-height:1.4}
+.side h4{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink500);margin:14px 0 6px;font-weight:800}
+.side .preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.side .preset{padding:7px 10px;border-radius:10px;background:var(--surface);border:1px solid var(--border);font-weight:700;font-size:12px;color:var(--ink700);text-align:left;transition:all .12s}
+.side .preset:hover{background:var(--sunken)}
+.side .preset.on{background:var(--t600);color:var(--surface);border-color:var(--t600)}
+.side .nav{display:flex;flex-direction:column;gap:2px}
+.side .nav-group{font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--ink500);margin:8px 0 2px 4px}
+.side .nav button{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;padding:6px 10px;border-radius:8px;font-weight:600;color:var(--ink700);font-size:12.5px}
+.side .nav button:hover{background:var(--sunken)}
+.side .nav button.on{background:var(--ink900);color:var(--cream)}
+.side .nav b{font-weight:800;color:var(--t700);margin-right:6px;display:inline-block;min-width:48px}
+.side .nav button.on b{color:var(--butter)}
+.side .nav .tag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;background:var(--sunken);color:var(--ink500)}
+.side .nav button.on .tag{background:rgba(255,244,230,.16);color:var(--butter)}
+.side label{display:flex;gap:8px;align-items:center;margin:5px 0;font-weight:600;color:var(--ink700);cursor:pointer}
+.side .row-opts{display:flex;gap:12px;flex-wrap:wrap}
+
+/* Stage central: barra de cenários da tela atual + moldura do aparelho */
+.stage{display:flex;flex-direction:column;align-items:center;gap:12px;flex-shrink:0}
+.scenebar{width:390px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:10px 12px;box-shadow:var(--e1);display:flex;flex-direction:column;gap:6px}
+.scenebar-top{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--ink500)}
+.scenebar-top span{color:var(--t700)}
+.scenepills{display:flex;flex-wrap:wrap;gap:5px}
+.scenepill{padding:5px 10px;border-radius:999px;background:var(--sunken);color:var(--ink700);font-size:12px;font-weight:700;transition:all .12s}
+.scenepill:hover{background:var(--border)}
+.scenepill.on{background:var(--ink900);color:var(--surface)}
+
+/* Moldura do iPhone / Android */
+.phone{width:390px;height:844px;background:var(--bg);border-radius:48px;box-shadow:0 0 0 10px #2A211C,0 30px 60px rgba(42,33,28,.35);overflow:hidden;position:relative;flex-shrink:0}
+.status{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;font-weight:800;font-size:14px;position:absolute;top:0;left:0;right:0;z-index:30;pointer-events:none}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;padding-top:44px;background:var(--bg)}
+.screen.on{display:flex}
+.scroll{flex:1;overflow-y:auto;padding:16px 20px 24px;display:flex;flex-direction:column;gap:16px}
+.scroll::-webkit-scrollbar{display:none}
+.foot{padding:12px 20px 24px;background:var(--bg);display:flex;flex-direction:column;gap:8px}
+
+/* Escala tipográfica idêntica a tokens.ts */
+.display{font-family:var(--serif);font-weight:600;font-size:40px;line-height:44px;color:var(--ink900);font-variation-settings:'SOFT' 100}
+.h1{font-family:var(--serif);font-weight:600;font-size:30px;line-height:36px;color:var(--ink900);font-variation-settings:'SOFT' 100}
+.h2{font-family:var(--serif);font-weight:600;font-size:22px;line-height:28px;color:var(--ink900);font-variation-settings:'SOFT' 100}
+.h3{font-family:var(--sans);font-weight:800;font-size:17px;line-height:22px;color:var(--ink900)}
+.body{font-size:16px;line-height:24px;color:var(--ink900);font-weight:500}
+.body-sec{font-size:16px;line-height:24px;color:var(--ink700);font-weight:500}
+.body-muted{font-size:16px;line-height:24px;color:var(--ink500);font-weight:500}
+.strong{font-size:16px;line-height:24px;color:var(--ink900);font-weight:700}
+.cap{font-size:13px;font-weight:600;color:var(--ink500);line-height:18px}
+.cap-sec{font-size:13px;font-weight:600;color:var(--ink700);line-height:18px}
+.cap-link{font-size:13px;font-weight:600;color:var(--t700);line-height:18px}
+.over{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--ink700);line-height:14px}
+
+/* SectionHeader.tsx */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.sec-hdr button{display:inline-flex;align-items:center;gap:2px;font-size:13px;font-weight:600;color:var(--t700)}
+
+/* Button.tsx */
+.btn{height:52px;border-radius:999px;background:var(--t600);color:var(--surface);font-weight:700;font-size:16px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid transparent;transition:transform .12s,background .12s;flex-shrink:0}
+.btn:active{transform:scale(.98)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn.sm{height:44px;padding:0 18px}
+.btn.sec{background:var(--surface);color:var(--ink900);border-color:var(--ink900)}
+.btn.ghost{background:transparent;color:var(--t700);border-color:transparent}
+.btn.danger{background:transparent;color:var(--error);border-color:transparent}
+.btn-reason{font-size:13px;font-weight:600;color:var(--ink500);text-align:center;margin-top:4px}
+
+/* Card.tsx */
+.card{background:var(--surface);border-radius:20px;box-shadow:var(--e1);border:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:12px}
+.card.dashed{background:transparent;border:2px dashed var(--borderStrong);box-shadow:none}
+.card.click{cursor:pointer;transition:transform .12s}
+.card.click:active{transform:scale(.99);opacity:.92}
+
+/* Chip.tsx (exatamente como no FrontEnd: surfaceSunken -> terracota300 + Check à esquerda!) */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-right:-20px;padding-right:20px}
+.chips-scroll::-webkit-scrollbar{display:none}
+.chip{min-height:40px;padding:0 16px;border-radius:999px;background:var(--sunken);color:var(--ink900);font-weight:700;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:4px;transition:all .12s;flex-shrink:0;white-space:nowrap}
+.chip.on{background:var(--t300);color:var(--ink900)}
+.chip.on.salvia{background:var(--s300)}
+.chip.on.rosa{background:var(--r300)}
+.chip.on.pipoca{background:var(--p300)}
+.chip .chk{display:none;font-size:14px}
+.chip.on .chk{display:inline-flex}
+
+/* TextField.tsx & SearchField.tsx */
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-weight:700;font-size:16px;color:var(--ink700);line-height:24px}
+.field .box{min-height:52px;border-radius:12px;border:1.5px solid var(--borderStrong);background:var(--surface);display:flex;align-items:center;padding:0 16px;gap:8px}
+.field .box:focus-within{border-color:var(--ink900)}
+.field .box.err-box{border-color:var(--error)}
+.field input{border:none;background:transparent;outline:none;flex:1;font-size:16px;font-weight:500;color:var(--ink900);min-height:48px}
+.field input::placeholder{color:var(--ink500)}
+.field .hint{font-size:13px;font-weight:600;color:var(--ink500);line-height:18px}
+.field .err{font-size:13px;font-weight:600;color:var(--error);line-height:18px}
+.searchfield{min-height:48px;padding:0 16px;border-radius:999px;background:var(--sunken);display:flex;align-items:center;gap:8px;color:var(--ink500);flex-shrink:0}
+.searchfield input{border:none;background:transparent;outline:none;flex:1;font-size:16px;font-weight:500;color:var(--ink900);min-height:44px}
+.searchfield input::placeholder{color:var(--ink500)}
+
+/* Checkbox.tsx */
+.checkbox{display:flex;gap:12px;align-items:flex-start;min-height:44px;cursor:pointer;text-align:left}
+.checkbox .cbox{width:24px;height:24px;margin-top:2px;border-radius:4px;border:2px solid var(--borderStrong);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--surface);flex-shrink:0}
+.checkbox.on .cbox{background:var(--t600);border-color:var(--t600)}
+
+/* SegmentedControl.tsx */
+.seg{display:flex;background:var(--sunken);border-radius:999px;padding:4px;flex-shrink:0}
+.seg button{flex:1;min-height:40px;border-radius:999px;font-weight:700;font-size:16px;color:var(--ink500);padding:0 8px;border:1px solid transparent}
+.seg button.on{background:var(--surface);border-color:var(--border);color:var(--ink900)}
+
+/* PosterArt.tsx & PosterCard.tsx */
+.poster{border-radius:12px;position:relative;overflow:hidden;flex-shrink:0;display:flex;align-items:flex-end;padding:7px;color:#fff;font-family:var(--serif);font-weight:600;line-height:1.1;border:1px solid rgba(42,33,28,.08)}
+.poster > span{text-shadow:0 1px 3px rgba(0,0,0,.35);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.pcard{display:flex;flex-direction:column;cursor:pointer;text-align:left}
+.pcard-frame{position:relative;border-radius:12px;overflow:hidden}
+.pcard.sel .pcard-frame{box-shadow:inset 0 0 0 3px var(--t600);border:3px solid var(--t600)}
+.pcard-badges{position:absolute;left:4px;bottom:4px;display:flex;gap:3px;pointer-events:none}
+.pbadge{min-width:18px;height:18px;padding:0 4px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;line-height:12px;color:var(--surface)}
+.pbadge.rate{background:var(--p300);color:var(--ink900)}
+.pcard-check{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:11px;background:var(--t600);color:var(--surface);display:flex;align-items:center;justify-content:center;font-size:13px}
+.pcard-corner{position:absolute;top:2px;right:2px}
+.pcard-cap{margin-top:4px;display:flex;flex-direction:column}
+.pcard-cap .t{font-size:13px;font-weight:600;color:var(--ink900);line-height:17px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pcard-cap .y{font-size:13px;font-weight:600;color:var(--ink500);line-height:17px}
+
+/* Grids & Carousels */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.hscroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;margin-right:-20px;padding-right:20px}
+.hscroll::-webkit-scrollbar{display:none}
+
+/* Banner.tsx */
+.banner{display:flex;align-items:center;gap:8px;border-radius:12px;padding:12px;font-weight:700;font-size:16px;line-height:22px;cursor:pointer;text-align:left}
+.banner.success{background:var(--s100);color:var(--s700)}
+.banner.info{background:var(--p100);color:var(--p700)}
+.banner span{flex:1}
+
+/* Avatar.tsx */
+.avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-weight:700;font-size:18px;color:var(--ink900);background:var(--p300);border:3px solid var(--bg);flex-shrink:0}
+.av-pair{display:inline-flex;align-items:center}
+.av-pair .avatar + .avatar{margin-left:-14px;background:var(--s300)}
+
+/* ListRow.tsx */
+.lrow{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 0;width:100%;text-align:left}
+.lrow-texts{flex:1;display:flex;flex-direction:column;gap:2px}
+.switch{width:48px;height:28px;border-radius:999px;background:var(--borderStrong);padding:2px;display:inline-flex;align-items:center;transition:background .15s;flex-shrink:0;cursor:pointer}
+.switch i{width:24px;height:24px;border-radius:50%;background:var(--surface);box-shadow:var(--e1);transition:transform .15s}
+.switch.on{background:var(--t600)}
+.switch.on i{transform:translateX(20px)}
+
+/* IconButton.tsx (círculo 44x44 + rótulo opcional abaixo, usado em TitleActions e QuickLogForm) */
+.ibtn-row{display:flex;gap:8px}
+.ibtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:44px;min-height:44px}
+.ibtn-circ{width:44px;height:44px;border-radius:999px;background:var(--surface);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--ink700);transition:all .12s}
+.ibtn.on .ibtn-circ{background:var(--t100);border-color:var(--t600)}
+.ibtn-lbl{font-size:13px;font-weight:600;color:var(--ink700);line-height:18px}
+.ibtn.on .ibtn-lbl{color:var(--t700)}
+
+/* BarChart.tsx (HorizontalBars & VerticalBars exatos do FrontEnd) */
+.hbars{display:flex;flex-direction:column;gap:12px}
+.hbar-item{display:flex;flex-direction:column;gap:4px}
+.hbar-top{display:flex;justify-content:space-between;align-items:baseline}
+.hbar-track{height:10px;border-radius:999px;background:var(--sunken);overflow:hidden}
+.hbar-fill{height:100%;border-radius:999px;background:var(--s500)}
+.vbars{display:flex;align-items:flex-end;gap:4px;height:160px;padding-top:16px}
+.vbar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.vbar-val{font-size:10px;line-height:12px;font-weight:600;color:var(--ink500);margin-bottom:2px;min-height:12px}
+.vbar-bar{width:70%;border-radius:4px;background:var(--t500)}
+.vbar-lbl{font-size:10px;line-height:12px;font-weight:600;color:var(--ink500);margin-top:4px}
+
+/* ProgressBar.tsx */
+.pbar-track{height:8px;border-radius:999px;background:var(--sunken);overflow:hidden}
+.pbar-fill{height:100%;border-radius:999px;background:var(--s500);transition:width .3s}
+.pbar-fill.done{background:var(--s700)}
+.pbar-lbl{display:flex;align-items:center;gap:4px;margin-top:4px;font-size:13px;font-weight:600;color:var(--ink500)}
+.pbar-lbl.done{color:var(--s700)}
+
+/* EmptyState.tsx & States.tsx */
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;padding:24px 12px}
+.state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:32px 16px}
+.skel{background:var(--sunken);border-radius:8px;animation:pulse 1.2s ease-in-out infinite alternate}
+@keyframes pulse{from{opacity:.55}to{opacity:1}}
+.spinner{width:36px;height:36px;border-radius:50%;border:3.5px solid var(--sunken);border-top-color:var(--t600);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* OnboardingFrame.tsx */
+.ob-top{display:flex;align-items:center;gap:12px}
+.ob-back{min-width:44px;min-height:44px;display:flex;align-items:center;font-size:22px;color:var(--ink900)}
+.ob-bars{flex:1;display:flex;gap:4px}
+.ob-bars i{flex:1;height:4px;border-radius:999px;background:var(--sunken)}
+.ob-bars i.on{background:var(--t600)}
+
+/* TitleRow.tsx */
+.trow{display:flex;align-items:center;gap:8px}
+.trow-main{flex:1;display:flex;align-items:center;gap:12px;padding:4px 0;cursor:pointer;text-align:left;min-width:0}
+.trow-texts{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.trow-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.trow-plus{width:44px;height:44px;border-radius:22px;background:var(--t100);color:var(--t600);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+
+/* TI-01 / TI-02 Season accordion */
+.season-box{border-radius:20px;background:var(--surface);border:1px solid var(--border);padding:0 16px}
+.season-hdr{display:flex;align-items:center;gap:8px;min-height:52px}
+.season-title{flex:1;display:flex;flex-direction:column;gap:4px;padding:12px 0;cursor:pointer;text-align:left}
+.mini-track{height:4px;border-radius:2px;background:var(--sunken);overflow:hidden}
+.mini-fill{height:100%;background:var(--s500)}
+.mini-fill.done{background:var(--s700)}
+.circ{width:28px;height:28px;border-radius:14px;border:2px solid var(--borderStrong);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--surface);font-size:14px;cursor:pointer;flex-shrink:0}
+.circ.on{background:var(--s700);border-color:var(--s700)}
+.ep-row{display:flex;align-items:center;gap:12px;min-height:44px;border-top:1px solid var(--border);cursor:pointer}
+.ep-num{width:28px;font-family:var(--serif);font-weight:600;color:var(--ink700);font-size:16px}
+
+/* Barra de abas nativa: iOS 27 Liquid Glass vs Android Material 3 (AppTabs.tsx) */
+.tabbar{position:absolute;left:0;right:0;bottom:0;z-index:20;display:flex;pointer-events:none}
+.screen.tabs .scroll{padding-bottom:116px}
+.ios .tabbar{padding:0 14px 24px}
+.glass{pointer-events:auto;background:rgba(255,253,249,.62);backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.85),inset 0 1px 0 rgba(255,255,255,.95),0 8px 24px rgba(74,52,38,.14)}
+.ios .tabgroup{flex:1;height:62px;border-radius:999px;display:flex;padding:4px}
+.ios .tabgroup button{flex:1;min-width:0;border-radius:999px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;white-space:nowrap;font-weight:700;color:var(--ink500)}
+.ios .tabgroup button .svg{font-size:22px}
+.ios .tabgroup button.on{color:var(--ink900);background:rgba(42,33,28,.07)}
+.ios .tabgroup button.on .svg{color:var(--t600)}
+.ios .tb-android{display:none}
+.ios .tb-ios,.android .tb-android{display:contents}
+.android .tb-ios{display:none}
+.android .tabbar{background:var(--surface);border-top:1px solid var(--border);height:78px;padding:10px 6px 14px;pointer-events:auto}
+.android .screen.tabs .scroll{padding-bottom:98px}
+.android .tabbar button{flex:1;min-width:0;white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--ink500)}
+.android .tabbar .ind{width:52px;height:30px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:21px}
+.android .tabbar button.on .ind{background:var(--t100);color:var(--t700)}
+.android .tabbar button.on{color:var(--ink900)}
+
+/* Sheet BU-02 (QuickLogScreen.tsx + QuickLogForm.tsx) */
+.scrim{position:absolute;inset:0;background:rgba(42,33,28,.42);z-index:40;display:none}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;background:var(--bg);border-radius:28px 28px 0 0;box-shadow:var(--e3);z-index:41;padding:10px 24px 36px;transform:translateY(105%);transition:transform .22s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;gap:16px}
+.sheet::-webkit-scrollbar{display:none}
+.sheet.on{transform:none}
+.grab{width:40px;height:5px;border-radius:9px;background:var(--borderStrong);margin:0 auto}
+.bigstars{display:flex;gap:4px;justify-content:center;align-items:center}
+.star-btn{width:34px;height:34px;position:relative;cursor:pointer}
+.star-btn svg{width:100%;height:100%}
+.review-input{min-height:96px;padding:12px;border-radius:12px;border:1.5px solid var(--borderStrong);background:var(--surface);color:var(--ink900);font-size:16px;line-height:24px;resize:none;outline:none;width:100%}
+
+/* Toast.tsx */
+.toast{position:absolute;left:20px;right:20px;bottom:98px;background:var(--ink900);color:var(--surface);border-radius:999px;padding:12px 24px;font-weight:700;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:16px;z-index:60;opacity:0;transform:translateY(10px);transition:all .2s;pointer-events:none;box-shadow:var(--e2)}
+.toast.on{opacity:1;transform:none;pointer-events:auto}
+.toast button{color:var(--p300);font-weight:800;font-size:15px}
+
+/* Story 9:16 (MatchStoryScreen.tsx + StorySlides.tsx) */
+#MA-05{background:var(--plum);padding-top:0;z-index:50}
+.sbars{position:absolute;top:50px;left:14px;right:14px;display:flex;gap:4px;z-index:5}
+.sbars i{flex:1;height:3px;border-radius:3px;background:color-mix(in srgb,var(--sfg,#FFF4E6) 30%,transparent);overflow:hidden;cursor:pointer}
+.sbars i b{display:block;height:100%;width:0;background:var(--sfg,#FFF4E6)}
+.sclose{position:absolute;top:60px;right:16px;z-index:6;font-size:22px;color:var(--sfg,#FFF4E6);width:44px;height:44px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:110px 30px 130px;overflow:hidden}
+.slide.on{display:flex}
+.slide .t{font-family:var(--serif);font-variation-settings:'SOFT' 100;font-weight:700;line-height:.95}
+.slide .anim{animation:pop .7s cubic-bezier(.2,1.4,.4,1) both}
+.slide .anim2{animation:pop .7s .18s cubic-bezier(.2,1.4,.4,1) both}
+.slide .anim3{animation:pop .7s .36s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes pop{from{opacity:0;transform:translateY(22px) scale(.92) rotate(-2deg)}to{opacity:1;transform:none}}
+.blob{position:absolute;z-index:0;pointer-events:none}
+.slide > *:not(.blob){position:relative;z-index:1}
+.sfoot{position:absolute;bottom:34px;left:20px;right:20px;z-index:6;display:flex;gap:10px}
+.sfoot button{flex:1;height:48px;border-radius:999px;background:var(--sfg,#FFF4E6);color:var(--sbg,#2A211C);font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.sbrand{position:absolute;bottom:34px;left:30px;right:30px;z-index:6;text-align:center;display:none;flex-direction:column;gap:2px;pointer-events:none}
+.tapzone{position:absolute;top:100px;bottom:100px;width:38%;z-index:4;cursor:pointer}
+.reduce .slide .anim,.reduce .slide .anim2,.reduce .slide .anim3{animation:fade .15s both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes nudgeL{from{transform:rotate(-8deg) translateX(0)}to{transform:rotate(-4deg) translateX(14px)}}
+@keyframes nudgeR{from{transform:rotate(8deg) translateX(0)}to{transform:rotate(4deg) translateX(-14px)}}
+
+.svg{width:1em;height:1em;display:inline-block;vertical-align:-.15em;flex-shrink:0}
+.row{display:flex;align-items:center;gap:12px}
+.between{justify-content:space-between}
+</style>
+</head>
+<body>
+
+<aside class="side">
+  <h1>cine<em>diary</em></h1>
+  <p class="sub">Protótipo v2.0 sincronizado 1:1 com o <b>FrontEnd Mobile (`cinediary-mobile`)</b>. Navegue pelas telas abaixo ou alterne os cenários (vazio, cheio, construção, carregando, erro) na barra acima do celular.</p>
+
+  <h4>Predefinições Globais de Cenário</h4>
+  <div class="preset-grid" id="globalPresets">
+    <button class="preset on" data-preset="full" onclick="applyGlobalPreset('full')">✨ App Cheio (uso real)</button>
+    <button class="preset" data-preset="empty" onclick="applyGlobalPreset('empty')">🌱 App Vazio (conta zero)</button>
+    <button class="preset" data-preset="building" onclick="applyGlobalPreset('building')">🧱 Match em Construção</button>
+    <button class="preset" data-preset="loading" onclick="applyGlobalPreset('loading')">⏳ Estado Carregando</button>
+    <button class="preset" data-preset="error" onclick="applyGlobalPreset('error')">⚠️ Estado de Erro</button>
+    <button class="preset" data-preset="discovery" onclick="applyGlobalPreset('discovery')">🔭 Match Descoberta</button>
+  </div>
+
+  <h4>Aparência & Idioma</h4>
+  <div class="row-opts">
+    <label><input type="radio" name="plat" value="ios" checked> iOS 27 (Liquid Glass)</label>
+    <label><input type="radio" name="plat" value="android"> Android (Material 3)</label>
+  </div>
+  <div class="row-opts">
+    <label><input type="radio" name="loc" value="pt" checked> Abas PT-BR</label>
+    <label><input type="radio" name="loc" value="en"> Abas EN (Home/Log…)</label>
+  </div>
+  <div class="row-opts">
+    <label><input type="checkbox" id="optInvite"> Convite pendente da Ana</label>
+    <label><input type="checkbox" id="optReduce"> Reduzir movimento</label>
+  </div>
+
+  <h4>Todas as Telas & Fluxos (19 telas)</h4>
+  <div class="nav" id="nav"></div>
+</aside>
+
+<main class="stage">
+  <!-- Barra de cenários da tela atual -->
+  <div class="scenebar">
+    <div class="scenebar-top">
+      <div>Cenários desta tela · <span id="curScreenLabel">AU-01a · Boas-vindas</span></div>
+      <button onclick="openQuickLogTitle('Duna: Parte Dois',2024,'MOVIE',11)" style="color:var(--t600);font-weight:800;font-size:11px">＋ Abrir QuickLog</button>
+    </div>
+    <div class="scenepills" id="scenePills"></div>
+  </div>
+
+  <!-- Celular -->
+  <div class="phone ios" id="phone">
+    <div class="status" id="statusbar"><span>21:41</span><span>●●● ▮</span></div>
+
+    <!-- 1. AU-01a · WelcomeScreen.tsx -->
+    <section class="screen" id="AU-01a"></section>
+
+    <!-- 2. AU-01b · SignUpScreen.tsx -->
+    <section class="screen" id="AU-01b"></section>
+
+    <!-- 3. AU-01c · SignInScreen.tsx -->
+    <section class="screen" id="AU-01c"></section>
+
+    <!-- 4. AU-02 · SessionGate.tsx & MissingConfigScreen.tsx -->
+    <section class="screen" id="AU-02"></section>
+
+    <!-- 5. ON-01 · OnboardingGenresScreen.tsx -->
+    <section class="screen" id="ON-01"></section>
+
+    <!-- 6. ON-02 · OnboardingSeenScreen.tsx -->
+    <section class="screen" id="ON-02"></section>
+
+    <!-- 7. ON-03 · OnboardingFavoritesScreen.tsx -->
+    <section class="screen" id="ON-03"></section>
+
+    <!-- 8. IN-01 · HomeScreen.tsx (Aba 1: Início) -->
+    <section class="screen" id="IN-01"></section>
+
+    <!-- 9. BU-01 · SearchScreen.tsx (Aba 2: Buscar) -->
+    <section class="screen" id="BU-01"></section>
+
+    <!-- 10. RG-01 · LogScreen.tsx (Aba 3: Registrar) -->
+    <section class="screen" id="RG-01"></section>
+
+    <!-- 11. TI-01 · TitleDetailScreen.tsx (Filme) -->
+    <section class="screen" id="TI-01" style="padding-top:0"></section>
+
+    <!-- 12. TI-02 · TitleDetailScreen.tsx (Série) -->
+    <section class="screen" id="TI-02" style="padding-top:0"></section>
+
+    <!-- 13. IM-01..04 · ImportScreen.tsx (Letterboxd) -->
+    <section class="screen" id="IM-01"></section>
+
+    <!-- 14. MA-01 · TogetherHubScreen.tsx (Aba 4: Juntos) -->
+    <section class="screen" id="MA-01"></section>
+
+    <!-- 15. MA-04 · AcceptInviteScreen.tsx / CalculatingView.tsx -->
+    <section class="screen" id="MA-04" style="padding-top:0"></section>
+
+    <!-- 16. MA-05 · MatchStoryScreen.tsx (Story 9:16) -->
+    <section class="screen" id="MA-05">
+      <div class="sbars" id="sbars"></div>
+      <button class="sclose" onclick="closeStory()" aria-label="Fechar Story">✕</button>
+      <div class="tapzone" style="left:0" onclick="prevSlide()"></div>
+      <div class="tapzone" style="right:0" onclick="nextSlide()"></div>
+      <div id="slides"></div>
+      <div class="sfoot" id="sfoot">
+        <button onclick="toast('PNG 1080×1920 pronto para compartilhar ✓')"><span id="shareStoryIcon"></span> Compartilhar este</button>
+      </div>
+      <div class="sbrand" id="sbrand">
+        <div style="font-family:var(--serif);font-size:28px;font-weight:700">cine<em>diary</em></div>
+        <div style="font-size:14px;font-weight:600">Faça o seu Match no CineDiary</div>
+      </div>
+    </section>
+
+    <!-- 17. MA-06 · MatchDetailScreen.tsx (Sala do Match) -->
+    <section class="screen" id="MA-06"></section>
+
+    <!-- 18. MA-07 · AddToSharedWatchlistScreen.tsx -->
+    <section class="screen" id="MA-07"></section>
+
+    <!-- 19. PE-01 · ProfileScreen.tsx (Aba 5: Perfil) -->
+    <section class="screen" id="PE-01"></section>
+
+    <!-- 20. DS-01 · DesignSystemScreen.tsx (Catálogo Vivo) -->
+    <section class="screen" id="DS-01"></section>
+
+    <!-- BU-02 · QuickLogScreen.tsx (formSheet sobre qualquer tela) -->
+    <div class="scrim" id="scrim" onclick="closeSheet()"></div>
+    <div class="sheet" id="sheet"></div>
+
+    <!-- Toast.tsx -->
+    <div class="toast" id="toast">
+      <span id="toastTxt"></span>
+      <button id="toastAct" onclick="onToastAction()" style="display:none"></button>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+/* ---------- 1. Ícones Phosphor (SVG inline) ---------- */
+const IC = {
+  house: '<path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/>',
+  plusCircle: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  users: '<circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 19.5c1-3.2 3.5-4.8 6.5-4.8s5.5 1.6 6.5 4.8"/><path d="M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.5 15.2c1.7.7 3 2.1 3.7 4.3"/>',
+  userCircle: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.8 18.5c1.2-2.2 3-3.3 5.2-3.3s4 1.1 5.2 3.3"/>',
+  check: '<path d="M4.5 12.5l5 5L19.5 7.5"/>',
+  heart: '<path d="M12 20.2s-7.8-4.7-7.8-10.4A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 7.8 2.6c0 5.7-7.8 10.4-7.8 10.4z"/>',
+  bookmark: '<path d="M6.5 4h11v16.5L12 16.5l-5.5 4z"/>',
+  star: '<path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/>',
+  calendar: '<rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8.5 3v4M15.5 3v4"/>',
+  caretLeft: '<path d="M15 5l-7 7 7 7"/>',
+  caretRight: '<path d="M9 5l7 7-7 7"/>',
+  caretUp: '<path d="M5 15l7-7 7 7"/>',
+  caretDown: '<path d="M5 9l7 7 7-7"/>',
+  rewind: '<path d="M4.5 12A7.5 7.5 0 1 0 7 6.4"/><path d="M4 3.5V8h4.5"/>',
+  pencil: '<path d="M4 20h4.2L19 9.2 14.8 5 4 15.8z"/><path d="M13 6.8l4.2 4.2"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
+  download: '<path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M4.5 19.5h15"/>',
+  palette: '<path d="M12 3a9 9 0 0 0 0 18c1.4 0 2.5-1.1 2.5-2.5 0-.6-.2-1.2-.6-1.6-.4-.4-.6-.9-.6-1.4 0-1.4 1.1-2.5 2.5-2.5H17a4 4 0 0 0 4-4c0-3.3-4-6-9-6z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="14.5" cy="7.5" r="1"/>',
+  signOut: '<path d="M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10M15 16l4-4-4-4M9.5 12H19"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeSlash: '<path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.8A9.8 9.8 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a15.8 15.8 0 0 1-3.2 4.2M6.2 6.2C3.9 8 2.5 12 2.5 12s3.5 6.5 9.5 6.5c1.9 0 3.6-.6 5-1.5"/>',
+  warn: '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>',
+  xCircle: '<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>',
+  ticket: '<path d="M3 8.5a1.5 1.5 0 0 1 1.5-1.5h15A1.5 1.5 0 0 1 21 8.5v2a2 2 0 0 0 0 3v2a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-2a2 2 0 0 0 0-3z"/><path d="M9.5 7v10"/>',
+  popcorn: '<path d="M6.5 10L8 20h8l1.5-10z"/><path d="M10.5 10l-.5 10M13.5 10l.5 10"/><path d="M6 10a2.5 2.5 0 0 1 .8-4.8A3 3 0 0 1 12 4a3 3 0 0 1 5.2 1.2A2.5 2.5 0 0 1 18 10z"/>',
+  filmReel: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="7" r="1.2"/><circle cx="12" cy="17" r="1.2"/><circle cx="7" cy="12" r="1.2"/><circle cx="17" cy="12" r="1.2"/><path d="M12 20.5H21"/>',
+  checkCircle: '<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5"/>',
+  share: '<circle cx="6" cy="12" r="2.5"/><circle cx="17.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/><path d="M8.3 10.9l6.9-3.3M8.3 13.1l6.9 3.3"/>',
+  copy: '<rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  play: '<path d="M7 5.5v13l11-6.5z"/>'
+};
+const FILLABLE = { heart: 1, bookmark: 1, house: 1, users: 1, star: 1, play: 1 };
+function I(name, filled = false, size = null) {
+  const s = size ? `style="font-size:${size}px"` : '';
+  const f = filled && FILLABLE[name] ? 'currentColor' : 'none';
+  const sw = name === 'check' || name === 'plus' ? '2.4' : '1.9';
+  return `<svg class="svg" ${s} viewBox="0 0 24 24" fill="${f}" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${IC[name] || ''}</svg>`;
+}
+
+/* ---------- 2. PosterArt.tsx (mesma função de hash e degradês do FrontEnd!) ---------- */
+const FALLBACK_GRADIENTS = [
+  ['#C9A15A', '#6E4B1E'],
+  ['#B4532F', '#4A1E14'],
+  ['#5E7F6E', '#24392F'],
+  ['#5B2A44', '#2A1220'],
+  ['#3E5C83', '#1A2840'],
+  ['#D08C86', '#7A3B37'],
+  ['#8FA685', '#3B4F35'],
+  ['#E8B84A', '#8A5A12'],
+  ['#6B5B95', '#2E2547'],
+  ['#2A211C', '#5A4A40'],
+];
+function hashIndex(seed) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  return Math.abs(h) % FALLBACK_GRADIENTS.length;
+}
+function posterArt(title, width, height = null, radius = 12, fontSize = null, extraStyle = '') {
+  const h = height ?? Math.round(width * 1.5);
+  const fs = fontSize ?? Math.max(10, Math.round(width / 8));
+  const [c0, c1] = FALLBACK_GRADIENTS[hashIndex(title)];
+  return `<div class="poster" style="width:${width}px;height:${h}px;border-radius:${radius}px;font-size:${fs}px;background:linear-gradient(150deg,${c0},${c1});${extraStyle}"><span>${title}</span></div>`;
+}
+function posterCard(opts) {
+  const {
+    title, year = null, width = 104, watched = false, liked = false,
+    inWatchlist = false, rating = null, selected = false, showCaption = false,
+    corner = '', onclick = ''
+  } = opts;
+  const h = Math.round(width * 1.5);
+  const fs = Math.max(10, Math.round(width / 8));
+  const [c0, c1] = FALLBACK_GRADIENTS[hashIndex(title)];
+  const rTxt = rating ? String(rating).replace('.', ',') : '';
+  return `<button class="pcard ${selected ? 'sel' : ''}" style="width:${width}px" ${onclick ? `onclick="${onclick}"` : ''}>
+    <div class="pcard-frame" style="width:${width}px;height:${h}px">
+      <div class="poster" style="width:100%;height:100%;font-size:${fs}px;background:linear-gradient(150deg,${c0},${c1})"><span>${title}</span></div>
+      <div class="pcard-badges">
+        ${watched ? `<span class="pbadge" style="background:var(--s700)">${I('check', false, 10)}</span>` : ''}
+        ${liked ? `<span class="pbadge" style="background:var(--r500)">${I('heart', true, 10)}</span>` : ''}
+        ${inWatchlist && !watched ? `<span class="pbadge" style="background:var(--ink700)">${I('bookmark', true, 10)}</span>` : ''}
+        ${rating ? `<span class="pbadge rate">${rTxt}</span>` : ''}
+      </div>
+      ${selected ? `<div class="pcard-check">${I('check', false, 13)}</div>` : ''}
+      ${corner ? `<div class="pcard-corner">${corner}</div>` : ''}
+    </div>
+    ${showCaption ? `<div class="pcard-cap"><span class="t">${title}</span>${year ? `<span class="y">${year}</span>` : ''}</div>` : ''}
+  </button>`;
+}
+
+/* ---------- 3. Catálogo de Exemplo (Filmes e Séries) ---------- */
+const CATALOG = [
+  { id: 1, title: 'Ainda Estou Aqui', originalTitle: 'Ainda Estou Aqui', year: 2024, mediaType: 'MOVIE', runtime: '2h15', genres: ['Drama', 'História'], watched: true, liked: true, rating: 5, inWatchlist: false, overview: 'No início da década de 1970, o Brasil enfrenta o endurecimento da ditadura militar. No Rio de Janeiro, a família Paiva — Rubens, Eunice e seus cinco filhos — vive à beira da praia em uma casa de portas abertas para os amigos, até que um dia Rubens é levado para prestar depoimento e nunca mais retorna.' },
+  { id: 2, title: 'Duna: Parte Dois', originalTitle: 'Dune: Part Two', year: 2024, mediaType: 'MOVIE', runtime: '2h46', genres: ['Ficção científica', 'Aventura'], watched: true, liked: false, rating: 4, inWatchlist: false, overview: 'Paul Atreides se une a Chani e aos Fremen enquanto busca vingança contra os conspiradores que destruíram sua família.' },
+  { id: 3, title: 'Ruptura', originalTitle: 'Severance', year: 2022, mediaType: 'SERIES', seasons: 2, genres: ['Suspense', 'Drama', 'Ficção científica'], watched: false, liked: true, rating: 4.5, inWatchlist: false, seriesStatus: 'WATCHING', overview: 'Mark lidera uma equipe de funcionários de escritório cujas memórias foram cirurgicamente divididas entre a vida no trabalho e a vida pessoal. Quando um misterioso colega aparece fora do trabalho, começa uma jornada para descobrir a verdade.' },
+  { id: 4, title: 'Central do Brasil', originalTitle: 'Central do Brasil', year: 1998, mediaType: 'MOVIE', runtime: '1h53', genres: ['Drama'], watched: true, liked: true, rating: 5, inWatchlist: false, overview: 'Dora escreve cartas para analfabetos na estação Central do Brasil, no Rio de Janeiro, e acaba cruzando o país com o menino Josué em busca do pai que ele nunca conheceu.' },
+  { id: 5, title: 'Bacurau', originalTitle: 'Bacurau', year: 2019, mediaType: 'MOVIE', runtime: '2h11', genres: ['Suspense', 'Faroeste', 'Ficção científica'], watched: true, liked: true, rating: 4.5, inWatchlist: false, overview: 'Pouco após a morte de dona Carmelita, os moradores de um pequeno povoado no sertão brasileiro chamado Bacurau descobrem que a comunidade não consta mais em qualquer mapa.' },
+  { id: 6, title: 'Corra!', originalTitle: 'Get Out', year: 2017, mediaType: 'MOVIE', runtime: '1h44', genres: ['Terror', 'Suspense'], watched: true, liked: true, rating: 5, inWatchlist: false, overview: 'Um jovem fotógrafo negro visita a família da namorada branca em uma propriedade isolada e descobre um segredo perturbador.' },
+  { id: 7, title: 'Pulp Fiction', originalTitle: 'Pulp Fiction', year: 1994, mediaType: 'MOVIE', runtime: '2h34', genres: ['Crime', 'Drama'], watched: true, liked: true, rating: 5, inWatchlist: false, overview: 'As vidas de dois assassinos da máfia, um boxeador, um gângster e sua esposa se entrelaçam em quatro histórias de violência e redenção.' },
+  { id: 8, title: 'Hereditário', originalTitle: 'Hereditary', year: 2018, mediaType: 'MOVIE', runtime: '2h07', genres: ['Terror', 'Drama', 'Mistério'], watched: true, liked: false, rating: 4, inWatchlist: false, overview: 'Após a morte da matriarca da família Graham, sua filha e netos começam a desvendar segredos ancestrais cada vez mais aterrorizantes.' },
+  { id: 9, title: 'Barbie', originalTitle: 'Barbie', year: 2023, mediaType: 'MOVIE', runtime: '1h54', genres: ['Comédia', 'Aventura'], watched: true, liked: false, rating: 3, inWatchlist: false, overview: 'Depois de ser expulsa da Barbieland por não ser uma boneca de aparência perfeita, Barbie parte para o mundo humano em busca da verdadeira felicidade.' },
+  { id: 10, title: 'Aquarius', originalTitle: 'Aquarius', year: 2016, mediaType: 'MOVIE', runtime: '2h26', genres: ['Drama'], watched: false, liked: false, rating: null, inWatchlist: true, overview: 'Clara, 65 anos, jornalista aposentada e escritora, é a última moradora do edifício Aquarius, na Avenida Boa Viagem, no Recife.' },
+  { id: 11, title: 'Moonlight', originalTitle: 'Moonlight: Sob a Luz do Luar', year: 2016, mediaType: 'MOVIE', runtime: '1h51', genres: ['Drama'], watched: false, liked: false, rating: null, inWatchlist: true, overview: 'Três momentos da vida de Chiron, um jovem negro morador de uma comunidade de Miami.' },
+  { id: 12, title: 'A Chegada', originalTitle: 'Arrival', year: 2016, mediaType: 'MOVIE', runtime: '1h56', genres: ['Ficção científica', 'Drama'], watched: false, liked: false, rating: null, inWatchlist: true, overview: 'Quando naves extraterrestres pousam em doze pontos da Terra, uma linguista é recrutada para decifrar a linguagem dos visitantes.' },
+  { id: 13, title: 'Lady Bird', originalTitle: 'Lady Bird: A Hora de Voar', year: 2017, mediaType: 'MOVIE', runtime: '1h34', genres: ['Comédia', 'Drama'], watched: false, liked: false, rating: null, inWatchlist: true, overview: 'Christine "Lady Bird" McPherson enfrenta o último ano do ensino médio em Sacramento e a relação intensa com a mãe.' },
+  { id: 14, title: 'The Bear', originalTitle: 'The Bear', year: 2022, mediaType: 'SERIES', seasons: 3, genres: ['Comédia', 'Drama'], watched: false, liked: true, rating: 4.5, inWatchlist: false, seriesStatus: 'WATCHING', overview: 'Um jovem chef da alta gastronomia volta a Chicago para administrar a lanchonete de sanduíches da família.' },
+  { id: 15, title: 'Sintonia', originalTitle: 'Sintonia', year: 2019, mediaType: 'SERIES', seasons: 5, genres: ['Drama', 'Crime', 'Musical'], watched: false, liked: false, rating: null, inWatchlist: false, seriesStatus: 'WATCHING', overview: 'Criados juntos na quebrada de São Paulo, três amigos correm atrás de seus sonhos entre a música, a igreja e o crime.' },
+  { id: 16, title: 'Oppenheimer', originalTitle: 'Oppenheimer', year: 2023, mediaType: 'MOVIE', runtime: '3h00', genres: ['Drama', 'História'], watched: false, liked: false, rating: null, inWatchlist: false, overview: 'A história do físico J. Robert Oppenheimer e seu papel no desenvolvimento da bomba atômica.' },
+  { id: 17, title: 'Cidade de Deus', originalTitle: 'Cidade de Deus', year: 2002, mediaType: 'MOVIE', runtime: '2h10', genres: ['Crime', 'Drama'], watched: true, liked: true, rating: 5, inWatchlist: false, overview: 'Buscapé é um jovem morador da Cidade de Deus que cresce em meio à violência e descobre seu talento como fotógrafo.' },
+  { id: 18, title: 'Parasita', originalTitle: 'Gisaengchung', year: 2019, mediaType: 'MOVIE', runtime: '2h12', genres: ['Suspense', 'Comédia', 'Drama'], watched: true, liked: true, rating: 5, inWatchlist: false, overview: 'Toda a família de Ki-taek está desempregada, até que o filho mais velho começa a dar aulas de inglês para a filha da rica família Park.' },
+  { id: 19, title: 'Duna', originalTitle: 'Dune', year: 2021, mediaType: 'MOVIE', runtime: '2h35', genres: ['Ficção científica', 'Aventura'], watched: true, liked: true, rating: 4.5, inWatchlist: false, overview: 'Paul Atreides viaja para o planeta mais perigoso do universo para garantir o futuro de seu povo.' },
+  { id: 20, title: 'Duna: A Profecia', originalTitle: 'Dune: Prophecy', year: 2024, mediaType: 'SERIES', seasons: 1, genres: ['Ficção científica', 'Drama'], watched: false, liked: false, rating: null, inWatchlist: true, overview: 'Dez mil anos antes da ascensão de Paul Atreides, duas irmãs Harkonnen fundam a ordem conhecida como Bene Gesserit.' }
+];
+
+const GENRES = ['Comédia', 'Drama', 'Terror', 'Ação', 'Romance', 'Ficção científica', 'Animação', 'Suspense', 'Aventura', 'Fantasia', 'Crime', 'Documentário', 'Família', 'Mistério', 'Musical', 'Guerra', 'Faroeste', 'História'];
+
+/* ---------- 4. Estado Reativo do Protótipo (todos os fluxos e cenários) ---------- */
+const S = {
+  screen: 'IN-01',
+  hist: [],
+  loc: 'pt',
+  plat: 'ios',
+  fromInvite: false,
+  reduceMotion: false,
+  /* Cenário de cada tela */
+  au01a: 'default',     // 'default' | 'invite'
+  au01b: 'normal',      // 'normal' | 'validation' | 'clerk_error'
+  au01c: 'normal',      // 'normal' | 'error'
+  au02: 'loading',      // 'loading' | 'error' | 'missing_key'
+  on01: 'normal',       // 'normal' | 'loading' | 'error'
+  on02: 'normal',       // 'normal' | 'loading' | 'error'
+  onGenres: [1, 2, 7],  // Drama, Terror, Suspense
+  onSeen: [1, 4, 5, 6, 7, 17],
+  onAddToHistory: false,
+  onSearch: '',
+  onFavs: [1, 6, 5, 7],
+  in01: 'full',         // 'full' | 'empty' | 'import_ready' | 'import_running' | 'building' | 'loading' | 'error'
+  bu01: 'discovery',    // 'discovery' | 'results' | 'short' | 'empty' | 'cache' | 'loading' | 'error'
+  buQuery: '',
+  buType: 'ALL',        // 'ALL' | 'MOVIE' | 'SERIES'
+  buGenre: null,
+  rg01: 'full',         // 'full' | 'minimal' | 'searching'
+  ti01: 'with_entries', // 'with_entries' | 'no_entries' | 'expanded_overview' | 'loading' | 'error'
+  ti01TitleId: 1,
+  ti02: 'watching',     // 'watching' | 'completed_unrated' | 'dropped' | 'loading' | 'error'
+  ti02Seasons: [
+    { number: 1, name: 'Temporada 1', episodeCount: 9, watched: [1,2,3,4,5,6,7,8,9] },
+    { number: 2, name: 'Temporada 2', episodeCount: 10, watched: [1,2,3,4] }
+  ],
+  ti02OpenSeason: 2,
+  ti02Rating: 4.5,
+  im: 'IM-01',          // 'IM-01' | 'IM-01-ERR' | 'IM-02' | 'IM-03' | 'IM-03-NONE' | 'IM-04' | 'IM-ERR'
+  imUnmatchedOpen: false,
+  ma01: 'full',         // 'full' | 'empty' | 'invite_created' | 'invalid_code' | 'loading' | 'error'
+  maCodeInput: '',
+  ma04: 'calculating',  // 'calculating' | 'invalid'
+  ma05Mode: 'normal',   // 'normal' | 'discovery' | 'capturing'
+  ma06: 'active_wl',    // 'active_wl' | 'active_empty_wl' | 'active_summary' | 'building' | 'pending' | 'loading' | 'error'
+  ma06Tab: 'watchlist', // 'watchlist' | 'summary'
+  sharedWatchlist: [
+    { titleId: 10, addedBy: 'Edu' },
+    { titleId: 11, addedBy: 'Ana' },
+    { titleId: 12, addedBy: 'Ana' },
+    { titleId: 13, addedBy: 'Edu' }
+  ],
+  pe01: 'full',         // 'full' | 'empty' | 'private' | 'loading' | 'error'
+  isPrivate: false,
+  /* QuickLog Sheet (BU-02) */
+  sheetOpen: false,
+  sheetTitle: CATALOG[1],
+  sheetWatched: true,
+  sheetLiked: false,
+  sheetWatchlist: false,
+  sheetSeriesStatus: 'WATCHING',
+  sheetRating: 0,
+  sheetDayOffset: 0,
+  sheetRewatch: false,
+  sheetShowReview: false,
+  sheetReview: ''
+};
+
+/* ---------- 5. Mapa de Telas e Cenários ---------- */
+const NAV_ITEMS = [
+  { group: 'Auth & Sessão (Clerk)' },
+  { id: 'AU-01a', name: 'Boas-vindas', tag: '2 variantes' },
+  { id: 'AU-01b', name: 'Criar conta', tag: '3 estados' },
+  { id: 'AU-01c', name: 'Entrar', tag: '2 estados' },
+  { id: 'AU-02', name: 'Portão de Sessão (/me)', tag: 'novo FE' },
+  { group: 'Onboarding v1.2 (0 mínimo)' },
+  { id: 'ON-01', name: 'Passo 1 · Gêneros', tag: 'opcional' },
+  { id: 'ON-02', name: 'Passo 2 · Já vi', tag: 'busca + check' },
+  { id: 'ON-03', name: 'Passo 3 · Favoritos', tag: 'até 4' },
+  { group: '5 Abas Nativas (Liquid Glass / M3)' },
+  { id: 'IN-01', name: 'Aba 1 · Início', tag: 'vazia / cheia' },
+  { id: 'BU-01', name: 'Aba 2 · Buscar', tag: '7 cenários' },
+  { id: 'RG-01', name: 'Aba 3 · Registrar', tag: '3 toques' },
+  { id: 'MA-01', name: 'Aba 4 · Juntos (Hub)', tag: 'vazio / cheio' },
+  { id: 'PE-01', name: 'Aba 5 · Perfil (FE v2)', tag: 'fiel ao FE' },
+  { group: ' Catálogo & Séries' },
+  { id: 'TI-01', name: 'Detalhe · Filme', tag: 'novo FE' },
+  { id: 'TI-02', name: 'Detalhe · Série', tag: 'acordeão + nota' },
+  { group: 'Importação Letterboxd (.zip)' },
+  { id: 'IM-01', name: 'Fluxo de Importação', tag: '7 estados' },
+  { group: 'Taste Match & Story 9:16' },
+  { id: 'MA-04', name: 'Calculando / Deep Link', tag: '2 estados' },
+  { id: 'MA-05', name: 'Match Story (9:16)', tag: '8/7 slides + PNG' },
+  { id: 'MA-06', name: 'Sala do Match', tag: '6 cenários' },
+  { id: 'MA-07', name: 'Adicionar à Lista (Match)', tag: 'novo FE' },
+  { group: 'Dev / Sistema de Design' },
+  { id: 'DS-01', name: 'Design System (dev)', tag: 'novo FE' }
+];
+
+const SCENE_OPTIONS = {
+  'AU-01a': [
+    ['default', 'Padrão', () => { S.au01a = 'default'; S.fromInvite = false; $('#optInvite').checked = false; }],
+    ['invite', 'Chegou por convite', () => { S.au01a = 'invite'; S.fromInvite = true; $('#optInvite').checked = true; }]
+  ],
+  'AU-01b': [
+    ['normal', 'Normal', () => S.au01b = 'normal'],
+    ['validation', 'Erro de validação (blur)', () => S.au01b = 'validation'],
+    ['clerk_error', 'Erro Clerk (@ já existe)', () => S.au01b = 'clerk_error']
+  ],
+  'AU-01c': [
+    ['normal', 'Normal', () => S.au01c = 'normal'],
+    ['error', 'Senha incorreta', () => S.au01c = 'error']
+  ],
+  'AU-02': [
+    ['loading', 'Carregando /me', () => S.au02 = 'loading'],
+    ['error', 'Servidor offline (Tentar de novo)', () => S.au02 = 'error'],
+    ['missing_key', 'Falta chave Clerk (.env.local)', () => S.au02 = 'missing_key']
+  ],
+  'ON-01': [
+    ['some', 'Com gêneros (Continuar)', () => { S.on01 = 'normal'; S.onGenres = [1, 2, 7]; }],
+    ['zero', '0 marcados (Pular por agora)', () => { S.on01 = 'normal'; S.onGenres = []; }],
+    ['loading', 'Carregando', () => S.on01 = 'loading'],
+    ['error', 'Erro', () => S.on01 = 'error']
+  ],
+  'ON-02': [
+    ['some', '6 marcados + checkbox', () => { S.on02 = 'normal'; S.onSeen = [1, 4, 5, 6, 7, 17]; }],
+    ['zero', '0 marcados (Pular por agora)', () => { S.on02 = 'normal'; S.onSeen = []; }],
+    ['loading', 'Carregando (Skeleton)', () => S.on02 = 'loading'],
+    ['error', 'Erro', () => S.on02 = 'error']
+  ],
+  'ON-03': [
+    ['normal', '4 favoritos marcados', () => { if (!S.onSeen.length) S.onSeen = [1, 4, 5, 6, 7, 17]; S.onFavs = S.onSeen.slice(0, 4); }],
+    ['zero', '0 favoritos', () => { if (!S.onSeen.length) S.onSeen = [1, 4, 5, 6, 7, 17]; S.onFavs = []; }]
+  ],
+  'IN-01': [
+    ['full', 'Home Cheia (completa)', () => S.in01 = 'full'],
+    ['empty', 'Home Vazia (0 registros)', () => S.in01 = 'empty'],
+    ['import_ready', 'Banner: Importação pronta', () => S.in01 = 'import_ready'],
+    ['import_running', 'Banner: Importando…', () => S.in01 = 'import_running'],
+    ['building', 'Banner: Match em construção', () => S.in01 = 'building'],
+    ['loading', 'Carregando (Skeleton)', () => S.in01 = 'loading'],
+    ['error', 'Erro', () => S.in01 = 'error']
+  ],
+  'BU-01': [
+    ['discovery', 'Descoberta (Em alta + gêneros)', () => { S.bu01 = 'discovery'; S.buQuery = ''; }],
+    ['results', 'Com busca ("duna")', () => { S.bu01 = 'results'; S.buQuery = 'duna'; }],
+    ['short', '1 letra ("d")', () => { S.bu01 = 'short'; S.buQuery = 'd'; }],
+    ['empty', 'Sem resultados', () => { S.bu01 = 'empty'; S.buQuery = 'xyz123'; }],
+    ['cache', 'Offline (do cache)', () => { S.bu01 = 'cache'; S.buQuery = 'duna'; }],
+    ['loading', 'Carregando', () => S.bu01 = 'loading'],
+    ['error', 'Erro', () => S.bu01 = 'error']
+  ],
+  'RG-01': [
+    ['full', 'Completa (Watchlist + Séries + Em alta)', () => S.rg01 = 'full'],
+    ['minimal', 'Conta nova (só Em alta)', () => S.rg01 = 'minimal'],
+    ['searching', 'Buscando título', () => S.rg01 = 'searching']
+  ],
+  'TI-01': [
+    ['with_entries', 'Filme já visto (com registros)', () => { S.ti01 = 'with_entries'; S.ti01TitleId = 1; }],
+    ['no_entries', 'Filme não visto (sem registros)', () => { S.ti01 = 'no_entries'; S.ti01TitleId = 10; }],
+    ['loading', 'Carregando', () => S.ti01 = 'loading'],
+    ['error', 'Erro', () => S.ti01 = 'error']
+  ],
+  'TI-02': [
+    ['watching', 'Assistindo (13/19 ep.)', () => {
+      S.ti02 = 'watching';
+      S.ti02Rating = 4.5;
+      S.ti02Seasons = [
+        { number: 1, name: 'Temporada 1', episodeCount: 9, watched: [1,2,3,4,5,6,7,8,9] },
+        { number: 2, name: 'Temporada 2', episodeCount: 10, watched: [1,2,3,4] }
+      ];
+    }],
+    ['completed_unrated', 'Concluída 19/19 (pedindo nota!)', () => {
+      S.ti02 = 'completed_unrated';
+      S.ti02Rating = 0;
+      S.ti02Seasons = [
+        { number: 1, name: 'Temporada 1', episodeCount: 9, watched: [1,2,3,4,5,6,7,8,9] },
+        { number: 2, name: 'Temporada 2', episodeCount: 10, watched: [1,2,3,4,5,6,7,8,9,10] }
+      ];
+    }],
+    ['dropped', 'Abandonada', () => S.ti02 = 'dropped'],
+    ['loading', 'Carregando', () => S.ti02 = 'loading'],
+    ['error', 'Erro', () => S.ti02 = 'error']
+  ],
+  'IM-01': [
+    ['IM-01', 'IM-01 · Instruções', () => S.im = 'IM-01'],
+    ['IM-01-ERR', 'IM-01 · Erro (.zip inválido)', () => S.im = 'IM-01-ERR'],
+    ['IM-02', 'IM-02 · Processando', () => S.im = 'IM-02'],
+    ['IM-03', 'IM-03 · Resumo (842 títulos)', () => S.im = 'IM-03'],
+    ['IM-03-NONE', 'IM-03 · Nada novo', () => S.im = 'IM-03-NONE'],
+    ['IM-04', 'IM-04 · Concluído', () => S.im = 'IM-04'],
+    ['IM-ERR', 'Falha ao ler arquivo', () => S.im = 'IM-ERR']
+  ],
+  'MA-01': [
+    ['full', 'Com Matches (Ativo + Construção + Aguardando)', () => S.ma01 = 'full'],
+    ['empty', 'Match Vazio (0 Matches)', () => S.ma01 = 'empty'],
+    ['invite_created', 'MA-02 · Convite criado', () => S.ma01 = 'invite_created'],
+    ['invalid_code', 'Erro de código inválido', () => S.ma01 = 'invalid_code'],
+    ['loading', 'Carregando', () => S.ma01 = 'loading'],
+    ['error', 'Erro', () => S.ma01 = 'error']
+  ],
+  'MA-04': [
+    ['calculating', 'Calculando Match…', () => S.ma04 = 'calculating'],
+    ['invalid', 'Convite inválido / usado', () => S.ma04 = 'invalid']
+  ],
+  'MA-05': [
+    ['normal', 'Normal (8 slides · 78%)', () => { S.ma05Mode = 'normal'; openStory(0); }],
+    ['discovery', 'Modo Descoberta (7 slides · 61%)', () => { S.ma05Mode = 'discovery'; openStory(0); }],
+    ['capturing', 'Prévia PNG 1080×1920 (com marca)', () => { S.ma05Mode = 'capturing'; openStory(1); }]
+  ],
+  'MA-06': [
+    ['active_wl', 'Ativo · Watchlist com filmes', () => { S.ma06 = 'active_wl'; S.ma06Tab = 'watchlist'; }],
+    ['active_empty_wl', 'Ativo · Watchlist vazia (sugestões)', () => { S.ma06 = 'active_empty_wl'; S.ma06Tab = 'watchlist'; }],
+    ['active_summary', 'Ativo · Aba Resumo', () => { S.ma06 = 'active_summary'; S.ma06Tab = 'summary'; }],
+    ['building', 'Match em construção (0 dados)', () => { S.ma06 = 'building'; S.ma06Tab = 'watchlist'; }],
+    ['pending', 'Aguardando amigo topar', () => { S.ma06 = 'pending'; S.ma06Tab = 'watchlist'; }],
+    ['loading', 'Carregando', () => S.ma06 = 'loading'],
+    ['error', 'Erro', () => S.ma06 = 'error']
+  ],
+  'MA-07': [
+    ['normal', 'Buscar para adicionar à lista', () => {}]
+  ],
+  'PE-01': [
+    ['full', 'Perfil Cheio (Favoritos + Stats + Recentes)', () => { S.pe01 = 'full'; S.isPrivate = false; }],
+    ['empty', 'Perfil Vazio (0 favoritos / 0 stats)', () => { S.pe01 = 'empty'; S.isPrivate = false; }],
+    ['private', 'Perfil Privado (cadeado ativo)', () => { S.pe01 = 'private'; S.isPrivate = true; }],
+    ['loading', 'Carregando', () => S.pe01 = 'loading'],
+    ['error', 'Erro', () => S.pe01 = 'error']
+  ],
+  'DS-01': [
+    ['normal', 'Catálogo de Componentes', () => {}]
+  ]
+};
+
+function applyGlobalPreset(preset) {
+  $$('#globalPresets .preset').forEach(b => b.classList.toggle('on', b.dataset.preset === preset));
+  if (preset === 'full') {
+    S.in01 = 'full'; S.bu01 = 'discovery'; S.rg01 = 'full'; S.ti01 = 'with_entries'; S.ti02 = 'watching';
+    S.ma01 = 'full'; S.ma06 = 'active_wl'; S.ma06Tab = 'watchlist'; S.pe01 = 'full'; S.ma05Mode = 'normal';
+  } else if (preset === 'empty') {
+    S.in01 = 'empty'; S.bu01 = 'discovery'; S.rg01 = 'minimal'; S.ti01 = 'no_entries';
+    S.ma01 = 'empty'; S.ma06 = 'active_empty_wl'; S.ma06Tab = 'watchlist'; S.pe01 = 'empty';
+    S.onGenres = []; S.onSeen = []; S.onFavs = [];
+  } else if (preset === 'building') {
+    S.in01 = 'building'; S.ma01 = 'full'; S.ma06 = 'building'; S.pe01 = 'empty';
+  } else if (preset === 'loading') {
+    S.in01 = 'loading'; S.bu01 = 'loading'; S.ti01 = 'loading'; S.ti02 = 'loading';
+    S.ma01 = 'loading'; S.ma06 = 'loading'; S.pe01 = 'loading'; S.on01 = 'loading'; S.on02 = 'loading'; S.au02 = 'loading';
+  } else if (preset === 'error') {
+    S.in01 = 'error'; S.bu01 = 'error'; S.ti01 = 'error'; S.ti02 = 'error';
+    S.ma01 = 'error'; S.ma06 = 'error'; S.pe01 = 'error'; S.on01 = 'error'; S.on02 = 'error'; S.au02 = 'error';
+  } else if (preset === 'discovery') {
+    S.ma05Mode = 'discovery'; S.ma01 = 'full'; S.ma06 = 'active_summary'; S.ma06Tab = 'summary';
+  }
+  renderAll();
+}
+
+/* ---------- 6. Componentes Compartilhados (States, TabBar, Stars) ---------- */
+function loadingStateHTML(label = 'Carregando…') {
+  return `<div class="state-box"><div class="spinner"></div><div class="body-muted">${label}</div></div>`;
+}
+function errorStateHTML(msg = 'Algo saiu do roteiro. Tente de novo em instantes.', retryFn = 'renderAll()') {
+  return `<div class="state-box">
+    <span style="color:var(--error);font-size:28px">${I('warn', false, 28)}</span>
+    <div class="body-sec">${msg}</div>
+    <button class="btn sec sm" style="width:auto" onclick="${retryFn}">Tentar de novo</button>
+  </div>`;
+}
+function skeletonRowsHTML(count = 5) {
+  return `<div style="display:flex;flex-direction:column;gap:16px">
+    ${Array.from({ length: count }, () => `<div class="row">
+      <div class="skel" style="width:40px;height:60px"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div class="skel" style="width:70%;height:14px"></div>
+        <div class="skel" style="width:40%;height:12px"></div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+const TAB_LABELS = {
+  pt: { 'IN-01': 'Início', 'BU-01': 'Buscar', 'RG-01': 'Registrar', 'MA-01': 'Juntos', 'PE-01': 'Perfil' },
+  en: { 'IN-01': 'Home', 'BU-01': 'Search', 'RG-01': 'Log', 'MA-01': 'Together', 'PE-01': 'Profile' }
+};
+const TABS = [
+  ['IN-01', 'house'],
+  ['BU-01', 'search'],
+  ['RG-01', 'plusCircle'],
+  ['MA-01', 'users'],
+  ['PE-01', 'userCircle']
+];
+function tabBarHTML(activeTab) {
+  const L = TAB_LABELS[S.loc];
+  return `<nav class="tabbar">
+    <div class="tb-ios"><div class="tabgroup glass">
+      ${TABS.map(([id, ic]) => `<button class="${id === activeTab ? 'on' : ''}" onclick="go('${id}')">${I(ic, id === activeTab)}${L[id]}</button>`).join('')}
+    </div></div>
+    <div class="tb-android">
+      ${TABS.map(([id, ic]) => `<button class="${id === activeTab ? 'on' : ''}" onclick="go('${id}')"><span class="ind">${I(ic, id === activeTab)}</span>${L[id]}</button>`).join('')}
+    </div>
+  </nav>`;
+}
+
+function starSvg(fill, size = 14) {
+  const id = 'sg' + Math.random().toString(36).slice(2, 8);
+  const color = fill > 0 ? '#D9A23A' : '#8E8176';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24"><defs><linearGradient id="${id}"><stop offset="${fill * 100}%" stop-color="#D9A23A"/><stop offset="${fill * 100}%" stop-color="transparent"/></linearGradient></defs><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z" fill="url(#${id})" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+}
+function miniStarsHTML(val) {
+  if (!val) return '';
+  return `<span style="display:inline-flex;gap:2px;align-items:center">${[1,2,3,4,5].map(n => starSvg(val >= n ? 1 : val >= n - 0.5 ? 0.5 : 0, 14)).join('')}</span>`;
+}
+function interactiveStarsHTML(val, fnName) {
+  return `<div class="bigstars">${[1,2,3,4,5].map(n => {
+    const fill = val >= n ? 1 : val >= n - 0.5 ? 0.5 : 0;
+    return `<div class="star-btn" onclick="${fnName}(event,${n})">${starSvg(fill, 32)}</div>`;
+  }).join('')}</div>`;
+}
+
+function titleRowHTML(t, actionFn = null, actionIconName = 'plus') {
+  const showOrig = t.originalTitle && t.originalTitle.toLowerCase() !== t.title.toLowerCase();
+  const detailScreen = t.mediaType === 'SERIES' ? `openSeriesDetail(${t.id})` : `openMovieDetail(${t.id})`;
+  const actCall = actionFn ? actionFn(t) : `openQuickLogById(${t.id})`;
+  return `<div class="trow">
+    <button class="trow-main" onclick="${detailScreen}">
+      ${posterArt(t.title, 40, 60, 8, 8)}
+      <div class="trow-texts">
+        <div class="strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.title}</div>
+        ${showOrig ? `<div class="cap" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.originalTitle}</div>` : ''}
+        <div class="trow-meta">
+          <span class="cap">${t.year} · ${t.mediaType === 'SERIES' ? 'Série' : 'Filme'}</span>
+          ${t.watched ? `<span style="color:var(--s700);font-size:14px">${I('check')}</span>` : ''}
+          ${t.liked ? `<span style="color:var(--r500);font-size:14px">${I('heart', true)}</span>` : ''}
+          ${t.rating ? `<span style="display:inline-flex;align-items:center;gap:2px"><span style="color:var(--p500);font-size:12px">${I('star', true)}</span><span class="cap" style="color:var(--ink900)">${String(t.rating).replace('.', ',')}</span></span>` : ''}
+          ${t.inWatchlist ? `<span style="color:var(--ink700);font-size:14px">${I('bookmark', true)}</span>` : ''}
+        </div>
+      </div>
+    </button>
+    <button class="trow-plus" onclick="${actCall}" aria-label="Ação para ${t.title}">${I(actionIconName)}</button>
+  </div>`;
+}
+
+/* ---------- 7. Renderizadores de Cada Tela (100% Fiel ao FrontEnd) ---------- */
+
+/* AU-01a · WelcomeScreen.tsx */
+function renderAU01a() {
+  const mosaic = ['Central do Brasil', 'Cidade de Deus', 'Bacurau', 'Ainda Estou Aqui'];
+  const tilt = [-6, 4, -3, 6];
+  const inv = S.au01a === 'invite' || S.fromInvite;
+  $('#AU-01a').innerHTML = `
+    <div class="scroll">
+      <div style="display:flex;justify-content:center;gap:8px;margin-top:24px;margin-bottom:16px">
+        ${mosaic.map((t, i) => `<div style="transform:rotate(${tilt[i]}deg)">${posterArt(t, 72, 108, 12, 10)}</div>`).join('')}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;flex:1">
+        <div class="h1">${inv ? 'Te chamaram para um <em>Taste Match</em>' : 'Seu diário de <em>filmes e séries</em>.'}</div>
+        <div class="body-sec">${inv ? 'Crie sua conta para ver o quanto vocês combinam.' : 'Registre o que viu, traga seu Letterboxd e descubra o quanto você combina com seus amigos.'}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <button class="btn" onclick="go('AU-01b')">Criar conta</button>
+        <button class="btn sec" onclick="go('AU-01c')">Já tenho conta</button>
+      </div>
+      <div class="cap" style="text-align:center">Ao continuar, você aceita os Termos e a Política de Privacidade.</div>
+    </div>`;
+}
+
+/* AU-01b · SignUpScreen.tsx */
+function renderAU01b() {
+  const valErr = S.au01b === 'validation';
+  const clerkErr = S.au01b === 'clerk_error';
+  $('#AU-01b').innerHTML = `
+    <div class="scroll">
+      <div class="h1">Crie seu <em>diário</em></div>
+      <div class="body-sec">Leva menos de um minuto.</div>
+      <div class="field">
+        <label>Nome de usuário</label>
+        <div class="box ${valErr ? 'err-box' : ''}"><input value="${valErr ? 'ed!' : 'edu'}" placeholder="cinefilo"></div>
+        ${valErr
+          ? `<div class="err">Use de 4 a 64 caracteres: letras minúsculas, números, "." ou "_".</div>`
+          : `<div class="hint">Letras minúsculas, números, "." e "_". Você pode mudar depois no perfil.</div>`}
+      </div>
+      <div class="field">
+        <label>E-mail</label>
+        <div class="box ${valErr ? 'err-box' : ''}"><input value="${valErr ? 'edu.com' : 'edu@exemplo.com'}" placeholder="voce@exemplo.com"></div>
+        ${valErr ? `<div class="err">Confira o e-mail: falta o @ ou o domínio.</div>` : ''}
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <div class="box"><input type="password" value="12345678"><button style="color:var(--ink700);font-size:22px">${I('eye')}</button></div>
+        <div class="hint">Pelo menos 8 caracteres.</div>
+      </div>
+      ${clerkErr ? `<div class="body" style="color:var(--error)">Esse usuário ou e-mail já tem conta. Que tal entrar?</div>` : ''}
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        <button class="btn" ${valErr ? 'disabled' : ''} onclick="go('ON-01')">Criar conta</button>
+        <button class="btn ghost" onclick="go('AU-01c')">Já tenho conta</button>
+      </div>
+    </div>`;
+}
+
+/* AU-01c · SignInScreen.tsx */
+function renderAU01c() {
+  const err = S.au01c === 'error';
+  $('#AU-01c').innerHTML = `
+    <div class="scroll">
+      <div class="h1">Que bom te ver de <em>novo</em></div>
+      <div class="body-sec">Entre com seu usuário ou e-mail.</div>
+      <div class="field">
+        <label>E-mail ou usuário</label>
+        <div class="box"><input value="edu@exemplo.com" placeholder="voce@exemplo.com ou cinefilo"></div>
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <div class="box"><input type="password" value="12345678"><button style="color:var(--ink700);font-size:22px">${I('eye')}</button></div>
+      </div>
+      ${err ? `<div class="body" style="color:var(--error)">E-mail ou senha não conferem.</div>` : ''}
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        <button class="btn" onclick="go('IN-01')">Entrar</button>
+        <button class="btn ghost" onclick="go('AU-01b')">Ainda não tenho conta</button>
+      </div>
+    </div>`;
+}
+
+/* AU-02 · SessionGate.tsx & MissingConfigScreen.tsx */
+function renderAU02() {
+  if (S.au02 === 'missing_key') {
+    $('#AU-02').innerHTML = `<div class="scroll">
+      <div class="h1">Falta uma <em>chave</em></div>
+      <div class="body-sec">Copie .env.example para .env.local, preencha EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY e reinicie o Metro com <b style="color:var(--ink900)">npx expo start -c</b>.</div>
+    </div>`;
+    return;
+  }
+  $('#AU-02').innerHTML = `<div class="scroll" style="justify-content:center">
+    ${S.au02 === 'loading'
+      ? loadingStateHTML('Carregando…')
+      : `${errorStateHTML('Não conseguimos carregar seu perfil. Confira se o servidor está no ar e tente de novo.', "S.au02='loading';renderAll();setTimeout(()=>go('ON-01'),600)")}
+         <button class="btn ghost" onclick="go('AU-01a')">Sair</button>`}
+  </div>`;
+}
+
+/* ON-01 · OnboardingGenresScreen.tsx */
+function renderON01() {
+  const n = S.onGenres.length;
+  $('#ON-01').innerHTML = `
+    <div class="scroll">
+      <div class="ob-top">
+        <div class="ob-back"></div>
+        <div class="ob-bars"><i class="on"></i><i></i><i></i></div>
+        <div class="ob-back"></div>
+      </div>
+      <div class="h1">Do que você <em>gosta</em>?</div>
+      ${S.on01 === 'loading' ? loadingStateHTML() : S.on01 === 'error' ? errorStateHTML() : `
+        <div class="chips">
+          ${GENRES.map((g, i) => `<button class="chip ${S.onGenres.includes(i) ? 'on' : ''}" onclick="toggleOnGenre(${i})"><span class="chk">${I('check')}</span>${g}</button>`).join('')}
+        </div>
+      `}
+    </div>
+    <div class="foot">
+      <button class="btn ${n === 0 ? 'sec' : ''}" onclick="go('ON-02')">${n === 0 ? 'Pular por agora' : 'Continuar'}</button>
+      <div class="cap" style="text-align:center">Isso ajuda a montar seu Match. Dá para mudar depois no perfil.</div>
+    </div>`;
+}
+function toggleOnGenre(i) {
+  const k = S.onGenres.indexOf(i);
+  k >= 0 ? S.onGenres.splice(k, 1) : S.onGenres.push(i);
+  renderON01();
+}
+
+/* ON-02 · OnboardingSeenScreen.tsx */
+function renderON02() {
+  const movies = CATALOG.filter(t => t.mediaType === 'MOVIE' && (!S.onSearch || t.title.toLowerCase().includes(S.onSearch.toLowerCase())));
+  const n = S.onSeen.length;
+  $('#ON-02').innerHTML = `
+    <div class="scroll">
+      <div class="ob-top">
+        <button class="ob-back" onclick="go('ON-01')">${I('caretLeft')}</button>
+        <div class="ob-bars"><i class="on"></i><i class="on"></i><i></i></div>
+        <div class="ob-back"></div>
+      </div>
+      <div class="h1">Quais destes você <em>já viu</em>?</div>
+      <div class="searchfield">
+        ${I('search', false, 20)}
+        <input value="${S.onSearch}" oninput="S.onSearch=this.value;renderON02()" placeholder="Não achou? Busque um título">
+        ${S.onSearch ? `<button onclick="S.onSearch='';renderON02()">${I('xCircle', false, 18)}</button>` : ''}
+      </div>
+      ${S.on02 === 'loading' ? skeletonRowsHTML(4) : S.on02 === 'error' ? errorStateHTML() : `
+        <div class="grid4">
+          ${movies.map(m => posterCard({
+            title: m.title, year: m.year, width: 78,
+            selected: S.onSeen.includes(m.id),
+            onclick: `toggleOnSeen(${m.id})`
+          })).join('')}
+        </div>
+        <button class="btn ghost" onclick="toast('Mais filmes carregados')">Mostrar outros</button>
+      `}
+    </div>
+    <div class="foot">
+      <div class="strong">${n === 1 ? '1 marcado' : `${n} marcados`} <span class="cap">${n === 0 ? 'Pode seguir sem marcar nenhum.' : 'Quanto mais, melhor seu Match.'}</span></div>
+      ${n > 0 ? `<button class="checkbox ${S.onAddToHistory ? 'on' : ''}" onclick="S.onAddToHistory=!S.onAddToHistory;renderON02()">
+        <div class="cbox">${S.onAddToHistory ? I('check', false, 14) : ''}</div>
+        <div style="flex:1"><div class="strong">Adicionar estes filmes ao meu diário</div><div class="cap">Se ficar desmarcado, usamos só para entender seu gosto. Seu diário continua vazio.</div></div>
+      </button>` : ''}
+      <button class="btn ${n === 0 ? 'sec' : ''}" onclick="${n === 0 ? 'finishOnboarding()' : "go('ON-03')"}">${n === 0 ? 'Pular por agora' : 'Continuar'}</button>
+    </div>`;
+}
+function toggleOnSeen(id) {
+  const k = S.onSeen.indexOf(id);
+  k >= 0 ? S.onSeen.splice(k, 1) : S.onSeen.push(id);
+  renderON02();
+}
+
+/* ON-03 · OnboardingFavoritesScreen.tsx */
+function renderON03() {
+  const seenList = CATALOG.filter(t => S.onSeen.includes(t.id));
+  const list = seenList.length ? seenList : CATALOG.slice(0, 6);
+  const n = S.onFavs.length;
+  $('#ON-03').innerHTML = `
+    <div class="scroll">
+      <div class="ob-top">
+        <button class="ob-back" onclick="go('ON-02')">${I('caretLeft')}</button>
+        <div class="ob-bars"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+        <button class="ob-back" style="justify-content:flex-end" onclick="finishOnboarding()"><span class="strong" style="color:var(--t700)">Pular</span></button>
+      </div>
+      <div class="h1">E quais você <em>ama</em>?</div>
+      <div class="body-sec">Escolha até 4. Eles viram os favoritos do seu perfil.</div>
+      <div class="grid3">
+        ${list.map(m => {
+          const fav = S.onFavs.includes(m.id);
+          const corner = `<div style="width:30px;height:30px;border-radius:15px;background:${fav ? 'var(--r500)' : 'rgba(255,253,249,.9)'};color:${fav ? 'var(--surface)' : 'var(--ink700)'};display:flex;align-items:center;justify-content:center">${I('heart', fav, 16)}</div>`;
+          return posterCard({ title: m.title, year: m.year, width: 108, selected: fav, corner, onclick: `toggleOnFav(${m.id})` });
+        }).join('')}
+      </div>
+    </div>
+    <div class="foot">
+      <div class="cap" style="text-align:center">${n} de 4</div>
+      <button class="btn" onclick="finishOnboarding()">${S.fromInvite ? 'Ver nosso Match' : 'Concluir'}</button>
+    </div>`;
+}
+function toggleOnFav(id) {
+  const k = S.onFavs.indexOf(id);
+  if (k >= 0) S.onFavs.splice(k, 1);
+  else if (S.onFavs.length < 4) S.onFavs.push(id);
+  else toast('Escolha até 4 favoritos');
+  renderON03();
+}
+function finishOnboarding() {
+  if (S.fromInvite) { go('MA-04'); }
+  else { go('IN-01'); toast('Bem-vindo(a)! Seu diário está pronto.'); }
+}
+
+/* IN-01 · HomeScreen.tsx */
+function renderIN01() {
+  const st = S.in01;
+  const isEmpty = st === 'empty';
+  const isBuilding = st === 'building';
+  const importBanner = st === 'import_ready'
+    ? `<button class="banner success" onclick="S.im='IM-03';go('IM-01')"><span>Sua importação está pronta para revisar</span>${I('caretRight', false, 16)}</button>`
+    : st === 'import_running'
+      ? `<button class="banner info" onclick="S.im='IM-02';go('IM-01')"><span>Importando seu Letterboxd…</span>${I('caretRight', false, 16)}</button>`
+      : '';
+
+  const togetherBanner = !isEmpty ? `
+    <button class="banner success" onclick="S.ma06='${isBuilding ? 'building' : 'active_wl'}';go('MA-06')">
+      ${I('users', false, 20)}
+      <span>Juntos agora · ${isBuilding ? 'Seu Match com Ana está em construção' : 'Seu Match com Ana está em 78%'}</span>
+      ${I('caretRight', false, 16)}
+    </button>` : '';
+
+  const continueWatching = (!isEmpty && !isBuilding) ? `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="sec-hdr"><span class="over">Continue assistindo</span></div>
+      <div class="hscroll">
+        ${[
+          { id: 3, title: 'Ruptura', next: 'T2 · E5' },
+          { id: 14, title: 'The Bear', next: 'T3 · E2' },
+          { id: 15, title: 'Sintonia', next: 'T5 · E1' }
+        ].map(s => `<div style="width:220px;padding:12px;border-radius:20px;background:var(--surface);border:1px solid var(--border);display:flex;flex-direction:column;gap:12px;flex-shrink:0">
+          <div style="display:flex;gap:12px;cursor:pointer" onclick="openSeriesDetail(${s.id})">
+            ${posterArt(s.title, 56, 84, 8, 9)}
+            <div class="strong" style="flex:1">${s.title}</div>
+          </div>
+          <button class="btn sec sm" onclick="toast('${s.next} marcado', 'Cancelar', () => toast('Desmarcado'))">+1 ep</button>
+        </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  const entriesNov = [
+    { day: 13, id: 1, title: 'Ainda Estou Aqui', rating: 5, liked: true, rewatch: false },
+    { day: 10, id: 8, title: 'Hereditário', rating: 4, liked: false, rewatch: true },
+    { day: 8, id: 5, title: 'Bacurau', rating: 4.5, liked: true, rewatch: false },
+    { day: 3, id: 9, title: 'Barbie', rating: 3, liked: false, rewatch: false }
+  ];
+  const entriesOct = [
+    { day: 28, id: 2, title: 'Duna: Parte Dois', rating: 4, liked: false, rewatch: false },
+    { day: 19, id: 6, title: 'Corra!', rating: 5, liked: true, rewatch: true }
+  ];
+
+  const renderEntryRow = e => `<button class="row" style="width:100%;text-align:left;padding:2px 0" onclick="openMovieDetail(${e.id})">
+    <div style="width:32px;font-family:var(--serif);font-weight:600;font-size:22px;line-height:26px;text-align:center">${e.day ?? '–'}</div>
+    ${posterArt(e.title, 40, 60, 8, 8)}
+    <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
+      <div class="strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.title}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${miniStarsHTML(e.rating)}
+        ${e.liked ? `<span style="color:var(--r500);font-size:14px">${I('heart', true)}</span>` : ''}
+        ${e.rewatch ? `<span style="display:inline-flex;align-items:center;gap:2px;color:var(--ink700)" class="cap">${I('rewind', false, 12)} rever</span>` : ''}
+      </div>
+    </div>
+  </button>`;
+
+  const body = st === 'loading' ? skeletonRowsHTML(5)
+    : st === 'error' ? errorStateHTML()
+    : (isEmpty || isBuilding) ? `<div class="empty">
+        <span style="color:var(--t500);font-size:56px">${I('ticket', false, 56)}</span>
+        <div class="h2">Seu diário está <em>em branco</em></div>
+        <div class="body-sec">Registre o último filme que você viu, ou traga tudo do Letterboxd em 1 minuto.</div>
+        <button class="btn" onclick="go('RG-01')">Registrar</button>
+        <button class="btn sec" onclick="S.im='IM-01';go('IM-01')">Importar do Letterboxd</button>
+      </div>`
+    : `<div style="display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="over">novembro 2026</div>
+          ${entriesNov.map(renderEntryRow).join('')}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="over">outubro 2026</div>
+          ${entriesOct.map(renderEntryRow).join('')}
+        </div>
+        <button class="btn ghost" onclick="toast('Mais registros carregados')">Ver mais registros</button>
+      </div>`;
+
+  $('#IN-01').className = 'screen tabs' + (S.screen === 'IN-01' ? ' on' : '');
+  $('#IN-01').innerHTML = `
+    <div class="scroll">
+      <div class="h1">Boa noite, Edu</div>
+      ${importBanner}
+      ${togetherBanner}
+      ${continueWatching}
+      <div class="sec-hdr"><span class="over">Seu diário</span></div>
+      ${body}
+    </div>
+    ${tabBarHTML('IN-01')}`;
+}
+
+/* BU-01 · SearchScreen.tsx + CatalogSearchPanel.tsx */
+function renderBU01() {
+  const st = S.bu01;
+  let list = CATALOG.filter(t => S.buType === 'ALL' ? true : t.mediaType === S.buType);
+  if (S.buGenre) list = list.filter(t => t.genres.includes(S.buGenre));
+  if (S.buQuery.trim().length >= 2) {
+    const q = S.buQuery.toLowerCase();
+    list = list.filter(t => t.title.toLowerCase().includes(q) || t.originalTitle.toLowerCase().includes(q));
+  }
+
+  let content = '';
+  if (st === 'loading') content = skeletonRowsHTML(5);
+  else if (st === 'error') content = errorStateHTML();
+  else if (st === 'short' || (S.buQuery.trim().length === 1)) content = `<div class="body-muted">Digite pelo menos 2 letras.</div>`;
+  else if (st === 'empty' || list.length === 0) content = `<div class="body-sec">${S.buGenre ? 'Nenhum título deste gênero nesta lista.' : 'Não achamos esse título. Tente o nome original ou o ano.'}</div>`;
+  else {
+    const isTyping = S.buQuery.trim().length >= 2;
+    content = `
+      ${!isTyping ? `<div class="sec-hdr"><span class="over">${S.buType === 'SERIES' ? 'Séries em alta' : 'Em alta no Brasil'}</span></div>` : ''}
+      ${st === 'cache' ? `<div class="cap">Sem internet. Mostrando o que já está salvo.</div>` : ''}
+      <div style="display:flex;flex-direction:column;gap:12px">
+        ${list.map(t => titleRowHTML(t)).join('')}
+      </div>`;
+  }
+
+  $('#BU-01').className = 'screen tabs' + (S.screen === 'BU-01' ? ' on' : '');
+  $('#BU-01').innerHTML = `
+    <div class="scroll">
+      <div class="h1">Buscar</div>
+      <div class="searchfield">
+        ${I('search', false, 20)}
+        <input value="${S.buQuery}" oninput="S.buQuery=this.value;S.bu01=this.value.length===1?'short':this.value.length>=2?'results':'discovery';renderBU01()" placeholder="Filmes e séries">
+        ${S.buQuery ? `<button onclick="S.buQuery='';S.bu01='discovery';renderBU01()">${I('xCircle', false, 18)}</button>` : ''}
+      </div>
+      <div class="seg">
+        <button class="${S.buType === 'ALL' ? 'on' : ''}" onclick="S.buType='ALL';renderBU01()">Tudo</button>
+        <button class="${S.buType === 'MOVIE' ? 'on' : ''}" onclick="S.buType='MOVIE';renderBU01()">Filmes</button>
+        <button class="${S.buType === 'SERIES' ? 'on' : ''}" onclick="S.buType='SERIES';renderBU01()">Séries</button>
+      </div>
+      <div class="chips-scroll">
+        ${GENRES.slice(0, 10).map(g => `<button class="chip ${S.buGenre === g ? 'on' : ''}" onclick="S.buGenre=S.buGenre==='${g}'?null:'${g}';renderBU01()"><span class="chk">${I('check')}</span>${g}</button>`).join('')}
+      </div>
+      ${content}
+    </div>
+    ${tabBarHTML('BU-01')}`;
+}
+
+/* RG-01 · LogScreen.tsx */
+function renderRG01() {
+  const st = S.rg01;
+  const wl = CATALOG.filter(t => t.inWatchlist);
+  const cont = CATALOG.filter(t => t.mediaType === 'SERIES' && t.seriesStatus === 'WATCHING');
+  const hot = CATALOG.slice(0, 6);
+
+  const carousel = (title, items, clickFn) => `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="sec-hdr"><span class="over">${title}</span></div>
+      <div class="hscroll">
+        ${items.map(t => posterCard({
+          title: t.title, year: t.year, width: 104,
+          watched: t.watched, liked: t.liked, rating: t.rating, inWatchlist: t.inWatchlist,
+          showCaption: true, onclick: clickFn(t)
+        })).join('')}
+      </div>
+    </div>`;
+
+  $('#RG-01').className = 'screen tabs' + (S.screen === 'RG-01' ? ' on' : '');
+  $('#RG-01').innerHTML = `
+    <div class="scroll">
+      <div class="h1">O que você viu <em>hoje</em>?</div>
+      ${st === 'searching' ? `
+        <div class="searchfield">
+          ${I('search', false, 20)}
+          <input value="duna" placeholder="Buscar título para registrar">
+        </div>
+        <div class="seg">
+          <button class="on">Tudo</button><button>Filmes</button><button>Séries</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          ${CATALOG.filter(t => t.title.toLowerCase().includes('duna')).map(t => titleRowHTML(t)).join('')}
+        </div>
+        <button class="btn ghost" onclick="S.rg01='full';renderRG01()">Fechar</button>
+      ` : `
+        <button class="searchfield" onclick="S.rg01='searching';renderRG01()">
+          ${I('search', false, 20)}
+          <span>Buscar título para registrar</span>
+        </button>
+        ${st === 'full' ? carousel('Da sua watchlist', wl, t => `openQuickLogById(${t.id})`) : ''}
+        ${st === 'full' ? carousel('Continue assistindo', cont, t => `openSeriesDetail(${t.id})`) : ''}
+        ${carousel('Em alta agora', hot, t => `openQuickLogById(${t.id})`)}
+      `}
+    </div>
+    ${tabBarHTML('RG-01')}`;
+}
+
+/* BU-02 · QuickLogScreen.tsx + QuickLogForm.tsx */
+function openQuickLogById(id) {
+  const t = CATALOG.find(x => x.id === id) || CATALOG[1];
+  S.sheetTitle = t;
+  S.sheetWatched = t.mediaType !== 'SERIES';
+  S.sheetLiked = !!t.liked;
+  S.sheetWatchlist = !!t.inWatchlist;
+  S.sheetSeriesStatus = t.seriesStatus || 'WATCHING';
+  S.sheetRating = t.rating || 0;
+  S.sheetDayOffset = 0;
+  S.sheetRewatch = false;
+  S.sheetShowReview = false;
+  S.sheetReview = '';
+  S.sheetOpen = true;
+  renderSheet();
+}
+function openQuickLogTitle(title, year, mediaType) {
+  const found = CATALOG.find(x => x.title === title) || CATALOG[1];
+  openQuickLogById(found.id);
+}
+function closeSheet() {
+  S.sheetOpen = false;
+  $('#scrim').style.display = 'none';
+  $('#sheet').classList.remove('on');
+}
+function rateSheet(e, n) {
+  const half = e.offsetX < e.currentTarget.clientWidth / 2;
+  const v = half ? n - 0.5 : n;
+  S.sheetRating = S.sheetRating === v ? 0 : v;
+  renderSheet();
+}
+function dayLabel(offset) {
+  if (offset === 0) return 'Hoje';
+  if (offset === -1) return 'Ontem';
+  return `${13 + offset} de nov`;
+}
+function renderSheet() {
+  const t = S.sheetTitle;
+  const isSeries = t.mediaType === 'SERIES';
+  const cta = (!isSeries && S.sheetWatched) ? 'Registrar'
+    : (S.sheetWatchlist && !S.sheetWatched && !S.sheetLiked && !S.sheetRating) ? 'Salvar na watchlist'
+    : 'Salvar';
+
+  $('#scrim').style.display = S.sheetOpen ? 'block' : 'none';
+  $('#sheet').classList.toggle('on', S.sheetOpen);
+  $('#sheet').innerHTML = `
+    <div class="grab"></div>
+    <div class="row" style="gap:16px">
+      ${posterArt(t.title, 72, 108, 12, 10)}
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+        <div class="h3">${t.title}</div>
+        <div class="cap">${t.year} · ${isSeries ? 'Série' : 'Filme'}</div>
+      </div>
+    </div>
+
+    <div class="ibtn-row">
+      ${!isSeries ? `<button class="ibtn ${S.sheetWatched ? 'on' : ''}" onclick="S.sheetWatched=!S.sheetWatched;renderSheet()">
+        <div class="ibtn-circ" style="color:${S.sheetWatched ? 'var(--s700)' : 'var(--ink700)'}">${I('check')}</div>
+        <span class="ibtn-lbl">Assistido</span>
+      </button>` : ''}
+      <button class="ibtn ${S.sheetLiked ? 'on' : ''}" onclick="S.sheetLiked=!S.sheetLiked;renderSheet()">
+        <div class="ibtn-circ" style="color:${S.sheetLiked ? 'var(--r500)' : 'var(--ink700)'}">${I('heart', S.sheetLiked)}</div>
+        <span class="ibtn-lbl">Curtir</span>
+      </button>
+      <button class="ibtn ${S.sheetWatchlist ? 'on' : ''}" onclick="S.sheetWatchlist=!S.sheetWatchlist;renderSheet()">
+        <div class="ibtn-circ">${I('bookmark', S.sheetWatchlist)}</div>
+        <span class="ibtn-lbl">Watchlist</span>
+      </button>
+    </div>
+
+    ${isSeries ? `
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="over">Status</div>
+        <div class="chips">
+          ${[['WATCHING','Assistindo'],['COMPLETED','Concluída'],['DROPPED','Abandonada']].map(([k,lbl]) =>
+            `<button class="chip ${S.sheetSeriesStatus === k ? 'on' : ''}" onclick="S.sheetSeriesStatus='${k}';renderSheet()"><span class="chk">${I('check')}</span>${lbl}</button>`
+          ).join('')}
+        </div>
+      </div>
+    ` : ''}
+
+    ${interactiveStarsHTML(S.sheetRating, 'rateSheet')}
+
+    ${!isSeries && S.sheetWatched ? `
+      <div class="row" style="min-height:44px;gap:8px">
+        <span style="color:var(--ink700);font-size:20px">${I('calendar')}</span>
+        <button style="width:44px;height:44px;display:flex;align-items:center;justify-content:center" onclick="S.sheetDayOffset--;renderSheet()">${I('caretLeft', false, 18)}</button>
+        <span class="strong" style="min-width:80px;text-align:center">${dayLabel(S.sheetDayOffset)}</span>
+        <button style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;opacity:${S.sheetDayOffset >= 0 ? .3 : 1}" ${S.sheetDayOffset >= 0 ? 'disabled' : ''} onclick="S.sheetDayOffset++;renderSheet()">${I('caretRight', false, 18)}</button>
+      </div>
+      <div class="lrow">
+        <span style="color:var(--ink700);font-size:20px">${I('rewind')}</span>
+        <div class="lrow-texts"><span class="strong">Já vi antes (rever)</span></div>
+        <button class="switch ${S.sheetRewatch ? 'on' : ''}" onclick="S.sheetRewatch=!S.sheetRewatch;renderSheet()"><i></i></button>
+      </div>
+      ${S.sheetShowReview ? `
+        <textarea class="review-input" placeholder="O que você achou?" oninput="S.sheetReview=this.value">${S.sheetReview}</textarea>
+      ` : `
+        <button class="lrow" onclick="S.sheetShowReview=true;renderSheet()">
+          <span style="color:var(--ink700);font-size:20px">${I('pencil')}</span>
+          <div class="lrow-texts"><span class="strong">Escrever review (opcional)</span></div>
+          <span style="color:var(--ink500)">${I('caretRight', false, 16)}</span>
+        </button>
+      `}
+    ` : ''}
+
+    ${isSeries ? `
+      <button class="lrow" onclick="closeSheet();openSeriesDetail(${t.id})">
+        <div class="lrow-texts"><span class="strong">Marcar episódios</span></div>
+        <span style="color:var(--ink500)">${I('caretRight', false, 16)}</span>
+      </button>
+    ` : ''}
+
+    <button class="btn" onclick="closeSheet();toast('${cta === 'Registrar' ? 'Registrado no seu diário' : cta === 'Salvar na watchlist' ? 'Salvo na sua watchlist' : 'Salvo'}')">${cta}</button>
+  `;
+}
+
+/* TI-01 · TitleDetailScreen.tsx (Filme) */
+function openMovieDetail(id) {
+  S.ti01TitleId = id;
+  const t = CATALOG.find(x => x.id === id);
+  S.ti01 = (t && t.watched) ? 'with_entries' : 'no_entries';
+  go('TI-01');
+}
+function rateTI01(e, n) {
+  const t = CATALOG.find(x => x.id === S.ti01TitleId) || CATALOG[0];
+  const half = e.offsetX < e.currentTarget.clientWidth / 2;
+  const v = half ? n - 0.5 : n;
+  t.rating = t.rating === v ? null : v;
+  renderTI01();
+}
+function renderTI01() {
+  if (S.ti01 === 'loading') { $('#TI-01').innerHTML = `<div class="scroll" style="justify-content:center">${loadingStateHTML()}</div>`; return; }
+  if (S.ti01 === 'error') { $('#TI-01').innerHTML = `<div class="scroll" style="justify-content:center">${errorStateHTML('Não conseguimos abrir este título agora.')}</div>`; return; }
+
+  const t = CATALOG.find(x => x.id === S.ti01TitleId) || CATALOG[0];
+  const hasEntries = S.ti01 === 'with_entries' && t.watched;
+  const [c0, c1] = FALLBACK_GRADIENTS[hashIndex(t.title)];
+  const showOrig = t.originalTitle && t.originalTitle !== t.title;
+
+  $('#TI-01').innerHTML = `
+    <div class="scroll" style="padding:0 0 36px;gap:0">
+      <div style="height:220px;background:linear-gradient(150deg,${c0},${c1});position:relative">
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(250,246,240,0) 20%,var(--bg))"></div>
+        <button onclick="back()" style="position:absolute;top:52px;left:20px;width:44px;height:44px;border-radius:22px;background:rgba(255,253,249,.85);display:flex;align-items:center;justify-content:center;font-size:22px">${I('caretLeft')}</button>
+      </div>
+      <div style="margin-top:-96px;padding:0 20px;display:flex;flex-direction:column;gap:16px;position:relative">
+        <div style="display:flex;gap:16px;align-items:flex-end">
+          ${posterArt(t.title, 105, 158, 12, 12, 'border:3px solid var(--bg)')}
+          <div style="flex:1;display:flex;flex-direction:column;gap:4px;padding-bottom:4px">
+            <div class="h2">${t.title}</div>
+            ${showOrig ? `<div class="cap">${t.originalTitle}</div>` : ''}
+            <div class="cap-sec">${t.year} · ${t.runtime || '2h05'} · ${t.genres.join(', ')}</div>
+          </div>
+        </div>
+        <div class="body-sec">${t.overview}</div>
+
+        <div class="ibtn-row" style="margin-top:8px">
+          <button class="ibtn ${t.watched ? 'on' : ''}" onclick="CATALOG.find(x=>x.id===${t.id}).watched=!CATALOG.find(x=>x.id===${t.id}).watched;renderTI01()">
+            <div class="ibtn-circ" style="color:${t.watched ? 'var(--s700)' : 'var(--ink700)'}">${I('check')}</div>
+            <span class="ibtn-lbl">Assistido</span>
+          </button>
+          <button class="ibtn ${t.liked ? 'on' : ''}" onclick="CATALOG.find(x=>x.id===${t.id}).liked=!CATALOG.find(x=>x.id===${t.id}).liked;renderTI01()">
+            <div class="ibtn-circ" style="color:${t.liked ? 'var(--r500)' : 'var(--ink700)'}">${I('heart', t.liked)}</div>
+            <span class="ibtn-lbl">${t.liked ? 'Curtido' : 'Curtir'}</span>
+          </button>
+          <button class="ibtn ${t.inWatchlist ? 'on' : ''}" onclick="CATALOG.find(x=>x.id===${t.id}).inWatchlist=!CATALOG.find(x=>x.id===${t.id}).inWatchlist;renderTI01()">
+            <div class="ibtn-circ">${I('bookmark', t.inWatchlist)}</div>
+            <span class="ibtn-lbl">${t.inWatchlist ? 'Na watchlist' : 'Watchlist'}</span>
+          </button>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+          <div class="over">Sua nota</div>
+          ${interactiveStarsHTML(t.rating || 0, 'rateTI01')}
+        </div>
+
+        <button class="btn" onclick="openQuickLogById(${t.id})">${t.watched ? 'Registrar de novo' : 'Registrar'}</button>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="sec-hdr"><span class="over">Seus registros</span></div>
+          ${!hasEntries
+            ? `<div class="body-muted">Você ainda não registrou este título.</div>`
+            : `
+              <div class="row" style="min-height:32px;gap:12px">
+                <span class="strong" style="min-width:72px">13 de nov</span>
+                ${miniStarsHTML(t.rating || 5)}
+                ${t.liked ? `<span style="color:var(--r500);font-size:14px">${I('heart', true)}</span>` : ''}
+              </div>
+              <div class="row" style="min-height:32px;gap:12px">
+                <span class="strong" style="min-width:72px">02 de out</span>
+                ${miniStarsHTML(4.5)}
+                <span class="cap" style="display:inline-flex;align-items:center;gap:2px;color:var(--ink700)">${I('rewind', false, 12)} rever</span>
+              </div>
+            `}
+        </div>
+
+        <div class="cap" style="margin-top:8px">Dados e imagens: TMDB. Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.</div>
+      </div>
+    </div>`;
+}
+
+/* TI-02 · TitleDetailScreen.tsx + SeriesProgressSection.tsx (Série) */
+function openSeriesDetail(id) {
+  go('TI-02');
+}
+function rateTI02(e, n) {
+  const half = e.offsetX < e.currentTarget.clientWidth / 2;
+  const v = half ? n - 0.5 : n;
+  S.ti02Rating = S.ti02Rating === v ? 0 : v;
+  renderTI02();
+}
+function toggleEp(sIdx, ep) {
+  const s = S.ti02Seasons[sIdx];
+  const k = s.watched.indexOf(ep);
+  k >= 0 ? s.watched.splice(k, 1) : s.watched.push(ep);
+  const total = S.ti02Seasons.reduce((a, x) => a + x.episodeCount, 0);
+  const done = S.ti02Seasons.reduce((a, x) => a + x.watched.length, 0);
+  if (done >= total) { S.ti02 = 'completed_unrated'; S.ti02Rating = 0; }
+  else if (S.ti02 === 'completed_unrated') { S.ti02 = 'watching'; }
+  renderTI02();
+}
+function markUntilEp(sIdx, ep) {
+  S.ti02Seasons.forEach((s, idx) => {
+    if (idx < sIdx) s.watched = Array.from({ length: s.episodeCount }, (_, i) => i + 1);
+    else if (idx === sIdx) s.watched = Array.from({ length: ep }, (_, i) => i + 1);
+  });
+  toast(`Marcado até T${S.ti02Seasons[sIdx].number} · E${ep}`);
+  renderTI02();
+}
+function toggleWholeSeason(sIdx) {
+  const s = S.ti02Seasons[sIdx];
+  if (s.watched.length >= s.episodeCount) s.watched = [];
+  else s.watched = Array.from({ length: s.episodeCount }, (_, i) => i + 1);
+  const total = S.ti02Seasons.reduce((a, x) => a + x.episodeCount, 0);
+  const done = S.ti02Seasons.reduce((a, x) => a + x.watched.length, 0);
+  if (done >= total) { S.ti02 = 'completed_unrated'; S.ti02Rating = 0; }
+  renderTI02();
+}
+function renderTI02() {
+  if (S.ti02 === 'loading') { $('#TI-02').innerHTML = `<div class="scroll" style="justify-content:center">${loadingStateHTML()}</div>`; return; }
+  if (S.ti02 === 'error') { $('#TI-02').innerHTML = `<div class="scroll" style="justify-content:center">${errorStateHTML('Não conseguimos abrir este título agora.')}</div>`; return; }
+
+  const t = CATALOG[2]; // Ruptura
+  const [c0, c1] = FALLBACK_GRADIENTS[hashIndex(t.title)];
+  const total = S.ti02Seasons.reduce((a, x) => a + x.episodeCount, 0);
+  const watched = S.ti02Seasons.reduce((a, x) => a + x.watched.length, 0);
+  const doneAll = watched >= total;
+  const status = S.ti02 === 'dropped' ? 'DROPPED' : doneAll ? 'COMPLETED' : 'WATCHING';
+
+  let nextEp = null;
+  for (const s of S.ti02Seasons) {
+    for (let e = 1; e <= s.episodeCount; e++) {
+      if (!s.watched.includes(e)) { nextEp = { s: s.number, e }; break; }
+    }
+    if (nextEp) break;
+  }
+
+  $('#TI-02').innerHTML = `
+    <div class="scroll" style="padding:0 0 36px;gap:0">
+      <div style="height:220px;background:linear-gradient(150deg,${c0},${c1});position:relative">
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(250,246,240,0) 20%,var(--bg))"></div>
+        <button onclick="back()" style="position:absolute;top:52px;left:20px;width:44px;height:44px;border-radius:22px;background:rgba(255,253,249,.85);display:flex;align-items:center;justify-content:center;font-size:22px">${I('caretLeft')}</button>
+      </div>
+      <div style="margin-top:-96px;padding:0 20px;display:flex;flex-direction:column;gap:16px;position:relative">
+        <div style="display:flex;gap:16px;align-items:flex-end">
+          ${posterArt(t.title, 105, 158, 12, 12, 'border:3px solid var(--bg)')}
+          <div style="flex:1;display:flex;flex-direction:column;gap:4px;padding-bottom:4px">
+            <div class="h2">${t.title}</div>
+            <div class="cap">${t.originalTitle}</div>
+            <div class="cap-sec">2022 · 2 temporadas · Suspense, Drama</div>
+          </div>
+        </div>
+        <div class="body-sec">${t.overview}</div>
+
+        <div class="ibtn-row">
+          <button class="ibtn ${t.liked ? 'on' : ''}" onclick="CATALOG[2].liked=!CATALOG[2].liked;renderTI02()">
+            <div class="ibtn-circ" style="color:${t.liked ? 'var(--r500)' : 'var(--ink700)'}">${I('heart', t.liked)}</div>
+            <span class="ibtn-lbl">${t.liked ? 'Curtido' : 'Curtir'}</span>
+          </button>
+          <button class="ibtn ${t.inWatchlist ? 'on' : ''}" onclick="CATALOG[2].inWatchlist=!CATALOG[2].inWatchlist;renderTI02()">
+            <div class="ibtn-circ">${I('bookmark', t.inWatchlist)}</div>
+            <span class="ibtn-lbl">${t.inWatchlist ? 'Na watchlist' : 'Watchlist'}</span>
+          </button>
+        </div>
+
+        <div class="chips">
+          <button class="chip ${status === 'WATCHING' ? 'on' : ''}" onclick="S.ti02='watching';renderTI02()"><span class="chk">${I('check')}</span>Assistindo</button>
+          <button class="chip ${status === 'COMPLETED' ? 'on salvia' : ''}" onclick="S.ti02='completed_unrated';renderTI02()"><span class="chk">${I('check')}</span>Concluída</button>
+          <button class="chip ${status === 'DROPPED' ? 'on rosa' : ''}" onclick="S.ti02='dropped';renderTI02()"><span class="chk">${I('check')}</span>Abandonada</button>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+          <div class="over">Sua nota</div>
+          ${interactiveStarsHTML(S.ti02Rating, 'rateTI02')}
+        </div>
+
+        <button class="btn" onclick="openQuickLogById(3)">Registrar</button>
+
+        <div class="sec-hdr"><span class="over">Assistindo</span></div>
+
+        <div>
+          <div class="pbar-track"><div class="pbar-fill ${doneAll ? 'done' : ''}" style="width:${(watched / total) * 100}%"></div></div>
+          <div class="pbar-lbl ${doneAll ? 'done' : ''}">${doneAll ? I('check', false, 12) : ''} ${watched} de ${total} ep.</div>
+        </div>
+        ${nextEp ? `<div class="cap-sec">Próximo: T${nextEp.s} · E${nextEp.e}</div>` : ''}
+
+        ${doneAll && !S.ti02Rating ? `
+          <div class="card">
+            <div class="h2">Terminou <em>Ruptura</em>? Dê uma nota</div>
+            ${interactiveStarsHTML(0, 'rateTI02')}
+          </div>
+        ` : ''}
+
+        ${S.ti02Seasons.map((s, sIdx) => {
+          const w = s.watched.length;
+          const sDone = w >= s.episodeCount;
+          const open = S.ti02OpenSeason === s.number;
+          return `<div class="season-box">
+            <div class="season-hdr">
+              <button class="season-title" onclick="S.ti02OpenSeason=${open ? 'null' : s.number};renderTI02()">
+                <div class="strong">${s.name} · ${w}/${s.episodeCount}</div>
+                <div class="mini-track"><div class="mini-fill ${sDone ? 'done' : ''}" style="width:${(w / s.episodeCount) * 100}%"></div></div>
+              </button>
+              <button class="circ ${sDone ? 'on' : ''}" onclick="toggleWholeSeason(${sIdx})" title="Marcar temporada inteira">${sDone ? I('check', false, 14) : ''}</button>
+              <span style="color:var(--ink500)">${I(open ? 'caretUp' : 'caretDown', false, 16)}</span>
+            </div>
+            ${open ? Array.from({ length: s.episodeCount }, (_, i) => i + 1).map(ep => {
+              const seen = s.watched.includes(ep);
+              return `<div class="ep-row" onclick="toggleEp(${sIdx},${ep})">
+                <span class="ep-num">${ep}</span>
+                <span class="body" style="flex:1">Episódio ${ep}</span>
+                <button class="cap-link" style="margin-right:6px" onclick="event.stopPropagation();markUntilEp(${sIdx},${ep})">Até aqui</button>
+                <div class="circ ${seen ? 'on' : ''}">${seen ? I('check', false, 14) : ''}</div>
+              </div>`;
+            }).join('') : ''}
+          </div>`;
+        }).join('')}
+
+        ${status !== 'DROPPED' ? `<button class="btn danger sm" onclick="S.ti02='dropped';renderTI02()">Abandonar série</button>` : ''}
+
+        <div class="cap">Dados e imagens: TMDB. Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.</div>
+      </div>
+    </div>`;
+}
+
+/* IM-01 a IM-04 · ImportScreen.tsx + ImportSummary.tsx */
+function renderIM01() {
+  const st = S.im;
+  if (st === 'IM-ERR') {
+    $('#IM-01').innerHTML = `<div class="scroll">
+      <span style="color:var(--error);font-size:48px">${I('warn', false, 48)}</span>
+      <div class="h1"><em>Algo saiu do roteiro ao ler seu arquivo.</em></div>
+      <button class="btn" onclick="S.im='IM-01';renderIM01()">Tentar de novo</button>
+      <button class="btn ghost" onclick="back()">Fechar</button>
+    </div>`;
+    return;
+  }
+  if (st === 'IM-02') {
+    $('#IM-01').innerHTML = `<div class="scroll" style="justify-content:center;align-items:center;text-align:center">
+      <span style="color:var(--t500);font-size:64px">${I('filmReel', false, 64)}</span>
+      <div class="spinner"></div>
+      <div class="h3">Encontramos 420 títulos até agora…</div>
+      <div class="body-sec">Você pode sair desta tela; avisamos no Início quando terminar.</div>
+      <button class="btn sec sm" style="width:auto" onclick="S.im='IM-03';renderIM01()">Avançar para resumo →</button>
+      <button class="btn ghost" onclick="S.in01='import_running';go('IN-01')">Fechar</button>
+    </div>`;
+    return;
+  }
+  if (st === 'IM-03' || st === 'IM-03-NONE') {
+    const none = st === 'IM-03-NONE';
+    const counts = [
+      ['Lidos', 854], ['Encontrados', 842], ['Não encontrados', 12],
+      ['Watchlist', 64], ['Reviews', 37]
+    ];
+    $('#IM-01').innerHTML = `<div class="scroll">
+      <div class="h1">Encontramos <em>842 títulos</em></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${counts.map(([lbl, val]) => `<div style="width:31%;padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border);text-align:center">
+          <div style="font-family:var(--serif);font-weight:600;font-size:22px;line-height:28px">${val}</div>
+          <div class="cap">${lbl}</div>
+        </div>`).join('')}
+      </div>
+      <div class="body-sec">Registros que já estavam no seu diário não serão duplicados.</div>
+      <div style="padding:12px;border-radius:12px;background:var(--sunken);display:flex;flex-direction:column;gap:4px">
+        <button class="row between" style="min-height:32px;width:100%;text-align:left" onclick="S.imUnmatchedOpen=!S.imUnmatchedOpen;renderIM01()">
+          <span class="strong">12 não encontramos no catálogo</span>
+          <span style="color:var(--ink500)">${I(S.imUnmatchedOpen ? 'caretUp' : 'caretDown', false, 16)}</span>
+        </button>
+        <div class="cap">No MVP eles não são importados.</div>
+        ${S.imUnmatchedOpen ? `<div style="display:flex;flex-direction:column;gap:4px;margin-top:4px" class="body">
+          <span>Curta Universitário (2019)</span>
+          <span>Mostra de Cinema Independente (2021)</span>
+          <span>Sessão Especial VHS (1997)</span>
+        </div>` : ''}
+      </div>
+      ${none ? `
+        <div class="body-sec">Tudo já estava aqui; nada novo para importar.</div>
+        <button class="btn" onclick="go('PE-01')">Ok</button>
+      ` : `
+        <button class="btn" onclick="S.im='IM-04';renderIM01()">Importar para meu diário</button>
+        <button class="btn ghost" onclick="S.im='IM-01';renderIM01()">Cancelar</button>
+      `}
+    </div>`;
+    return;
+  }
+  if (st === 'IM-04') {
+    $('#IM-01').innerHTML = `<div class="scroll">
+      <span style="color:var(--s700);font-size:56px">${I('checkCircle', false, 56)}</span>
+      <div class="h1">Pronto! Seu diário agora tem <em>842 títulos</em>.</div>
+      <button class="btn" onclick="S.in01='full';go('IN-01')">Ver meu diário</button>
+      <button class="btn sec" onclick="S.ma01='full';go('MA-01')">Criar um Taste Match</button>
+    </div>`;
+    return;
+  }
+  const steps = [
+    'Abra o Letterboxd no navegador e vá em Settings → Data → Export your data.',
+    'Baixe o arquivo .zip (não precisa descompactar).',
+    'Volte aqui e toque em Escolher arquivo.'
+  ];
+  $('#IM-01').innerHTML = `<div class="scroll">
+    <div class="h1">Traga seu <em>Letterboxd</em></div>
+    <div class="body-sec">Seu histórico, notas, curtidas, reviews e watchlist. Leva cerca de 1 minuto.</div>
+    ${steps.map((s, i) => `<div style="display:flex;gap:12px;align-items:flex-start">
+      <div style="width:28px;height:28px;border-radius:14px;background:var(--t600);color:var(--surface);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">${i + 1}</div>
+      <div class="body" style="flex:1">${s}</div>
+    </div>`).join('')}
+    <button class="btn sec" onclick="toast('Abrindo letterboxd.com/settings/data…')">Abrir Letterboxd</button>
+    <button class="btn" onclick="S.im='IM-02';renderIM01()">Escolher arquivo .zip</button>
+    ${st === 'IM-01-ERR' ? `<div class="body" style="color:var(--error)">Esse arquivo não é um .zip do Letterboxd.</div>` : ''}
+    <div class="row" style="gap:8px">
+      <span style="color:var(--ink700);font-size:18px">${I('lock')}</span>
+      <span class="cap-sec" style="flex:1">Usamos só o arquivo que você enviar. Nunca pedimos sua senha do Letterboxd.</span>
+    </div>
+    <button class="btn ghost" onclick="back()">Fechar</button>
+  </div>`;
+}
+
+/* MA-01 · TogetherHubScreen.tsx + MatchCard.tsx + InviteCreatedCard.tsx */
+function renderMA01() {
+  const st = S.ma01;
+  const inviteCreatedCard = st === 'invite_created' ? `
+    <div class="card">
+      <div class="h2">Convite <em>criado</em></div>
+      <div style="background:var(--plum);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:8px;transform:rotate(-1.5deg)">
+        <div class="av-pair">
+          <div class="avatar" style="background:var(--butter);border-color:var(--plum)">E</div>
+          <div class="avatar" style="background:var(--blush);border-color:var(--plum)">?</div>
+        </div>
+        <div class="h3" style="color:var(--cream)">Edu quer saber o quanto vocês combinam no cinema</div>
+        <div class="cap" style="color:var(--blush)">cinediary://match/invite/K7Q2M9</div>
+      </div>
+      <button class="btn" onclick="toast('Folha de compartilhamento aberta')">${I('share', false, 20)} Compartilhar convite</button>
+      <button class="btn sec" onclick="toast('Link copiado')">${I('copy', false, 20)} Copiar link</button>
+      <button class="btn ghost" onclick="S.ma01='full';renderMA01()">Fechar</button>
+    </div>` : '';
+
+  const matchList = `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <!-- Card 1: ACTIVE (Normal ou Modo Descoberta) -->
+      <div class="card click" onclick="S.ma06='active_wl';go('MA-06')">
+        <div class="row">
+          <div class="av-pair">
+            <div class="avatar" style="background:var(--p300)">E</div>
+            <div class="avatar" style="background:var(--r300)">A</div>
+          </div>
+          <div style="flex:1">
+            <div class="h3">Você + Ana</div>
+            ${S.ma05Mode === 'discovery' ? `<div class="cap">Modo Descoberta</div>` : ''}
+          </div>
+          <div class="display" style="color:var(--t700)">${S.ma05Mode === 'discovery' ? '61%' : '78%'}</div>
+        </div>
+      </div>
+
+      <!-- Card 2: BUILDING (Match em construção) -->
+      <div class="card click" onclick="S.ma06='building';go('MA-06')">
+        <div class="row">
+          <div class="av-pair">
+            <div class="avatar" style="background:var(--p300)">E</div>
+            <div class="avatar" style="background:var(--r300)">B</div>
+          </div>
+          <div class="h3" style="flex:1">Você + Bia</div>
+        </div>
+        <div class="h2">Match <em>em construção</em></div>
+        <div class="body-sec">Registre alguns filmes para ver o resultado.</div>
+        <button class="btn sm" onclick="event.stopPropagation();go('RG-01')">Registrar</button>
+      </div>
+
+      <!-- Card 3: PENDING (Aguardando amigo topar) -->
+      <div class="card dashed">
+        <div class="row">
+          <div class="av-pair">
+            <div class="avatar" style="background:var(--p300)">E</div>
+            <div class="avatar" style="background:var(--r300)">?</div>
+          </div>
+          <div style="flex:1"><div class="h2">Aguardando seu amigo <em>topar</em></div></div>
+        </div>
+        <div class="body-sec">Assim que a pessoa entrar e escolher alguns filmes, o Match começa sozinho.</div>
+        <div class="cap">Código: K7Q2M9</div>
+        <button class="btn sec sm" onclick="toast('Convite reenviado')">Reenviar convite</button>
+      </div>
+    </div>
+    ${st !== 'invite_created' ? `<button class="btn" onclick="S.ma01='invite_created';renderMA01()">Criar Match</button>` : ''}
+  `;
+
+  const mainContent = st === 'loading' ? skeletonRowsHTML(3)
+    : st === 'error' ? errorStateHTML()
+    : st === 'empty' ? `
+      <div class="empty">
+        <span style="color:var(--t500);font-size:56px">${I('popcorn', false, 56)}</span>
+        <div class="h2">Quanto você <em>combina</em> com seus amigos?</div>
+        <div class="body-sec">Crie um Match, mande o link e descubra em Stories.</div>
+        <button class="btn" onclick="S.ma01='invite_created';renderMA01()">Criar Match</button>
+      </div>`
+    : matchList;
+
+  $('#MA-01').className = 'screen tabs' + (S.screen === 'MA-01' ? ' on' : '');
+  $('#MA-01').innerHTML = `
+    <div class="scroll">
+      <div class="h1"><em>Juntos</em></div>
+      ${inviteCreatedCard}
+      ${mainContent}
+
+      <div class="sec-hdr"><span class="over">Recebeu um convite?</span></div>
+      <div class="field">
+        <label>Recebeu um convite?</label>
+        <div class="box"><input value="${S.maCodeInput}" oninput="S.maCodeInput=this.value.toUpperCase();renderMA01()" placeholder="Cole o código ou o link"></div>
+      </div>
+      <button class="btn sec" ${!S.maCodeInput && st !== 'invalid_code' ? 'disabled' : ''} onclick="S.ma04='calculating';go('MA-04')">Entrar no Match</button>
+      ${st === 'invalid_code' ? `<div class="body" style="color:var(--error)">Esse convite não existe ou já foi usado.</div>` : ''}
+    </div>
+    ${tabBarHTML('MA-01')}`;
+}
+
+/* MA-04 · AcceptInviteScreen.tsx & CalculatingView.tsx */
+function renderMA04() {
+  if (S.ma04 === 'invalid') {
+    $('#MA-04').innerHTML = `<div style="flex:1;background:var(--plum);display:flex;flex-direction:column;justify-content:center;padding:24px;gap:24px">
+      <div class="h2" style="color:var(--cream)">Esse convite não existe ou já foi usado.</div>
+      <button class="btn sec" onclick="go('MA-01')">Fechar</button>
+    </div>`;
+    return;
+  }
+  $('#MA-04').innerHTML = `<div style="flex:1;background:var(--plum);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:32px;text-align:center">
+    <div class="row" style="gap:0">
+      <div style="animation:nudgeL 1.2s ease-in-out infinite alternate">${posterArt('Central do Brasil', 110, 165, 12, 15)}</div>
+      <div style="animation:nudgeR 1.2s ease-in-out infinite alternate">${posterArt('Corra!', 110, 165, 12, 15)}</div>
+    </div>
+    <div style="font-family:var(--serif);font-weight:600;font-size:28px;line-height:32px;color:var(--cream)">Comparando <em>notas</em>, <em>gêneros</em> e <em>favoritos</em>…</div>
+    <button class="btn sec sm" style="width:auto" onclick="openStory(0)">Abrir Story agora →</button>
+  </div>`;
+}
+
+/* MA-06 · MatchDetailScreen.tsx + SharedWatchlistGrid.tsx + BreakdownBars.tsx */
+function breakdownBarsHTML(isStory = false) {
+  const disc = S.ma05Mode === 'discovery';
+  const rows = disc
+    ? [['Gêneros em comum', 42, 65, 'var(--sage)'], ['Favoritos e sinais', 19, 35, 'var(--blush)']]
+    : [['Notas parecidas', 41, 50, 'var(--butter)'], ['Gêneros em comum', 24, 30, 'var(--sage)'], ['Favoritos', 13, 20, 'var(--blush)']];
+  return `<div style="display:flex;flex-direction:column;gap:12px">
+    ${rows.map(([lbl, pts, w, c]) => `<div style="display:flex;flex-direction:column;gap:6px">
+      <div class="row between" style="font-weight:${isStory ? 800 : 700};font-size:${isStory ? 17 : 16}px">
+        <span>${lbl}</span><span>${pts} de ${w}</span>
+      </div>
+      <div style="height:${isStory ? 18 : 10}px;border-radius:999px;background:${isStory ? 'rgba(42,33,28,.12)' : 'var(--sunken)'};overflow:hidden">
+        <div style="height:100%;width:${(pts / w) * 100}%;background:${c};border-radius:999px;${isStory ? 'border:2px solid var(--ink900)' : ''}"></div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderMA06() {
+  const st = S.ma06;
+  if (st === 'loading') { $('#MA-06').innerHTML = `<div class="scroll">${loadingStateHTML()}</div>`; return; }
+  if (st === 'error') { $('#MA-06').innerHTML = `<div class="scroll">${errorStateHTML('Não achamos esse Match.')}</div>`; return; }
+
+  const isBuilding = st === 'building';
+  const isPending = st === 'pending';
+  const isActive = !isBuilding && !isPending;
+  const emptyWl = st === 'active_empty_wl' || S.sharedWatchlist.length === 0;
+  const score = S.ma05Mode === 'discovery' ? 61 : 78;
+
+  const watchlistSection = `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <button class="btn sec" onclick="go('MA-07')">${I('plus', false, 18)} Adicionar</button>
+      ${emptyWl ? `
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="body-sec">Nada na lista de vocês ainda. Que tal começar pelas recomendações do Story?</div>
+          <div class="row" style="gap:12px">
+            ${[13, 12, 10].map(id => {
+              const t = CATALOG.find(x => x.id === id);
+              return posterCard({ title: t.title, width: 72, showCaption: true, onclick: `openMovieDetail(${t.id})` });
+            }).join('')}
+          </div>
+        </div>
+      ` : `
+        <div class="grid3">
+          ${S.sharedWatchlist.map((item, idx) => {
+            const t = CATALOG.find(x => x.id === item.titleId) || CATALOG[9];
+            const corner = `<div class="avatar" style="width:24px;height:24px;font-size:10px;border-width:2px;background:var(--p300)">${item.addedBy[0]}</div>`;
+            return `<div style="display:flex;flex-direction:column;width:108px">
+              ${posterCard({ title: t.title, year: t.year, width: 108, corner, onclick: `openMovieDetail(${t.id})` })}
+              <div class="row between" style="margin-top:2px">
+                <span class="cap">por ${item.addedBy}</span>
+                <button class="cap" style="color:var(--error)" onclick="S.sharedWatchlist.splice(${idx},1);toast('Removido da lista de vocês');renderMA06()">remover</button>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      `}
+    </div>`;
+
+  const summarySection = `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="h2">De onde veio <em>o número</em></div>
+      ${breakdownBarsHTML(false)}
+      <div class="body-sec">${S.ma05Mode === 'discovery' ? 'Vocês ainda viram poucos filmes em comum, então olhamos para o gosto de cada um.' : 'Vocês deram notas parecidas em 23 filmes.'}</div>
+
+      <div class="sec-hdr"><span class="over">Gêneros em comum</span></div>
+      <div class="body">Terror · Drama · Suspense</div>
+
+      <div class="sec-hdr"><span class="over">Vocês dois amam</span></div>
+      <div class="body">Central do Brasil</div>
+      <div class="body">Parasita</div>
+      <div class="body">Bacurau</div>
+
+      <div class="sec-hdr"><span class="over">Onde discordam</span></div>
+      <div class="body">Barbie · Edu ★★★★★ · Ana ★½</div>
+
+      <div class="sec-hdr"><span class="over">Para verem juntos</span></div>
+      <div class="body">Lady Bird</div>
+      <div class="body">A Chegada</div>
+      <div class="body">Aquarius</div>
+    </div>`;
+
+  $('#MA-06').innerHTML = `
+    <div class="scroll">
+      <button style="width:44px;height:44px;display:flex;align-items:center;font-size:22px" onclick="go('MA-01')">${I('caretLeft')}</button>
+
+      <div class="row">
+        <div class="av-pair">
+          <div class="avatar" style="width:56px;height:56px;font-size:22px;background:var(--p300)">E</div>
+          <div class="avatar" style="width:56px;height:56px;font-size:22px;background:var(--s300)">${isPending ? '?' : 'A'}</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+          <div class="h3">Você + ${isPending ? 'seu amigo' : 'Ana'}</div>
+          ${isActive ? `<div class="cap">Recalculado sempre que um de vocês registra algo</div>` : ''}
+        </div>
+        ${isActive ? `<div class="display">${score}%</div>` : ''}
+      </div>
+
+      ${isBuilding ? `
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="h2">Match <em>em construção</em></div>
+          <div class="body-sec">Registre alguns filmes para ver o resultado.</div>
+          <button class="btn" onclick="go('RG-01')">Registrar</button>
+        </div>
+      ` : isActive ? `
+        <button class="btn" onclick="openStory(0)">${I('play', true, 18)} Rever Story</button>
+      ` : `
+        <div class="h2">Aguardando seu amigo <em>topar</em></div>
+      `}
+
+      <div class="seg">
+        <button class="${S.ma06Tab === 'watchlist' ? 'on' : ''}" onclick="S.ma06Tab='watchlist';renderMA06()">Watchlist de vocês</button>
+        <button class="${S.ma06Tab === 'summary' ? 'on' : ''}" onclick="S.ma06Tab='summary';renderMA06()">Resumo</button>
+      </div>
+
+      ${S.ma06Tab === 'watchlist' ? watchlistSection : summarySection}
+    </div>`;
+}
+
+/* MA-07 · AddToSharedWatchlistScreen.tsx */
+function addToSharedWl(id) {
+  if (!S.sharedWatchlist.some(x => x.titleId === id)) {
+    S.sharedWatchlist.push({ titleId: id, addedBy: 'Edu' });
+  }
+  toast('Adicionado à lista de vocês');
+}
+function renderMA07() {
+  $('#MA-07').innerHTML = `
+    <div class="scroll">
+      <div class="h1">Adicionar à <em>lista de vocês</em></div>
+      <div class="searchfield">
+        ${I('search', false, 20)}
+        <input placeholder="Filmes e séries">
+      </div>
+      <div class="seg">
+        <button class="on">Tudo</button><button>Filmes</button><button>Séries</button>
+      </div>
+      <div class="sec-hdr"><span class="over">Em alta no Brasil</span></div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        ${CATALOG.slice(0, 6).map(t => titleRowHTML(t, x => `addToSharedWl(${x.id})`, 'bookmark')).join('')}
+      </div>
+      <button class="btn ghost" onclick="go('MA-06')">Fechar</button>
+    </div>`;
+}
+
+/* PE-01 · ProfileScreen.tsx (100% FIEL AO QUE O FRONTEND CRIOU!) */
+function renderPE01() {
+  const st = S.pe01;
+  if (st === 'loading') {
+    $('#PE-01').className = 'screen tabs' + (S.screen === 'PE-01' ? ' on' : '');
+    $('#PE-01').innerHTML = `<div class="scroll">${loadingStateHTML()}</div>${tabBarHTML('PE-01')}`;
+    return;
+  }
+  if (st === 'error') {
+    $('#PE-01').className = 'screen tabs' + (S.screen === 'PE-01' ? ' on' : '');
+    $('#PE-01').innerHTML = `<div class="scroll">${errorStateHTML('Não conseguimos falar com o servidor agora.')}</div>${tabBarHTML('PE-01')}`;
+    return;
+  }
+
+  const isEmpty = st === 'empty';
+  const priv = S.isPrivate || st === 'private';
+  const favTitles = [CATALOG[0], CATALOG[5], CATALOG[4], CATALOG[6]];
+  const recentEntries = [
+    { id: 1, title: 'Ainda Estou Aqui', rating: 5, liked: true },
+    { id: 8, title: 'Hereditário', rating: 4, liked: false },
+    { id: 5, title: 'Bacurau', rating: 4.5, liked: true },
+    { id: 9, title: 'Barbie', rating: 3, liked: false }
+  ];
+  const topGenres = [['Drama', 92], ['Terror', 64], ['Comédia', 51], ['Suspense', 40], ['Ficção científica', 33]];
+  const months = [['dez', 6], ['jan', 9], ['fev', 4], ['mar', 12], ['abr', 8], ['mai', 10], ['jun', 7], ['jul', 14], ['ago', 11], ['set', 9], ['out', 13], ['nov', 8]];
+  const maxMonth = 14;
+
+  $('#PE-01').className = 'screen tabs' + (S.screen === 'PE-01' ? ' on' : '');
+  $('#PE-01').innerHTML = `
+    <div class="scroll">
+      <!-- Header: Avatar 72px + Nome em h2 + @username + LockSimple opcional -->
+      <div class="row" style="gap:16px">
+        <div class="avatar" style="width:72px;height:72px;font-size:30px;background:var(--p300)">E</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+          <div class="h2">Edu</div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <span class="body-sec">@edu</span>
+            ${priv ? `<span style="color:var(--ink700);font-size:14px" title="Perfil privado">${I('lock')}</span>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <!-- Favoritos (4 colunas com PosterCard) -->
+      <div class="sec-hdr"><span class="over">Favoritos</span></div>
+      ${isEmpty ? `
+        <div class="body-muted">Escolha até 4 favoritos no onboarding ou na página do título.</div>
+      ` : `
+        <div class="grid4">
+          ${favTitles.map(f => posterCard({ title: f.title, width: 78, onclick: `openMovieDetail(${f.id})` })).join('')}
+        </div>
+      `}
+
+      <!-- Estatísticas (StatCards + HorizontalBars + VerticalBars direto no fundo de papel, como no FrontEnd!) -->
+      ${isEmpty ? `
+        <div class="body-muted">Registre alguns títulos para ver suas estatísticas.</div>
+      ` : `
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;align-items:center;text-align:center;padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+            <div style="font-family:var(--serif);font-weight:600;font-size:26px;line-height:32px">842</div>
+            <div class="cap">Filmes</div>
+          </div>
+          <div style="flex:1;align-items:center;text-align:center;padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+            <div style="font-family:var(--serif);font-weight:600;font-size:26px;line-height:32px">31</div>
+            <div class="cap">Séries</div>
+          </div>
+          <div style="flex:1;align-items:center;text-align:center;padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+            <div style="font-family:var(--serif);font-weight:600;font-size:26px;line-height:32px">3,6★</div>
+            <div class="cap">Nota média</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="h2">Gêneros que você <em>mais vê</em></div>
+          <div class="hbars">
+            ${topGenres.map(([g, v]) => `<div class="hbar-item">
+              <div class="hbar-top"><span class="strong">${g}</span><span class="cap">${v}</span></div>
+              <div class="hbar-track"><div class="hbar-fill" style="width:${(v / 92) * 100}%"></div></div>
+            </div>`).join('')}
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="h2">Filmes por mês</div>
+          <div class="vbars">
+            ${months.map(([m, v]) => `<div class="vbar-col">
+              <span class="vbar-val">${v}</span>
+              <div class="vbar-bar" style="height:${Math.round((v / maxMonth) * 120)}px"></div>
+              <span class="vbar-lbl">${m}</span>
+            </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- Últimos registros (4 pôsteres com badges de nota e curtida!) -->
+        <div class="sec-hdr"><span class="over">Últimos registros</span></div>
+        <div class="grid4">
+          ${recentEntries.map(e => posterCard({
+            title: e.title, width: 78, rating: e.rating, liked: e.liked,
+            onclick: `openMovieDetail(${e.id})`
+          })).join('')}
+        </div>
+      `}
+
+      <!-- Configurações (ListRows nativos do ProfileScreen.tsx) -->
+      <div class="sec-hdr"><span class="over">Configurações</span></div>
+      <div>
+        <div class="lrow">
+          <span style="color:var(--ink700);font-size:20px">${I('lock')}</span>
+          <div class="lrow-texts">
+            <span class="strong">Perfil privado</span>
+            <span class="cap">Privado: só você vê seu diário. Matches continuam funcionando.</span>
+          </div>
+          <button class="switch ${priv ? 'on' : ''}" onclick="S.isPrivate=!S.isPrivate;S.pe01=S.isPrivate?'private':'full';renderPE01()"><i></i></button>
+        </div>
+        <button class="lrow" onclick="S.im='IM-01';go('IM-01')">
+          <span style="color:var(--ink700);font-size:20px">${I('download')}</span>
+          <div class="lrow-texts"><span class="strong">Importar do Letterboxd</span></div>
+          <span style="color:var(--ink500)">${I('caretRight', false, 16)}</span>
+        </button>
+        <button class="lrow" onclick="go('DS-01')">
+          <span style="color:var(--ink700);font-size:20px">${I('palette')}</span>
+          <div class="lrow-texts"><span class="strong">Design System (dev)</span></div>
+          <span style="color:var(--ink500)">${I('caretRight', false, 16)}</span>
+        </button>
+        <button class="lrow" onclick="go('AU-01a')">
+          <span style="color:var(--error);font-size:20px">${I('signOut')}</span>
+          <div class="lrow-texts"><span class="strong" style="color:var(--error)">Sair</span></div>
+        </button>
+      </div>
+    </div>
+    ${tabBarHTML('PE-01')}`;
+}
+
+/* DS-01 · DesignSystemScreen.tsx */
+function renderDS01() {
+  const swatches = ['#FAF6F0','#FFFDF9','#F3ECE2','#E6DCCF','#CBBFB1','#2A211C','#4F433B','#76695F','#8E8176','#F6E1D7','#E9B8A3','#C2694B','#A9553A','#8C432C','#FBF0D4','#F2D58A','#D9A23A','#A9761A','#E3EBDD','#8FA685','#4A6243','#D08C86','#A23B2E'];
+  $('#DS-01').innerHTML = `
+    <div class="row" style="padding:4px 16px;border-bottom:1px solid var(--border)">
+      <button style="width:44px;height:44px;display:flex;align-items:center;font-size:22px" onclick="go('PE-01')">${I('caretLeft')}</button>
+      <span class="h3">Design System</span>
+    </div>
+    <div class="scroll">
+      <div class="over">Tipografia</div>
+      <div class="display">78%</div>
+      <div class="h1">Seu ano em <em>filmes</em></div>
+      <div class="h2">Duna: Parte Dois</div>
+      <div class="h3">Continue assistindo</div>
+      <div class="body">Texto corrido em Nunito 500, 16/24.</div>
+      <div class="cap">2024 · 2h46 · Ficção científica</div>
+
+      <div class="over" style="margin-top:8px">Cores (23 tokens)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${swatches.map(hex => `<div title="${hex}" style="width:34px;height:34px;border-radius:8px;background:${hex};border:1px solid var(--border)"></div>`).join('')}
+      </div>
+
+      <div class="over" style="margin-top:8px">Botões</div>
+      <button class="btn">Registrar filme</button>
+      <button class="btn sec">Secundário</button>
+      <button class="btn ghost">Ghost</button>
+      <button class="btn danger">Excluir registro</button>
+      <button class="btn" disabled>Desabilitado</button>
+      <div class="btn-reason">Preencha usuário, e-mail e senha</div>
+
+      <div class="over" style="margin-top:8px">Pôsteres com Selos</div>
+      <div class="row" style="align-items:flex-start">
+        ${posterCard({ title: 'Ainda Estou Aqui', year: 2024, width: 76, watched: true, rating: 4.5, showCaption: true })}
+        ${posterCard({ title: 'Bacurau', year: 2019, width: 76, liked: true, selected: true, showCaption: true })}
+        ${posterCard({ title: 'Central do Brasil', year: 1998, width: 76, inWatchlist: true, showCaption: true })}
+      </div>
+    </div>`;
+}
+
+/* ---------- 8. Match Story 9:16 (8 slides / 7 em Modo Descoberta + Prévia PNG) ---------- */
+let SL = [], si = 0, sTimer = null;
+function slidesData() {
+  const d = S.ma05Mode === 'discovery';
+  const cap = S.ma05Mode === 'capturing';
+  const score = d ? 61 : 78;
+  return [
+    {
+      bg: 'var(--plum)', fg: 'var(--cream)',
+      h: `<div class="blob" style="width:340px;height:300px;background:var(--blush);right:-120px;top:120px;border-radius:46% 54% 60% 40%"></div>
+          <div class="av-pair anim" style="margin-bottom:26px">
+            <div class="avatar" style="width:96px;height:96px;font-size:40px;background:var(--butter);border-color:var(--plum)">E</div>
+            <div class="avatar" style="width:96px;height:96px;font-size:40px;background:var(--sage);border-color:var(--plum)">A</div>
+          </div>
+          <div class="t anim2" style="font-size:72px">Edu <em>&amp;</em><br>Ana</div>
+          <div class="anim3" style="font-size:20px;font-weight:700;margin-top:18px">Vamos ver o quanto vocês são cinema juntos?</div>`
+    },
+    {
+      bg: 'var(--butter)', fg: 'var(--ink900)',
+      h: `<div class="blob" style="width:260px;height:260px;background:var(--tomato);left:-80px;bottom:60px;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)"></div>
+          <div class="anim" style="font-size:24px;font-weight:800">Vocês são</div>
+          <div class="t anim2" style="font-size:144px;letter-spacing:-4px" id="scoreNum">${score}%</div>
+          <div class="t anim3" style="font-size:44px"><em>cinema juntos</em></div>
+          <div class="anim3" style="margin-top:22px;display:inline-block;background:var(--ink900);color:var(--butter);padding:10px 16px;border-radius:99px;font-weight:800;align-self:flex-start;transform:rotate(-3deg)">${d ? 'Match em <em>descoberta</em> 🔭' : 'Dupla de <em>sessão dupla</em> 🎟️'}</div>`,
+      on: () => countUp(score)
+    },
+    {
+      bg: 'var(--cream)', fg: 'var(--ink900)',
+      h: `<div class="t anim" style="font-size:46px;margin-bottom:14px">De onde veio <em>o número</em></div>
+          <div class="anim2">${breakdownBarsHTML(true)}</div>
+          <div class="anim3" style="font-size:16px;font-weight:700;margin-top:14px">${d ? 'Vocês ainda viram poucos filmes em comum, então olhamos para o gosto de cada um.' : 'Vocês deram notas parecidas em 23 filmes.'}</div>`
+    },
+    {
+      bg: 'var(--sage)', fg: '#1F2A1C',
+      h: `<div class="blob" style="width:300px;height:300px;background:var(--cream);opacity:.55;right:-100px;top:90px;border-radius:40% 60% 55% 45%"></div>
+          <div class="t anim" style="font-size:52px">Vocês dois<br>vivem de</div>
+          <div class="anim2" style="margin-top:22px">
+            ${[['👻 Terror','42%'],['🎭 Drama','35%'],['🔪 Suspense','23%']].map(([g,p],k) =>
+              `<div style="display:inline-flex;align-items:center;gap:10px;background:var(--ink900);color:var(--cream);padding:14px 20px;border-radius:99px;font-weight:800;font-size:22px;margin:0 8px 10px 0;transform:rotate(${[-3,2,-1][k]}deg)">${g}<span style="background:var(--butter);color:var(--ink900);border-radius:99px;padding:2px 8px;font-size:14px">${p}</span></div>`
+            ).join('')}
+          </div>`
+    },
+    ...(d ? [{
+      bg: 'var(--blush)', fg: 'var(--ink900)',
+      h: `<div class="t anim" style="font-size:42px;margin-bottom:18px">Vocês têm muito a <em>apresentar</em> um ao outro</div>
+          <div class="row anim2" style="align-items:flex-start;gap:14px">
+            ${[['Edu ama,<br>Ana não viu',['Ainda Estou Aqui','Bacurau','Pulp Fiction']],['Ana ama,<br>Edu não viu',['Aquarius','A Chegada','Lady Bird']]].map(([l,titles]) =>
+              `<div style="flex:1"><div style="font-weight:800;margin-bottom:8px">${l}</div>${titles.map((t,k) =>
+                `<div style="margin-bottom:8px;transform:rotate(${k%2?3:-3}deg)">${posterArt(t, 140, 70, 12, 12)}</div>`
+              ).join('')}</div>`
+            ).join('')}
+          </div>`
+    }] : [
+      {
+        bg: 'var(--blush)', fg: 'var(--ink900)',
+        h: `<div class="blob" style="width:420px;height:210px;border-radius:210px 210px 0 0;background:var(--tomato);opacity:.35;left:-30px;bottom:110px"></div>
+            <div class="t anim" style="font-size:52px;margin-bottom:22px">Vocês dois <em>amam</em></div>
+            <div class="row anim2" style="gap:10px;justify-content:center">
+              ${[['Central do Brasil','★★★★★',-6],['Parasita','★★★★★',0],['Bacurau','★★★★½',6]].map(([t,st,r]) =>
+                `<div style="transform:rotate(${r}deg);text-align:center">${posterArt(t, 98, 147, 12, 12)}<div style="font-size:12px;font-weight:800;margin-top:6px">${st}</div></div>`
+              ).join('')}
+            </div>`
+      },
+      {
+        bg: 'var(--tomato)', fg: 'var(--cream)',
+        h: `<div class="t anim" style="font-size:52px;margin-bottom:22px">Onde vocês <em>discordam</em> ⚡</div>
+            <div class="row anim2" style="gap:18px">
+              ${posterArt('Barbie', 130, 195, 12, 16)}
+              <div style="font-size:22px;font-weight:800;line-height:1.6">Edu<br><span style="color:var(--butter)">★★★★★</span><br>Ana<br><span style="color:var(--butter)">★½</span></div>
+            </div>
+            <div class="t anim3" style="font-size:30px;margin-top:22px">Esse filme rende <em>uma boa discussão.</em></div>`
+      }
+    ]),
+    {
+      bg: 'var(--ink900)', fg: 'var(--cream)',
+      h: `<div class="t anim" style="font-size:52px;margin-bottom:20px">Para verem <em style="color:var(--butter)">juntos</em></div>
+          <div class="anim2">
+            ${[['Lady Bird','Edu ama, Ana não viu'],['Aquarius','Ana ama, Edu não viu'],['A Chegada','Os dois querem ver']].map(([t,r]) =>
+              `<div class="row" style="margin-bottom:12px">${posterArt(t, 56, 84, 8, 9)}<div><div style="font-weight:800;font-size:18px">${t}</div><div style="color:var(--blush);font-size:14px;font-weight:700">${r}</div></div></div>`
+            ).join('')}
+          </div>
+          ${!cap ? `<button class="anim3" onclick="event.stopPropagation();toast('Salvo na watchlist de vocês')" style="position:relative;z-index:7;margin-top:10px;height:48px;border-radius:99px;background:var(--butter);color:var(--ink900);font-weight:800;padding:0 20px;align-self:flex-start">＋ Salvar na watchlist de vocês</button>` : ''}`
+    },
+    {
+      bg: 'var(--butter)', fg: 'var(--ink900)',
+      h: `<div class="t anim" style="font-size:66px">Edu + Ana<br>= <em>${score}%</em></div>
+          <div class="anim2" style="font-size:18px;font-weight:700;margin:16px 0 26px">${d ? 'Fica mais preciso conforme vocês registram.' : 'Recalculado sempre que um de vocês registra algo.'}</div>
+          ${!cap ? `<button class="anim3" onclick="event.stopPropagation();closeStory()" style="position:relative;z-index:7;height:52px;border-radius:99px;background:var(--ink900);color:var(--cream);font-weight:800;padding:0 22px;align-self:flex-start">Ir para a sala de vocês →</button>` : ''}`
+    }
+  ];
+}
+
+function openStory(startIdx = 0) {
+  clearTimeout(sTimer);
+  SL = slidesData();
+  $('#slides').innerHTML = SL.map(s => `<div class="slide" style="background:${s.bg};color:${s.fg}">${s.h}</div>`).join('');
+  $('#sbars').innerHTML = SL.map((_, idx) => `<i onclick="si=${idx};renderSlide()"><b></b></i>`).join('');
+  $('#shareStoryIcon').innerHTML = I('share', false, 18);
+  si = Math.min(startIdx, SL.length - 1);
+  if (S.screen !== 'MA-05') go('MA-05');
+  else renderSlide();
+}
+function renderSlide() {
+  const r = S.reduceMotion;
+  const cap = S.ma05Mode === 'capturing';
+  $('#MA-05').classList.toggle('reduce', r);
+  $$('#slides .slide').forEach((s, k) => {
+    s.classList.toggle('on', k === si);
+    if (k === si) { const c = s.cloneNode(true); s.replaceWith(c); }
+  });
+  $$('#sbars b').forEach((b, k) => {
+    b.style.transition = 'none';
+    b.style.width = k < si ? '100%' : '0';
+    if (k === si && !r && !cap) {
+      requestAnimationFrame(() => requestAnimationFrame(() => { b.style.transition = 'width 6s linear'; b.style.width = '100%'; }));
+    } else if (k === si) b.style.width = '100%';
+  });
+  $('#sbars').style.display = cap ? 'none' : 'flex';
+  $('.sclose').style.display = cap ? 'none' : 'flex';
+  $('#sfoot').style.display = cap ? 'none' : 'flex';
+  $('#sbrand').style.display = cap ? 'flex' : 'none';
+  $('#sbrand').style.color = SL[si].fg;
+  $('#MA-05').style.background = SL[si].bg;
+  $('#MA-05').style.setProperty('--sfg', SL[si].fg);
+  $('#MA-05').style.setProperty('--sbg', SL[si].bg);
+  $('#statusbar').style.color = SL[si].fg;
+  SL[si].on && SL[si].on();
+  clearTimeout(sTimer);
+  if (!r && !cap) sTimer = setTimeout(nextSlide, 6000);
+}
+function nextSlide() { if (si < SL.length - 1) { si++; renderSlide(); } }
+function prevSlide() { if (si > 0) { si--; renderSlide(); } }
+function closeStory() { clearTimeout(sTimer); go('MA-06'); }
+function countUp(t) {
+  const el = document.querySelector('.slide.on #scoreNum');
+  if (!el) return;
+  if (S.reduceMotion || S.ma05Mode === 'capturing') { el.textContent = t + '%'; return; }
+  let v = 0;
+  const iv = setInterval(() => {
+    v += Math.ceil((t - v) / 8);
+    el.textContent = Math.min(v, t) + '%';
+    if (v >= t) clearInterval(iv);
+  }, 55);
+}
+
+/* ---------- 9. Navegação, Toast e Barra de Cenários ---------- */
+let toastTmr = null, toastCallback = null;
+function toast(msg, actionLabel = null, onAction = null) {
+  $('#toastTxt').textContent = msg;
+  const act = $('#toastAct');
+  if (actionLabel) {
+    act.textContent = actionLabel;
+    act.style.display = 'inline';
+    toastCallback = onAction;
+  } else {
+    act.style.display = 'none';
+    toastCallback = null;
+  }
+  $('#toast').classList.add('on');
+  clearTimeout(toastTmr);
+  toastTmr = setTimeout(() => $('#toast').classList.remove('on'), 3200);
+}
+function onToastAction() {
+  $('#toast').classList.remove('on');
+  if (toastCallback) toastCallback();
+}
+
+function go(id, noHist = false) {
+  clearTimeout(sTimer);
+  if (S.screen && !noHist && S.screen !== id) S.hist.push(S.screen);
+  S.screen = id;
+  renderAll();
+  if (id === 'MA-05') {
+    SL = slidesData();
+    $('#slides').innerHTML = SL.map(s => `<div class="slide" style="background:${s.bg};color:${s.fg}">${s.h}</div>`).join('');
+    $('#sbars').innerHTML = SL.map((_, idx) => `<i onclick="si=${idx};renderSlide()"><b></b></i>`).join('');
+    $('#shareStoryIcon').innerHTML = I('share', false, 18);
+    renderSlide();
+  }
+}
+function back() {
+  const prev = S.hist.pop() || 'IN-01';
+  go(prev, true);
+}
+
+function renderNavAndScenebar() {
+  $('#nav').innerHTML = NAV_ITEMS.map(item => {
+    if (item.group) return `<div class="nav-group">${item.group}</div>`;
+    const on = S.screen === item.id;
+    return `<button class="${on ? 'on' : ''}" onclick="go('${item.id}')">
+      <span><b>${item.id}</b>${item.name}</span>
+      <span class="tag">${item.tag}</span>
+    </button>`;
+  }).join('');
+
+  const curItem = NAV_ITEMS.find(x => x.id === S.screen);
+  $('#curScreenLabel').textContent = curItem ? `${curItem.id} · ${curItem.name}` : S.screen;
+
+  const opts = SCENE_OPTIONS[S.screen] || [];
+  $('#scenePills').innerHTML = opts.map(([key, label], idx) => {
+    const isActive = checkActiveSceneKey(S.screen, key);
+    return `<button class="scenepill ${isActive ? 'on' : ''}" onclick="selectSceneOption('${S.screen}',${idx})">${label}</button>`;
+  }).join('');
+}
+
+function checkActiveSceneKey(scr, key) {
+  if (scr === 'AU-01a') return S.au01a === key;
+  if (scr === 'AU-01b') return S.au01b === key;
+  if (scr === 'AU-01c') return S.au01c === key;
+  if (scr === 'AU-02') return S.au02 === key;
+  if (scr === 'ON-01') return S.on01 !== 'normal' ? S.on01 === key : (key === 'zero' ? S.onGenres.length === 0 : S.onGenres.length > 0);
+  if (scr === 'ON-02') return S.on02 !== 'normal' ? S.on02 === key : (key === 'zero' ? S.onSeen.length === 0 : S.onSeen.length > 0);
+  if (scr === 'ON-03') return key === 'zero' ? S.onFavs.length === 0 : S.onFavs.length > 0;
+  if (scr === 'IN-01') return S.in01 === key;
+  if (scr === 'BU-01') return S.bu01 === key;
+  if (scr === 'RG-01') return S.rg01 === key;
+  if (scr === 'TI-01') return S.ti01 === key;
+  if (scr === 'TI-02') return S.ti02 === key;
+  if (scr === 'IM-01') return S.im === key;
+  if (scr === 'MA-01') return S.ma01 === key;
+  if (scr === 'MA-04') return S.ma04 === key;
+  if (scr === 'MA-05') return S.ma05Mode === key;
+  if (scr === 'MA-06') return S.ma06 === key;
+  if (scr === 'PE-01') return S.pe01 === key;
+  return true;
+}
+
+function selectSceneOption(scr, idx) {
+  const fn = SCENE_OPTIONS[scr]?.[idx]?.[2];
+  if (fn) fn();
+  renderAll();
+}
+
+function renderAll() {
+  $$('.screen').forEach(el => el.classList.toggle('on', el.id === S.screen));
+  $('#statusbar').style.color = (S.screen === 'MA-05' || S.screen === 'MA-04') ? 'var(--cream)' : 'var(--ink900)';
+  renderAU01a();
+  renderAU01b();
+  renderAU01c();
+  renderAU02();
+  renderON01();
+  renderON02();
+  renderON03();
+  renderIN01();
+  renderBU01();
+  renderRG01();
+  renderTI01();
+  renderTI02();
+  renderIM01();
+  renderMA01();
+  renderMA04();
+  renderMA06();
+  renderMA07();
+  renderPE01();
+  renderDS01();
+  renderNavAndScenebar();
+}
+
+/* Listeners de aparência e idioma */
+$$('input[name=plat]').forEach(r => r.onchange = () => {
+  S.plat = r.value;
+  const ph = $('#phone');
+  ph.classList.toggle('ios', S.plat === 'ios');
+  ph.classList.toggle('android', S.plat === 'android');
+  ph.style.borderRadius = S.plat === 'ios' ? '48px' : '30px';
+  renderAll();
+});
+$$('input[name=loc]').forEach(r => r.onchange = () => { S.loc = r.value; renderAll(); });
+$('#optInvite').onchange = e => { S.fromInvite = e.target.checked; S.au01a = S.fromInvite ? 'invite' : 'default'; renderAll(); };
+$('#optReduce').onchange = e => { S.reduceMotion = e.target.checked; renderAll(); };
+
+renderAll();
+</script>
+</body>
+</html>

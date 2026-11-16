@@ -1,0 +1,2202 @@
+openapi: 3.1.0
+info:
+  title: CineDiary API (Clean Architecture v2.0 + Neo4j GDS)
+  version: 2.0.0
+  description: >
+    Contrato oficial da API REST do CineDiary v2.0 (Monólito Modular com Clean Architecture,
+    PostgreSQL 17, Outbox Pattern e Neo4j + Graph Data Science para o Taste Match).
+
+    Idioma do conteúdo: o cabeçalho Accept-Language (o idioma do aparelho) escolhe o idioma dos dados do
+    TMDB (títulos, sinopses, gêneros, temporadas e episódios). "en…" devolve em inglês; "pt…", outro idioma
+    ou sem cabeçalho devolvem em PT-BR. Os campos continuam com os mesmos nomes (titlePt, overviewPt).
+servers:
+  - url: http://localhost:8080
+    description: Ambiente de Desenvolvimento Local
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Users & Onboarding
+    description: Sincronização Clerk via Svix, perfil, privacidade e onboarding cinematográfico sem mínimo obrigatório
+  - name: Catalog (TMDB)
+    description: Busca unificada, populares, gêneros e metadados de filmes e séries em PT-BR com cache local
+  - name: Diary & Series
+    description: Registro em até 3 toques, avaliações, reviews, watchlist e progresso de séries
+  - name: Importing (Letterboxd)
+    description: Upload assíncrono e confirmação idempotente do arquivo ZIP do Letterboxd
+  - name: Taste Match (Neo4j + GDS)
+    description: Convites, compatibilidade calculada no grafo com Neo4j + GDS, Match Story de 8 slides 9:16 e watchlist compartilhada
+  - name: Stats
+    description: Estatísticas gratuitas do perfil
+
+paths:
+  /api/v1/webhooks/clerk:
+    post:
+      tags: [Users & Onboarding]
+      summary: Recebe webhooks do Clerk validados via Svix (Idempotente)
+      security: []
+      parameters:
+        - in: header
+          name: svix-id
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: svix-timestamp
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: svix-signature
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Evento processado ou ignorado por idempotência
+        '400':
+          description: Assinatura Svix inválida
+
+  /api/v1/me:
+    get:
+      tags: [Users & Onboarding]
+      summary: Obtém o perfil do usuário autenticado
+      responses:
+        '200':
+          description: Perfil retornado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+    patch:
+      tags: [Users & Onboarding]
+      summary: Atualiza nome, @username, foto, privacidade e favoritos do perfil
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+
+  /api/v1/me/onboarding:
+    post:
+      tags: [Users & Onboarding]
+      summary: Conclui o onboarding cinematográfico (0 ou mais gêneros/títulos — suporta 'Pular por agora')
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingRequest'
+      responses:
+        '200':
+          description: Onboarding concluído e sincronizado via Outbox com o Neo4j
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingResponse'
+
+  /api/v1/users/{username}:
+    get:
+      tags: [Social]
+      summary: "Perfil de alguém (privado e sem seguir: só nome, foto e contadores)"
+      parameters:
+        - { in: path, name: username, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: "Perfil com contadores e a relação de quem vê"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicProfileResponse' }
+        '404': { description: "Perfil não encontrado" }
+
+  /api/v1/users/{username}/diary:
+    get:
+      tags: [Social]
+      summary: "Diário de alguém, mais recentes primeiro (403 se privado e você não segue)"
+      parameters:
+        - { in: path, name: username, required: true, schema: { type: string } }
+        - { in: query, name: page, required: false, schema: { type: integer, default: 0 } }
+        - { in: query, name: size, required: false, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: "Entradas (mesmo formato do seu diário)"
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/DiaryEntryResponse' } }
+        '403': { description: "Perfil privado" }
+
+  /api/v1/users/{username}/diary/{entryId}:
+    get:
+      tags: [Social]
+      summary: "Uma entrada do diário de alguém"
+      parameters:
+        - { in: path, name: username, required: true, schema: { type: string } }
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: "A entrada"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DiaryEntryResponse' }
+        '403': { description: "Perfil privado" }
+        '404': { description: "Não encontrada" }
+
+  /api/v1/users/{username}/follow:
+    post:
+      tags: [Social]
+      summary: "Seguir (perfil privado: vira pedido, REQUESTED)"
+      parameters:
+        - { in: path, name: username, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: "Relação depois de seguir"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RelationshipResponse' }
+        '400': { description: "Seguir a si mesmo" }
+    delete:
+      tags: [Social]
+      summary: "Deixar de seguir ou cancelar o pedido"
+      parameters:
+        - { in: path, name: username, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: "Relação depois de deixar de seguir"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RelationshipResponse' }
+
+  /api/v1/users/{username}/followers:
+    get:
+      tags: [Social]
+      summary: "Seguidores de alguém"
+      parameters:
+        - { in: path, name: username, required: true, schema: { type: string } }
+        - { in: query, name: page, required: false, schema: { type: integer, default: 0 } }
+        - { in: query, name: size, required: false, schema: { type: integer, default: 30 } }
+      responses:
+        '200':
+          description: "Pessoas"
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/SocialPersonResponse' } }
+        '403': { description: "Perfil privado" }
+
+  /api/v1/users/{username}/following:
+    get:
+      tags: [Social]
+      summary: "Quem alguém segue"
+      parameters:
+        - { in: path, name: username, required: true, schema: { type: string } }
+        - { in: query, name: page, required: false, schema: { type: integer, default: 0 } }
+        - { in: query, name: size, required: false, schema: { type: integer, default: 30 } }
+      responses:
+        '200':
+          description: "Pessoas"
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/SocialPersonResponse' } }
+        '403': { description: "Perfil privado" }
+
+  /api/v1/people/search:
+    get:
+      tags: [Social]
+      summary: "Busca de pessoas por @ ou nome (mínimo 2 letras)"
+      parameters:
+        - { in: query, name: q, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: "Até 20 pessoas"
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/SocialPersonResponse' } }
+
+  /api/v1/me/follow-requests:
+    get:
+      tags: [Social]
+      summary: "Pedidos para te seguir esperando aprovação (perfil privado)"
+      responses:
+        '200':
+          description: "Pessoas que pediram, mais antigas primeiro"
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/SocialPersonResponse' } }
+
+  /api/v1/me/follow-requests/{userId}/approve:
+    post:
+      tags: [Social]
+      summary: "Aprovar um pedido para te seguir"
+      parameters:
+        - { in: path, name: userId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: "Aprovado" }
+
+  /api/v1/me/follow-requests/{userId}:
+    delete:
+      tags: [Social]
+      summary: "Recusar um pedido para te seguir"
+      parameters:
+        - { in: path, name: userId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: "Recusado" }
+
+  /api/v1/me/followers/{userId}:
+    delete:
+      tags: [Social]
+      summary: "Tirar alguém dos seus seguidores"
+      parameters:
+        - { in: path, name: userId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: "Removido" }
+
+  /api/v1/entries/{entryId}/interactions:
+    get:
+      tags: [Social]
+      summary: "Curtidas (e se você curtiu) e número de respostas de uma entrada"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: "Números"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntryInteractionsResponse' }
+        '403': { description: "Perfil privado" }
+
+  /api/v1/entries/{entryId}/like:
+    put:
+      tags: [Social]
+      summary: "Curtir a entrada"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: "Números depois de curtir"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntryInteractionsResponse' }
+    delete:
+      tags: [Social]
+      summary: "Tirar a curtida"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: "Números depois de tirar"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntryInteractionsResponse' }
+
+  /api/v1/entries/{entryId}/comments:
+    get:
+      tags: [Social]
+      summary: "Respostas, mais antigas primeiro"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: "Respostas"
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/EntryCommentResponse' } }
+    post:
+      tags: [Social]
+      summary: "Responder a entrada"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, maxLength: 1000 }
+      responses:
+        '201':
+          description: "A resposta criada"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntryCommentResponse' }
+
+  /api/v1/entries/{entryId}/comments/{commentId}:
+    delete:
+      tags: [Social]
+      summary: "Apagar uma resposta (quem escreveu ou o dono da entrada)"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+        - { in: path, name: commentId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: "Apagada" }
+        '403': { description: "Sem permissão" }
+
+  /api/v1/feed:
+    get:
+      tags: [Social]
+      summary: "Registros recentes de quem você segue (sem importações do Letterboxd)"
+      parameters:
+        - { in: query, name: before, required: false, schema: { type: string, format: date-time }, description: "Cursor: nextBefore da página anterior" }
+        - { in: query, name: limit, required: false, schema: { type: integer, default: 20, maximum: 50 } }
+      responses:
+        '200':
+          description: "Uma página do feed"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FeedResponse' }
+
+  /api/v1/activity:
+    get:
+      tags: [Social]
+      summary: "Aba Amigos do sino: o que você e quem você segue fizeram (registros, seguiu, curtiu, respondeu)"
+      parameters:
+        - { in: query, name: before, required: false, schema: { type: string, format: date-time } }
+        - { in: query, name: limit, required: false, schema: { type: integer, default: 25, maximum: 50 } }
+      responses:
+        '200':
+          description: "Uma página"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActivityResponse' }
+
+  /api/v1/titles/{titleId}/community:
+    get:
+      tags: [Social]
+      summary: "Página do título: nota consolidada (TMDB + CineDiary), amigos que assistiram e até 3 reviews em destaque"
+      parameters:
+        - { in: path, name: titleId, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: "Lado social do título"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TitleCommunityResponse' }
+
+  /api/v1/titles/{titleId}/reviews:
+    get:
+      tags: [Social]
+      summary: "Todas as reviews do título (perfis privados só para quem segue)"
+      parameters:
+        - { in: path, name: titleId, required: true, schema: { type: integer, format: int64 } }
+        - { in: query, name: sort, required: false, schema: { type: string, enum: [POPULAR, RECENT, FRIENDS], default: POPULAR } }
+        - { in: query, name: page, required: false, schema: { type: integer, default: 0 } }
+        - { in: query, name: size, required: false, schema: { type: integer, default: 20, maximum: 50 } }
+      responses:
+        '200':
+          description: "Uma página"
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TitleReview' }
+
+  /api/v1/me/notifications:
+    get:
+      tags: [Social]
+      summary: "Sino: avisos mais recentes (curtidas no mesmo registro agrupadas)"
+      responses:
+        '200':
+          description: "Avisos"
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/NotificationResponse' } }
+
+  /api/v1/me/notifications/unread-count:
+    get:
+      tags: [Social]
+      summary: "Quantos avisos não vistos (o número do sino)"
+      responses:
+        '200':
+          description: "Contagem"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count]
+                properties:
+                  count: { type: integer, format: int64 }
+
+  /api/v1/me/notifications/seen:
+    post:
+      tags: [Social]
+      summary: "Marca todos os avisos como vistos (ao abrir o sino)"
+      responses:
+        '204': { description: "Marcados" }
+
+  /api/v1/public/usernames/{username}/availability:
+    get:
+      tags: [Público]
+      summary: "Se um @username está livre (sem login: cadastro, antes de criar a conta)"
+      description: >
+        Nome preso numa conta excluída ou abandonada (sem onboarding) conta como livre. Não reserva o nome:
+        o Clerk confirma ao criar a conta.
+      security: []
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Resultado da verificação"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsernameAvailabilityResponse'
+
+  /api/v1/public/showcase:
+    get:
+      tags: [Público]
+      summary: "Pôsteres populares no país e no idioma do aparelho (sem login: boas-vindas e animação do Match)"
+      security: []
+      parameters:
+        - in: query
+          name: region
+          required: false
+          description: "ISO 3166-1 (ex.: US). Inválido ou ausente = BR"
+          schema:
+            type: string
+        - in: query
+          name: language
+          required: false
+          description: "BCP 47 (ex.: en-US). Inválido ou ausente = pt-BR"
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Até 12 pôsteres (cache de 6 h por país e idioma); vazio se o TMDB estiver fora"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShowcasePoster'
+
+  /api/v1/catalog/search:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: Busca filmes e séries no TMDB (pt-BR) com cache local no PostgreSQL
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+            minLength: 2
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+            enum: [ALL, MOVIE, SERIES]
+            default: ALL
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: Resultados paginados do catálogo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogSearchResponse'
+
+  /api/v1/catalog/popular:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: Lista títulos populares para o onboarding e tela Registrar
+      parameters:
+        - in: query
+          name: genreIds
+          required: false
+          description: "IDs de gênero do TMDB (OU). Com eles, traz os populares desses gêneros (discover); sem resultado, cai nos populares gerais"
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: integer
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+            enum: [ALL, MOVIE, SERIES]
+            default: MOVIE
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: Títulos populares
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogSearchResponse'
+
+  /api/v1/catalog/trending:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: Em alta esta semana (TMDB trending, igual para todos)
+      parameters:
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+            enum: [MOVIE, SERIES]
+            default: MOVIE
+      responses:
+        '200':
+          description: Títulos em alta nos últimos 7 dias
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogSearchResponse'
+
+  /api/v1/recommendations/for-you:
+    get:
+      tags: [Recomendações]
+      summary: "Para você: gente com gosto parecido (Neo4j) e populares dos gêneros que mais combinam com você"
+      responses:
+        '200':
+          description: "Até 20 filmes que você ainda não viu nem pôs na watchlist; source diz de onde vieram"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForYouResponse'
+
+  /api/v1/recommendations/because-you-liked:
+    get:
+      tags: [Recomendações]
+      summary: "Porque você curtiu X: parecidos com um filme que você avaliou bem (gira entre os 3 mais amados)"
+      responses:
+        '200':
+          description: "seed é nulo (e items vazio) enquanto não houver filme com nota alta"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BecauseYouLikedResponse'
+
+  /api/v1/catalog/genres:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: Lista os gêneros cinematográficos suportados em PT-BR
+      responses:
+        '200':
+          description: Lista de gêneros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GenreDto'
+
+  /api/v1/catalog/{mediaType}/{tmdbId}:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: Detalhes completos de um filme ou série (incluindo temporadas e estado do usuário)
+      parameters:
+        - in: path
+          name: mediaType
+          required: true
+          schema:
+            $ref: '#/components/schemas/MediaType'
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Detalhes do título e estado atual do usuário autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogTitleDetailResponse'
+
+  /api/v1/catalog/{mediaType}/{tmdbId}/credits:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: Direção (filmes) e elenco principal de um filme ou série
+      parameters:
+        - in: path
+          name: mediaType
+          required: true
+          schema:
+            $ref: '#/components/schemas/MediaType'
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Direção primeiro, depois o elenco na ordem de destaque do TMDB (até 20)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TitleCreditDto'
+
+  /api/v1/catalog/{mediaType}/{tmdbId}/extras:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: "Lançamento, país, produtoras, equipe, trailer, coleção e similares do título"
+      parameters:
+        - in: query
+          name: language
+          required: false
+          description: "Idioma do aparelho (BCP 47, ex.: pt-BR), para escolher o trailer; ausente = pt-BR"
+          schema:
+            type: string
+        - in: path
+          name: mediaType
+          required: true
+          schema:
+            $ref: '#/components/schemas/MediaType'
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: "Dados do TMDB (cache de 6 h por título); listas vazias quando não há"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitleExtrasResponse'
+
+  /api/v1/catalog/series/{tmdbId}/seasons/{seasonNumber}:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: "Episódios de uma temporada: nome, data em que foi ao ar, duração, imagem e sinopse"
+      parameters:
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - in: path
+          name: seasonNumber
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: "Temporada e episódios (cache de 12 h)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeasonResponse'
+
+  /api/v1/catalog/series/{tmdbId}/seasons/{seasonNumber}/trailer:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: "Trailer da temporada no idioma do aparelho quando houver"
+      parameters:
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - in: path
+          name: seasonNumber
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: language
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "youtubeKey nulo quando a temporada não tem trailer"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  youtubeKey:
+                    type: string
+                    nullable: true
+
+  /api/v1/catalog/companies/{companyId}:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: Produtora com os filmes dela, os mais populares primeiro
+      parameters:
+        - in: path
+          name: companyId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Produtora e filmes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyResponse'
+
+  /api/v1/catalog/people/{personId}:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: Pessoa com os títulos em que atuou e os que dirigiu
+      parameters:
+        - in: path
+          name: personId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Filmografia sem duplicados, por popularidade, com o estado do usuário em cada título
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonResponse'
+        '404':
+          description: Pessoa não encontrada no TMDB
+
+  /api/v1/titles/{titleId}/state:
+    put:
+      tags: [Diary & Series]
+      summary: Registro rápido (<= 3 toques) de estado independente (assistido, nota, like, watchlist)
+      parameters:
+        - in: path
+          name: titleId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTitleStateRequest'
+      responses:
+        '200':
+          description: Estado atualizado, evento publicado na Outbox (Neo4j) e Matches recalculados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserTitleStateDto'
+
+  /api/v1/watchlist:
+    get:
+      tags: [Diary & Series]
+      summary: Lista os títulos na watchlist pessoal do usuário autenticado
+      responses:
+        '200':
+          description: Watchlist pessoal
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogTitleSummary'
+
+  /api/v1/diary/undated:
+    get:
+      tags: [Diary & Series]
+      summary: "Filmes já assistidos sem nenhuma entrada no diário (ex.: marcados no onboarding, ADR-04)"
+      responses:
+        '200':
+          description: "Até 30 filmes, mais recentes primeiro; saem da lista quando ganham uma entrada com data"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogTitleSummary'
+
+  /api/v1/diary/entries:
+    get:
+      tags: [Diary & Series]
+      summary: Lista entradas cronológicas do diário do usuário
+      parameters:
+        - in: query
+          name: titleId
+          required: false
+          description: Só as entradas deste título (página do filme)
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: size
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Lista de entradas do diário
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiaryEntryResponse'
+    post:
+      tags: [Diary & Series]
+      summary: Cria uma entrada no diário (suporta rewatch com datas diferentes e review textual)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDiaryEntryRequest'
+      responses:
+        '201':
+          description: Entrada criada no diário e sincronizada via Outbox
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryEntryResponse'
+
+  /api/v1/diary/entries/{entryId}:
+    parameters:
+      - in: path
+        name: entryId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Diary & Series]
+      summary: Uma entrada do diário (só o dono)
+      responses:
+        '200':
+          description: A entrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryEntryResponse'
+        '404':
+          description: Não existe ou é de outra pessoa
+    put:
+      tags: [Diary & Series]
+      summary: Edita data, nota, curtida, rever, review e spoiler (substitui todos; rating null = sem nota)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDiaryEntryRequest'
+      responses:
+        '200':
+          description: A entrada editada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryEntryResponse'
+    delete:
+      tags: [Diary & Series]
+      summary: Exclui a entrada (o título continua marcado como visto)
+      responses:
+        '204':
+          description: Excluída
+
+  /api/v1/series/{titleId}/episodes:
+    put:
+      tags: [Diary & Series]
+      summary: Marca ou desmarca episódios/temporadas assistidos e atualiza progresso da série
+      parameters:
+        - in: path
+          name: titleId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeriesEpisodeProgressRequest'
+      responses:
+        '200':
+          description: Progresso da série atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesProgressResponse'
+
+  /api/v1/imports/letterboxd:
+    post:
+      tags: [Importing (Letterboxd)]
+      summary: Envia o arquivo ZIP exportado do Letterboxd e inicia job assíncrono
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '202':
+          description: Job de importação iniciado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJobResponse'
+
+  /api/v1/imports/{jobId}:
+    get:
+      tags: [Importing (Letterboxd)]
+      summary: Consulta status e resumo pré-confirmação da importação
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Estado atual e resumo da importação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJobResponse'
+
+  /api/v1/imports/{jobId}/confirm:
+    post:
+      tags: [Importing (Letterboxd)]
+      summary: Confirma a importação e persiste os registros de forma idempotente
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmImportRequest'
+      responses:
+        '200':
+          description: Importação aplicada sem duplicidades e projetada no Neo4j
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJobResponse'
+
+  /api/v1/users/{username}/stats:
+    get:
+      tags: [Stats]
+      summary: Retorna perfil público/privado e estatísticas gratuitas (gêneros, média, filmes/mês)
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Estatísticas do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStatsResponse'
+
+  /api/v1/matches:
+    get:
+      tags: [Taste Match (Neo4j + GDS)]
+      summary: Lista os Taste Matches do usuário (PENDING, BUILDING e ACTIVE)
+      responses:
+        '200':
+          description: Lista de Matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TasteMatchSummaryResponse'
+    post:
+      tags: [Taste Match (Neo4j + GDS)]
+      summary: Cria um novo Taste Match e gera link/código de convite
+      responses:
+        '201':
+          description: Match criado no estado PENDING ("Aguardando seu amigo")
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasteMatchSummaryResponse'
+
+  /api/v1/matches/{inviteCode}/accept:
+    post:
+      tags: [Taste Match (Neo4j + GDS)]
+      summary: Aceita convite de Taste Match e executa cálculo no Neo4j + GDS
+      parameters:
+        - in: path
+          name: inviteCode
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Match ativado (ou em BUILDING se faltar histórico) e calculado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchStoryResponse'
+
+  /api/v1/matches/{matchId}:
+    delete:
+      tags: [Taste Match (Neo4j + GDS)]
+      summary: "Sai do Match: encerra para os dois e apaga a lista de vocês (convite pendente = cancela)"
+      parameters:
+        - in: path
+          name: matchId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Encerrado (sair de novo também devolve 204)
+        '403':
+          description: Você não participa deste Match
+
+  /api/v1/matches/{matchId}/story:
+    get:
+      tags: [Taste Match (Neo4j + GDS)]
+      summary: Retorna os 8 slides do Match Story (9:16) e a explicação detalhada da porcentagem via Neo4j GDS
+      parameters:
+        - in: path
+          name: matchId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dados completos do Match Story
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchStoryResponse'
+
+  /api/v1/matches/{matchId}/watchlist:
+    get:
+      tags: [Taste Match (Neo4j + GDS)]
+      summary: Lista a watchlist compartilhada do Taste Match
+      parameters:
+        - in: path
+          name: matchId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Títulos da watchlist compartilhada
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SharedWatchlistItemResponse'
+    post:
+      tags: [Taste Match (Neo4j + GDS)]
+      summary: Adiciona um título à watchlist compartilhada do Match
+      parameters:
+        - in: path
+          name: matchId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [titleId]
+              properties:
+                titleId:
+                  type: integer
+                  format: int64
+      responses:
+        '201':
+          description: Adicionado à watchlist compartilhada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedWatchlistItemResponse'
+
+  /api/v1/matches/{matchId}/watchlist/{titleId}:
+    delete:
+      tags: [Taste Match (Neo4j + GDS)]
+      summary: Remove um título da watchlist compartilhada do Match
+      parameters:
+        - in: path
+          name: matchId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: titleId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Removido da watchlist compartilhada
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ActivityResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, kind, actor, createdAt]
+            properties:
+              id: { type: string }
+              kind: { type: string, enum: [LOGGED, FOLLOWED, LIKED_ENTRY, REPLIED_ENTRY, WATCHLISTED] }
+              actor: { $ref: '#/components/schemas/FeedAuthor' }
+              target:
+                allOf: [{ $ref: '#/components/schemas/FeedAuthor' }]
+                nullable: true
+                description: "Quem foi seguido / dono da review curtida ou respondida"
+              entry:
+                allOf: [{ $ref: '#/components/schemas/DiaryEntryResponse' }]
+                nullable: true
+              commentText: { type: string, nullable: true }
+              title:
+                allOf: [{ $ref: '#/components/schemas/CatalogTitleSummary' }]
+                nullable: true
+                description: "Só em WATCHLISTED (quer ver)"
+              createdAt: { type: string, format: date-time }
+        nextBefore: { type: string, format: date-time, nullable: true }
+    TitleReview:
+      type: object
+      required: [entry, author, likeCount, commentCount]
+      properties:
+        entry: { $ref: '#/components/schemas/DiaryEntryResponse' }
+        author: { $ref: '#/components/schemas/FeedAuthor' }
+        likeCount: { type: integer, format: int64 }
+        commentCount: { type: integer, format: int64 }
+    TitleCommunityResponse:
+      type: object
+      required: [friends, reviews, reviewCount]
+      properties:
+        rating:
+          type: object
+          nullable: true
+          description: "Nota única de 0,5 a 5 juntando TMDB e CineDiary; ausente = ninguém deu nota"
+          required: [average, count, histogram]
+          properties:
+            average: { type: number }
+            count: { type: integer, format: int64, description: "Total de notas consideradas" }
+            histogram:
+              type: array
+              items: { type: integer, format: int64 }
+              description: "10 posições (0,5 … 5) das notas do app; vazio enquanto há poucas"
+        friends:
+          type: array
+          description: "Último registro de quem você segue (likeCount/commentCount = 0)"
+          items: { $ref: '#/components/schemas/TitleReview' }
+        reviews:
+          type: array
+          items: { $ref: '#/components/schemas/TitleReview' }
+        reviewCount: { type: integer }
+    FeedAuthor:
+      type: object
+      required: [id, username, displayName]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: string, nullable: true }
+    FeedResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [entry, author]
+            properties:
+              entry: { $ref: '#/components/schemas/DiaryEntryResponse' }
+              author: { $ref: '#/components/schemas/FeedAuthor' }
+        nextBefore: { type: string, format: date-time, nullable: true, description: "Cursor da próxima página; ausente = acabou" }
+    NotificationResponse:
+      type: object
+      required: [id, kind, actors, actorCount, createdAt, unseen, relationship]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [FOLLOWED, FOLLOW_REQUESTED, FOLLOW_APPROVED, ENTRY_LIKED, ENTRY_REPLIED] }
+        actors: { type: array, items: { $ref: '#/components/schemas/FeedAuthor' }, description: "Mais recentes primeiro (até 3)" }
+        actorCount: { type: integer }
+        entry:
+          type: object
+          nullable: true
+          required: [id, title]
+          properties:
+            id: { type: string, format: uuid }
+            title: { $ref: '#/components/schemas/CatalogTitleSummary' }
+        commentText: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        unseen: { type: boolean }
+        relationship: { $ref: '#/components/schemas/Relationship' }
+    ReplyPolicy:
+      type: string
+      enum: [ME, FOLLOWING, EVERYONE]
+      description: "Quem pode responder: só o dono, quem o dono segue ou qualquer pessoa que veja a entrada."
+    EntryInteractionsResponse:
+      type: object
+      required: [likesCount, likedByMe, commentsCount, replyPolicy, canReply, interactive]
+      properties:
+        interactive: { type: boolean, description: "Tem review: aceita curtidas e respostas (só assistido não aceita)" }
+        replyPolicy: { $ref: '#/components/schemas/ReplyPolicy' }
+        canReply: { type: boolean, description: "Você pode responder (o dono sempre pode)" }
+        likesCount: { type: integer, format: int64 }
+        likedByMe: { type: boolean }
+        commentsCount: { type: integer, format: int64 }
+    EntryCommentResponse:
+      type: object
+      required: [id, author, text, createdAt, canDelete]
+      properties:
+        id: { type: string, format: uuid }
+        author:
+          type: object
+          required: [id, username, displayName]
+          properties:
+            id: { type: string, format: uuid }
+            username: { type: string }
+            displayName: { type: string }
+            avatarUrl: { type: string, nullable: true }
+        text: { type: string }
+        createdAt: { type: string, format: date-time }
+        canDelete: { type: boolean, description: "Você escreveu ou é o dono da entrada" }
+    Relationship:
+      type: string
+      enum: [SELF, FOLLOWING, REQUESTED, NONE]
+      description: "SELF: seu perfil. FOLLOWING: você segue. REQUESTED: pediu para seguir (privado). NONE: não segue."
+    PublicProfileResponse:
+      type: object
+      required: [id, username, displayName, isPrivate, totalMoviesWatched, totalSeriesWatched, favorites,
+                 followersCount, followingCount, relationship, followsYou, canSeeContent, pendingRequestsCount]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: string, nullable: true }
+        isPrivate: { type: boolean }
+        totalMoviesWatched: { type: integer, format: int64 }
+        totalSeriesWatched: { type: integer, format: int64 }
+        favorites: { type: array, items: { $ref: '#/components/schemas/CatalogTitleSummary' } }
+        followersCount: { type: integer, format: int64 }
+        followingCount: { type: integer, format: int64 }
+        relationship: { $ref: '#/components/schemas/Relationship' }
+        followsYou: { type: boolean }
+        canSeeContent: { type: boolean, description: "Pode ver diário, estatísticas e favoritos" }
+        pendingRequestsCount: { type: integer, format: int64, description: "Só no seu perfil" }
+        bio: { type: string, nullable: true }
+        pronouns: { type: string, nullable: true }
+    SocialPersonResponse:
+      type: object
+      required: [id, username, displayName, isPrivate, relationship]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: string, nullable: true }
+        isPrivate: { type: boolean }
+        relationship: { $ref: '#/components/schemas/Relationship' }
+    RelationshipResponse:
+      type: object
+      required: [relationship]
+      properties:
+        relationship: { $ref: '#/components/schemas/Relationship' }
+
+    UsernameAvailabilityResponse:
+      type: object
+      required: [username, available, reason]
+      properties:
+        username:
+          type: string
+        available:
+          type: boolean
+        reason:
+          type: string
+          enum: [AVAILABLE, TAKEN, INVALID, RESERVED]
+
+    MediaType:
+      type: string
+      enum: [MOVIE, SERIES]
+
+    SeriesStatus:
+      type: string
+      enum: [WATCHING, COMPLETED, DROPPED]
+
+    MatchStatus:
+      type: string
+      enum: [PENDING, BUILDING, ACTIVE, ARCHIVED]
+
+    GenreDto:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    UserProfileResponse:
+      type: object
+      required: [id, username, displayName, isPrivate, onboardingCompleted, totalMoviesWatched, totalSeriesWatched]
+      properties:
+        defaultReplyPolicy:
+          allOf: [{ $ref: '#/components/schemas/ReplyPolicy' }]
+          description: "Só no /me. Padrão de quem pode responder suas entradas"
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        isPrivate:
+          type: boolean
+        onboardingCompleted:
+          type: boolean
+        totalMoviesWatched:
+          type: integer
+        totalSeriesWatched:
+          type: integer
+        favorites:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+        bio: { type: string, nullable: true, maxLength: 200 }
+        pronouns: { type: string, nullable: true, description: "Código: he, she, they, he_they, she_they ou any" }
+        firstName: { type: string, nullable: true, description: "Só no /me (espelho do Clerk)" }
+        lastName: { type: string, nullable: true, description: "Só no /me (espelho do Clerk)" }
+        showSpoilers: { type: boolean, description: "Só no /me. Preferência: reviews dos outros sem desfoque" }
+
+    UpdateProfileRequest:
+      type: object
+      description: "Campos ausentes não mudam. Texto vazio em firstName, lastName, bio e pronouns apaga."
+      properties:
+        defaultReplyPolicy: { $ref: '#/components/schemas/ReplyPolicy' }
+        firstName: { type: string, maxLength: 100 }
+        lastName: { type: string, maxLength: 100 }
+        bio: { type: string, maxLength: 200 }
+        pronouns: { type: string, enum: ['', he, she, they, he_they, she_they, any], description: "Código da lista (vazio = não mostrar); o app mostra no idioma de quem vê" }
+        showSpoilers: { type: boolean }
+        username:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+        isPrivate:
+          type: boolean
+        favoriteTitleIds:
+          type: array
+          maxItems: 4
+          items:
+            type: integer
+            format: int64
+
+    OnboardingRequest:
+      type: object
+      required: [genreIds, selectedTitleIds, addToHistory]
+      properties:
+        genreIds:
+          type: array
+          minItems: 0
+          description: Opcional (0 ou mais gêneros; suporta 'Pular por agora' conforme decisão v1.2)
+          items:
+            type: integer
+        selectedTitleIds:
+          type: array
+          minItems: 0
+          description: Opcional (0 ou mais títulos conhecidos; sem mínimo obrigatório)
+          items:
+            type: integer
+            format: int64
+        favoriteTitleIds:
+          type: array
+          maxItems: 4
+          items:
+            type: integer
+            format: int64
+        addToHistory:
+          type: boolean
+          default: false
+          description: Começa desmarcado na UI; se false, salva apenas como sinal de preferência
+        pendingInviteCode:
+          type: string
+          nullable: true
+
+    OnboardingResponse:
+      type: object
+      required: [onboardingCompleted]
+      properties:
+        onboardingCompleted:
+          type: boolean
+        activatedMatchId:
+          type: string
+          format: uuid
+          nullable: true
+
+    CatalogTitleSummary:
+      type: object
+      required: [id, tmdbId, mediaType, titlePt, originalTitle]
+      properties:
+        id:
+          type: integer
+          format: int64
+        tmdbId:
+          type: integer
+          format: int64
+        mediaType:
+          $ref: '#/components/schemas/MediaType'
+        titlePt:
+          type: string
+        originalTitle:
+          type: string
+        releaseYear:
+          type: integer
+          nullable: true
+        posterUrl:
+          type: string
+          nullable: true
+        genres:
+          type: array
+          items:
+            type: string
+        userState:
+          $ref: '#/components/schemas/UserTitleStateDto'
+
+    CatalogSearchResponse:
+      type: object
+      required: [page, totalResults, items]
+      properties:
+        page:
+          type: integer
+        totalResults:
+          type: integer
+        source:
+          type: string
+          enum: [TMDB, CACHE]
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+
+    CatalogTitleDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/CatalogTitleSummary'
+        - type: object
+          properties:
+            overviewPt:
+              type: string
+            backdropUrl:
+              type: string
+              nullable: true
+            runtimeMinutes:
+              type: integer
+              nullable: true
+            numberOfSeasons:
+              type: integer
+              nullable: true
+            numberOfEpisodes:
+              type: integer
+              nullable: true
+            seasons:
+              type: array
+              items:
+                $ref: '#/components/schemas/SeasonDetailDto'
+            trailer:
+              type: object
+              nullable: true
+              description: "Trailer escolhido junto com o detalhe (no idioma do pedido). Ausente = ainda não conferido (use o dos extras); youtubeKey nulo = o título não tem trailer."
+              properties:
+                youtubeKey: { type: string, nullable: true }
+
+    TitleCreditDto:
+      type: object
+      required: [personId, name, director]
+      properties:
+        personId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        role:
+          type: string
+          nullable: true
+          description: Personagem (elenco) ou "Direção"
+        photoUrl:
+          type: string
+          nullable: true
+        director:
+          type: boolean
+
+    PersonResponse:
+      type: object
+      required: [id, name, acting, directing]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        photoUrl:
+          type: string
+          nullable: true
+        knownForDepartment:
+          type: string
+          nullable: true
+        acting:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+        directing:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+
+    ForYouResponse:
+      type: object
+      required: [source, genres, items]
+      properties:
+        source:
+          type: string
+          enum: [SIMILAR_USERS, TASTE, ONBOARDING_GENRES, NONE]
+        genres:
+          type: array
+          description: Nomes dos gêneros usados (para "Porque você curte Drama e Suspense")
+          items:
+            type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+
+    BecauseYouLikedResponse:
+      type: object
+      required: [items]
+      properties:
+        seed:
+          allOf:
+            - $ref: '#/components/schemas/CatalogTitleSummary'
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+
+    ShowcasePoster:
+      type: object
+      required: [tmdbId, title, posterUrl]
+      properties:
+        tmdbId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        posterUrl:
+          type: string
+
+    TitleExtrasResponse:
+      type: object
+      required: [originCountries, companies, crew, collection, similar]
+      properties:
+        releaseDate:
+          type: string
+          format: date
+          nullable: true
+          description: "Lançamento no Brasil quando houver; série: estreia"
+        originCountries:
+          type: array
+          items:
+            type: string
+          description: "Nomes em português (ex.: Estados Unidos)"
+        companies:
+          type: array
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id:
+                type: integer
+                format: int64
+              name:
+                type: string
+              logoUrl:
+                type: string
+                nullable: true
+        crew:
+          type: array
+          items:
+            type: object
+            required: [personId, name, job]
+            properties:
+              personId:
+                type: integer
+                format: int64
+              name:
+                type: string
+              job:
+                type: string
+                enum: [WRITER, CINEMATOGRAPHY, MUSIC, CREATOR]
+              photoUrl:
+                type: string
+                nullable: true
+        trailerYoutubeKey:
+          type: string
+          nullable: true
+        collectionName:
+          type: string
+          nullable: true
+        collection:
+          type: array
+          description: "Outros filmes da franquia, em ordem de lançamento"
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+        similar:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+
+    CompanyResponse:
+      type: object
+      required: [id, name, titles]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        originCountry:
+          type: string
+          nullable: true
+        titles:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+
+    SeasonResponse:
+      type: object
+      required: [number, name, episodes]
+      properties:
+        number:
+          type: integer
+        name:
+          type: string
+        episodes:
+          type: array
+          items:
+            type: object
+            required: [number]
+            properties:
+              number:
+                type: integer
+              name:
+                type: string
+                nullable: true
+              airDate:
+                type: string
+                format: date
+                nullable: true
+              runtimeMinutes:
+                type: integer
+                nullable: true
+              stillUrl:
+                type: string
+                nullable: true
+              overview:
+                type: string
+                nullable: true
+
+    SeasonDetailDto:
+      type: object
+      required: [seasonNumber, name, episodeCount, watchedEpisodeNumbers]
+      properties:
+        seasonNumber:
+          type: integer
+        name:
+          type: string
+        episodeCount:
+          type: integer
+        watchedEpisodeNumbers:
+          type: array
+          items:
+            type: integer
+
+    UserTitleStateDto:
+      type: object
+      properties:
+        watched:
+          type: boolean
+        rating:
+          type: number
+          minimum: 0.5
+          maximum: 5.0
+          multipleOf: 0.5
+          nullable: true
+        liked:
+          type: boolean
+        inWatchlist:
+          type: boolean
+        seriesStatus:
+          $ref: '#/components/schemas/SeriesStatus'
+
+    UpdateTitleStateRequest:
+      type: object
+      properties:
+        watched:
+          type: boolean
+        rating:
+          type: number
+          minimum: 0.5
+          maximum: 5.0
+          multipleOf: 0.5
+          nullable: true
+        liked:
+          type: boolean
+        inWatchlist:
+          type: boolean
+        seriesStatus:
+          $ref: '#/components/schemas/SeriesStatus'
+
+    CreateDiaryEntryRequest:
+      type: object
+      required: [titleId, watchedDate]
+      properties:
+        replyPolicy:
+          type: string
+          enum: [DEFAULT, ME, FOLLOWING, EVERYONE]
+          description: "DEFAULT (ou ausente) = o padrão da conta"
+        titleId:
+          type: integer
+          format: int64
+        watchedDate:
+          type: string
+          format: date
+        rating:
+          type: number
+          minimum: 0.5
+          maximum: 5.0
+          multipleOf: 0.5
+          nullable: true
+        liked:
+          type: boolean
+          default: false
+        isRewatch:
+          type: boolean
+          default: false
+        reviewText:
+          type: string
+          nullable: true
+        seasonNumber:
+          type: integer
+          nullable: true
+          description: "Só séries: registra a temporada (sozinho) ou o episódio (com episodeNumber)"
+        episodeNumber:
+          type: integer
+          nullable: true
+        containsSpoilers:
+          type: boolean
+          default: false
+          description: "A review conta o que acontece (o app esconde até a pessoa escolher ver)"
+
+    UpdateDiaryEntryRequest:
+      type: object
+      required: [watchedDate]
+      properties:
+        replyPolicy:
+          type: string
+          enum: [DEFAULT, ME, FOLLOWING, EVERYONE]
+          description: "DEFAULT (ou ausente) = o padrão da conta"
+        watchedDate:
+          type: string
+          format: date
+        rating:
+          type: number
+          nullable: true
+        liked:
+          type: boolean
+        isRewatch:
+          type: boolean
+        reviewText:
+          type: string
+          nullable: true
+        containsSpoilers:
+          type: boolean
+
+    DiaryEntryResponse:
+      type: object
+      required: [id, userId, title, watchedDate, liked, isRewatch, createdAt]
+      properties:
+        replyPolicy:
+          allOf: [{ $ref: '#/components/schemas/ReplyPolicy' }]
+          nullable: true
+          description: "Desta entrada; ausente = segue o padrão da conta"
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+          description: Autor da entrada (mesmo id do UserProfileResponse). Quem não é o autor vê a review com spoiler escondida.
+        title:
+          $ref: '#/components/schemas/CatalogTitleSummary'
+        watchedDate:
+          type: string
+          format: date
+        rating:
+          type: number
+          nullable: true
+        liked:
+          type: boolean
+        isRewatch:
+          type: boolean
+        reviewText:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        seasonNumber:
+          type: integer
+          nullable: true
+        episodeNumber:
+          type: integer
+          nullable: true
+        containsSpoilers:
+          type: boolean
+
+    SeriesEpisodeProgressRequest:
+      type: object
+      required: [seasonNumber, watched]
+      properties:
+        seasonNumber:
+          type: integer
+        episodeNumbers:
+          type: array
+          items:
+            type: integer
+        watched:
+          type: boolean
+        seriesStatus:
+          $ref: '#/components/schemas/SeriesStatus'
+
+    SeriesProgressResponse:
+      type: object
+      required: [titleId, totalEpisodes, watchedEpisodes, progressPercentage, seriesStatus]
+      properties:
+        titleId:
+          type: integer
+          format: int64
+        totalEpisodes:
+          type: integer
+        watchedEpisodes:
+          type: integer
+        progressPercentage:
+          type: number
+        seriesStatus:
+          $ref: '#/components/schemas/SeriesStatus'
+
+    ImportJobResponse:
+      type: object
+      required: [jobId, status, totalItemsRead, matchedItemsCount, unmatchedItemsCount]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PARSING, AWAITING_CONFIRMATION, APPLYING, COMPLETED, FAILED]
+        totalItemsRead:
+          type: integer
+        matchedItemsCount:
+          type: integer
+        unmatchedItemsCount:
+          type: integer
+        unmatchedTitlesSample:
+          type: array
+          items:
+            type: string
+        watchlistCount:
+          type: integer
+        reviewsCount:
+          type: integer
+        diaryEntriesCount:
+          type: integer
+        diaryEntriesCreated:
+          type: integer
+          nullable: true
+        diaryEntriesSkipped:
+          type: integer
+          nullable: true
+        errorMessage:
+          type: string
+          nullable: true
+        preview:
+          type: array
+          description: "Até 10 títulos encontrados (só em AWAITING_CONFIRMATION)"
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+        ratedCount:
+          type: integer
+        likedCount:
+          type: integer
+        favoritesInApp:
+          type: array
+          description: "Favoritos atuais no app (só em AWAITING_CONFIRMATION)"
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+        favoritesFromImport:
+          type: array
+          description: "Favoritos do perfil do Letterboxd, na ordem de lá (só em AWAITING_CONFIRMATION)"
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+
+    ConfirmImportRequest:
+      type: object
+      properties:
+        favoritesMode:
+          type: string
+          enum: [KEEP, REPLACE, MERGE]
+          description: "Sem valor = REPLACE. Só importa quando os dois lados têm favoritos (máximo de 4)"
+
+    UserStatsResponse:
+      type: object
+      required: [totalMoviesWatched, totalSeriesWatched, averageRating, topGenres, moviesPerMonth]
+      properties:
+        totalMoviesWatched:
+          type: integer
+        totalSeriesWatched:
+          type: integer
+        averageRating:
+          type: number
+        topGenres:
+          type: array
+          items:
+            type: object
+            required: [genreName, count]
+            properties:
+              genreName:
+                type: string
+              count:
+                type: integer
+        moviesPerMonth:
+          type: array
+          items:
+            type: object
+            required: [yearMonth, count]
+            properties:
+              yearMonth:
+                type: string
+                example: "2026-11"
+              count:
+                type: integer
+
+    TasteMatchSummaryResponse:
+      type: object
+      required: [id, inviteCode, inviteUrl, status, statusLabel, creator]
+      properties:
+        id:
+          type: string
+          format: uuid
+        inviteCode:
+          type: string
+        inviteUrl:
+          type: string
+        status:
+          $ref: '#/components/schemas/MatchStatus'
+        statusLabel:
+          type: string
+          example: "Aguardando seu amigo"
+        creator:
+          $ref: '#/components/schemas/UserProfileResponse'
+        partner:
+          $ref: '#/components/schemas/UserProfileResponse'
+        compatibilityScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        discoveryMode:
+          type: boolean
+        sharedWatchlistCount:
+          type: integer
+
+    MatchStoryResponse:
+      type: object
+      required: [matchId, status, statusLabel, discoveryMode, engineUsed, creator, scoreBreakdown, commonGenres, bothLoved, disagreements, discoveryPicks, jointRecommendations]
+      properties:
+        matchId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/MatchStatus'
+        statusLabel:
+          type: string
+          example: "Match ativo"
+        compatibilityScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        discoveryMode:
+          type: boolean
+          description: True quando a dupla possui < 3 títulos avaliados em comum
+        engineUsed:
+          type: string
+          enum: [NEO4J_GDS, SQL_FALLBACK]
+        creator:
+          $ref: '#/components/schemas/UserProfileResponse'
+        partner:
+          $ref: '#/components/schemas/UserProfileResponse'
+        scoreBreakdown:
+          type: object
+          required: [ratingsScore, ratingsWeight, genresScore, genresWeight, favoritesScore, favoritesWeight, commonRatedCount, explanationText]
+          properties:
+            ratingsScore:
+              type: number
+            ratingsWeight:
+              type: number
+              example: 0.50
+            genresScore:
+              type: number
+            genresWeight:
+              type: number
+              example: 0.30
+            favoritesScore:
+              type: number
+            favoritesWeight:
+              type: number
+              example: 0.20
+            commonRatedCount:
+              type: integer
+            explanationText:
+              type: string
+        commonGenres:
+          type: array
+          items:
+            type: string
+        bothLoved:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+        disagreements:
+          type: array
+          items:
+            type: object
+            required: [title, creatorRating, partnerRating]
+            properties:
+              title:
+                $ref: '#/components/schemas/CatalogTitleSummary'
+              creatorRating:
+                type: number
+              partnerRating:
+                type: number
+        discoveryPicks:
+          type: array
+          description: "O que um ama e o outro ainda não viu"
+          items:
+            type: object
+            required: [recommendedByUserId, recommendedByName, title]
+            properties:
+              recommendedByUserId:
+                type: string
+                format: uuid
+              recommendedByName:
+                type: string
+              title:
+                $ref: '#/components/schemas/CatalogTitleSummary'
+        jointRecommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogTitleSummary'
+
+    SharedWatchlistItemResponse:
+      type: object
+      required: [title, addedByUserId, addedByName, addedByBoth, addedAt]
+      properties:
+        title:
+          $ref: '#/components/schemas/CatalogTitleSummary'
+        addedByUserId:
+          type: string
+          format: uuid
+        addedByName:
+          type: string
+        addedByBoth:
+          type: boolean
+          description: "Sugestão do Story \"para verem juntos\": o app mostra o rosto dos dois"
+        addedAt:
+          type: string
+          format: date-time
