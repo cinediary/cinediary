@@ -1,0 +1,180 @@
+import { ArrowCounterClockwise, ChatCircle, EyeSlash, Heart } from 'phosphor-react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, ScrollView, StyleSheet, TextInput, View, type ScrollViewInstance } from 'react-native';
+
+import { useMe } from '@/features/auth/application/profileQueries';
+import { strings, toIsoDate } from '@/shared/i18n';
+import { palette, radius, semantic, space, type as typeScale } from '@/shared/theme';
+import { ActionSheet, Button, IconButton, ListRow, PosterArt, StarRating, Text, useBottomSheet, useToast } from '@/shared/ui';
+import { useUpdateEntry } from '../../application/diaryQueries';
+import { REPLY_POLICIES, type DiaryEntry, type EntryChanges, type EntryReplyChoice } from '../../domain/diary';
+import { WatchedDateField } from './WatchedDateField';
+import { scopeLabel } from '../scopeLabel';
+
+/**
+ * Editar uma entrada: data, nota, curtida, rever, review e "Contém spoiler". Mesma estrutura do
+ * registro rápido: o conteúdo rola e "Salvar alterações" fica fixo embaixo, logo acima do teclado.
+ */
+export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
+  const t = strings.diary;
+  const toast = useToast();
+  const sheet = useBottomSheet();
+  const update = useUpdateEntry(entry.id);
+  const [draft, setDraft] = useState<EntryChanges>(() => ({
+    // Entrada sem data (onboarding): editar já dá a primeira data, hoje.
+    watchedDate: entry.watchedDate ?? toIsoDate(new Date()),
+    rating: entry.rating,
+    liked: entry.liked,
+    isRewatch: entry.isRewatch,
+    reviewText: entry.reviewText ?? '',
+    containsSpoilers: entry.containsSpoilers,
+    replyPolicy: entry.replyPolicy ?? 'DEFAULT',
+  }));
+  const me = useMe();
+  const [pickingReplies, setPickingReplies] = useState(false);
+  const ac = strings.account;
+  const accountDefault = me.data?.defaultReplyPolicy ?? 'EVERYONE';
+  const replyLabel = (choice: EntryReplyChoice) =>
+    choice === 'DEFAULT' ? ac.replyDefault(ac.replyPolicies[accountDefault]) : ac.replyPolicies[choice];
+  const set = (patch: Partial<EntryChanges>) => setDraft((d) => ({ ...d, ...patch }));
+  const hasReview = !!draft.reviewText?.trim();
+
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const writing = useRef(false);
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidShow', () => {
+      if (writing.current) scrollRef.current?.scrollToEnd({ animated: true });
+    });
+    return () => sub.remove();
+  }, []);
+
+  const onSave = async () => {
+    try {
+      const review = draft.reviewText?.trim() || null;
+      await update.mutateAsync({ ...draft, reviewText: review, containsSpoilers: !!review && draft.containsSpoilers });
+      sheet?.close();
+      toast(t.entrySaved);
+    } catch {
+      toast(t.saveError, { actionLabel: strings.common.retry, onAction: () => void onSave() });
+    }
+  };
+
+  return (
+    <>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scroll}
+        contentContainerStyle={styles.root}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={() => {
+          if (writing.current) scrollRef.current?.scrollToEnd({ animated: false });
+        }}
+      >
+        <View style={styles.header}>
+          <PosterArt title={entry.title.title} posterUrl={entry.title.posterUrl} width={56} />
+          <View style={styles.flex}>
+            <Text variant="overline" tone="secondary">
+              {t.entryEditTitle}
+            </Text>
+            <Text variant="h3" numberOfLines={2}>
+              {entry.title.title}
+            </Text>
+            {entry.scope ? (
+              <Text variant="caption" tone="secondary">
+                {scopeLabel(entry.scope)}
+              </Text>
+            ) : null}
+          </View>
+          <IconButton
+            label={t.like}
+            accessibilityLabel={t.like}
+            active={draft.liked}
+            variant="filled"
+            icon={<Heart size={22} weight={draft.liked ? 'fill' : 'regular'} color={draft.liked ? semantic.liked : palette.ink700} />}
+            onPress={() => set({ liked: !draft.liked })}
+          />
+        </View>
+
+        <View style={styles.center}>
+          <StarRating value={draft.rating ?? 0} onChange={(rating) => set({ rating: rating > 0 ? rating : null })} />
+        </View>
+
+        <WatchedDateField value={draft.watchedDate} onChange={(watchedDate) => set({ watchedDate })} />
+        <ListRow
+          icon={<ArrowCounterClockwise size={20} color={palette.ink700} />}
+          label={t.rewatch}
+          switchValue={draft.isRewatch}
+          onSwitchChange={(isRewatch) => set({ isRewatch })}
+        />
+        <TextInput
+          style={styles.review}
+          value={draft.reviewText ?? ''}
+          onChangeText={(reviewText) => set({ reviewText })}
+          placeholder={t.reviewPlaceholder}
+          placeholderTextColor={palette.ink500}
+          accessibilityLabel={t.writeReview}
+          maxLength={10_000}
+          onFocus={() => {
+            writing.current = true;
+          }}
+          onBlur={() => {
+            writing.current = false;
+          }}
+          multiline
+        />
+        {hasReview ? (
+          <ListRow
+            icon={<EyeSlash size={20} color={palette.ink700} />}
+            label={t.spoilerToggle}
+            hint={t.spoilerToggleHint}
+            switchValue={draft.containsSpoilers}
+            onSwitchChange={(containsSpoilers) => set({ containsSpoilers })}
+          />
+        ) : null}
+        <ListRow
+          icon={<ChatCircle size={20} color={palette.ink700} />}
+          label={ac.replyPolicy}
+          hint={replyLabel(draft.replyPolicy)}
+          onPress={() => setPickingReplies(true)}
+        />
+      </ScrollView>
+      <ActionSheet
+        visible={pickingReplies}
+        title={ac.replyPolicy}
+        onClose={() => setPickingReplies(false)}
+        options={(['DEFAULT', ...REPLY_POLICIES] as EntryReplyChoice[]).map((choice) => ({
+          key: choice,
+          label: replyLabel(choice),
+          hint: choice === 'DEFAULT' ? ac.replyDefaultHint : ac.replyPolicyHints[choice],
+          selected: draft.replyPolicy === choice,
+          onPress: () => set({ replyPolicy: choice }),
+        }))}
+      />
+      <View style={styles.footer}>
+        <Button label={t.entrySave} loading={update.isPending} onPress={onSave} />
+      </View>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  scroll: { flexGrow: 0, flexShrink: 1 },
+  root: { gap: space.lg, paddingHorizontal: space.xl, paddingTop: space.sm, paddingBottom: space.lg },
+  footer: { paddingHorizontal: space.xl, paddingTop: space.sm },
+  header: { flexDirection: 'row', gap: space.md, alignItems: 'center' },
+  flex: { flex: 1, gap: 2 },
+  center: { alignItems: 'center' },
+  review: {
+    ...typeScale.body,
+    minHeight: 120,
+    padding: space.md,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: palette.borderStrong,
+    backgroundColor: palette.surface,
+    color: palette.ink900,
+    textAlignVertical: 'top',
+  },
+});
