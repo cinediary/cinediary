@@ -429,12 +429,12 @@ key do Clerk ou o token do TMDB, que ficam no backend).
 | --- | --- | --- |
 | `EXPO_PUBLIC_API_URL` | Não (padrão `http://localhost:8080`) | Deixe `http://localhost:8080` |
 | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | ✅ | Clerk → API keys → Publishable key |
-| `EXPO_PUBLIC_POSTHOG_API_KEY` | Não (sem ela: analytics e flags desligados) | PostHog → Project settings → Project API key |
+| `EXPO_PUBLIC_POSTHOG_API_KEY` | Não (sem ela: analytics e flags desligados) | PostHog → Settings → Project token & ID → Project token |
 | `EXPO_PUBLIC_POSTHOG_HOST` | Junto com a chave | PostHog → a região do projeto (US ou EU) |
 
 > [!TIP]
-> Se o time já tem o Clerk e o PostHog configurados, peça os valores para quem configurou. São os mesmos
-> para todo mundo em desenvolvimento.
+> O Clerk e o PostHog já estão configurados e são os mesmos para todo mundo em desenvolvimento: você só copia
+> as chaves dos painéis (peça o convite para entrar neles).
 
 ### 1. `EXPO_PUBLIC_API_URL`: deixe `localhost`
 
@@ -452,8 +452,11 @@ app. Funciona em qualquer rede, sem editar nada. No emulador Android, ele usa `1
 
 ### 2. `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
 
-1. Entre em [dashboard.clerk.com](https://dashboard.clerk.com) e abra a aplicação do CineDiary. É a **mesma**
-   usada no `CLERK_ISSUER` do backend.
+O Clerk **já está configurado** e o time todo usa o mesmo painel: você só copia a chave. Para entrar no painel,
+peça a quem administra para te convidar na aplicação **CineDiary**.
+
+1. Entre em [dashboard.clerk.com](https://dashboard.clerk.com) e abra a aplicação **CineDiary**, a mesma do
+   `CLERK_ISSUER` do backend.
 2. Vá em **Configure → API keys**.
 3. Copie a **Publishable key**: começa com `pk_test_` em desenvolvimento ou `pk_live_` em produção.
 4. Cole no `.env.local`:
@@ -461,12 +464,25 @@ app. Funciona em qualquer rede, sem editar nada. No emulador Android, ele usa `1
    EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
    ```
 
-<!-- 📸 Print: Clerk → API keys → Publishable key -->
+<details open>
+<summary>Prints: <code>EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY</code></summary>
+
+   **1.** Abra a aba Configure  
+   <img src="../docs/images/setup/front/clerk_api_keys/passo%201.png" width="520" alt="Abra a aba Configure">
+
+   **2.** No menu, API keys  
+   <img src="../docs/images/setup/front/clerk_api_keys/passo%202.png" width="640" alt="No menu, API keys">
+
+   **3.** Escolha Expo e copie a Publishable key (pk_test_…)  
+   <img src="../docs/images/setup/front/clerk_api_keys/passo%203.png" width="640" alt="Escolha Expo e copie a Publishable key (pk_test_…)">
+
+</details>
 
 - **Sem essa chave**, o app abre uma tela avisando que falta configuração.
 - **Não confunda com a Secret key** (`sk_…`): ela é secreta e **não** vai no app.
-- **Configurações do login:** a aplicação do Clerk precisa de e-mail com código, username e senha ligados.
-  O passo a passo está no [README do backend](../cinediary-backend/README.md#1-clerk-clerk_issuer).
+- **Configurações do login** (e-mail com código, username, senha, campos do token, webhook): já estão feitas
+  no painel. Se um dia precisarem de uma aplicação nova, o passo a passo está no
+  [README do backend](../cinediary-backend/README.md#1-clerk-clerk_issuer-e-clerk_webhook_secret).
 
 ### 3. `EXPO_PUBLIC_POSTHOG_API_KEY` e `EXPO_PUBLIC_POSTHOG_HOST`
 
@@ -476,9 +492,9 @@ usam o valor padrão de `featureFlags.ts`.
 
 1. Entre em [posthog.com](https://posthog.com) e abra o projeto do CineDiary. Para criar um, faça a conta e
    escolha a região **US** ou **EU**.
-2. Vá em **Settings → Project** (ou o ícone de engrenagem → *Project settings*).
-3. Em **Project API key**, copie a chave: começa com `phc_`. Ela é pública por natureza e pode ir no app.
-4. O **host** depende da região do projeto:
+2. Clique na **engrenagem** (*Settings*, canto de baixo, à esquerda) e busque **"project token"** → **Project token & ID**.
+3. Copie o **Project token**: começa com `phc_`. Ele é público por natureza (o painel diz *"Safe to use in public apps"*) e pode ir no app.
+4. O **host** depende da **Region** que aparece na mesma página (o nosso é *US Cloud*):
    - US: `https://us.i.posthog.com`
    - EU: `https://eu.i.posthog.com`
 5. Cole no `.env.local`:
@@ -487,7 +503,13 @@ usam o valor padrão de `featureFlags.ts`.
    EXPO_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
    ```
 
-<!-- 📸 Print: PostHog → Project settings → Project API key -->
+<details open>
+<summary>Print: <code>EXPO_PUBLIC_POSTHOG_API_KEY</code></summary>
+
+   **1.** Settings (engrenagem) → busque "project token" → Project token & ID → copie o Project token  
+   <img src="../docs/images/setup/front/posthog_project_key/Screenshot%202026-11-16%20at%2018.47.19.png" width="640" alt="Settings (engrenagem) → busque "project token" → Project token & ID → copie o Project token">
+
+</details>
 
 As flags que existem hoje e como criar e testar uma estão em
 [Analytics e feature flags](#analytics-e-feature-flags-posthog).

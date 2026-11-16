@@ -332,7 +332,7 @@ Uma assinatura da Apple serve para o time todo, porque o EAS guarda os certifica
 | O app não carrega dados | Veja se a API responde: abra `http://localhost:8080/actuator/health` no navegador do computador. O celular e o computador precisam estar na mesma rede. |
 | O app pede login no Expo | Rode `eas login` com uma conta que seja membro da organização `cinediary`. |
 | Algo "preso" na tela logo depois de mudar o código | O Fast Refresh às vezes guarda estado antigo. Sacuda o celular e toque em **Reload**. |
-| Usuário novo não aparece com nome e foto | O webhook do Clerk não chegou: confira se o Svix está ligado (`.dev-logs/svix.log`). O usuário é criado mesmo assim no primeiro login. |
+| Conta nova aparece com um @ diferente do cadastrado (ex.: `cinefilo_1234`) ou sem nome e foto | O webhook do Clerk não chegou na sua API: o Svix não estava rodando ou os eventos foram para outra pessoa que rodava o `make back` ao mesmo tempo. A conta é criada mesmo assim no primeiro login, só que com um @ provisório. **Para resolver:** no app, vá em **Perfil → Editar perfil** e salve o @ certo. Confira também se o Svix está ligado (terminal do `make back` ou `.dev-logs/svix.log`). Só acontece em desenvolvimento: em produção o webhook vai direto para a API. |
 | Porta 8080 ocupada | Outra API já está rodando. O `make dev` usa essa; para trocar pela do Docker, feche a outra. |
 
 Os registros do script ficam em `.dev-logs/` (`compose.log`, `svix.log`, `npm-install.log`…).

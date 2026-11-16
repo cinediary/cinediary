@@ -332,9 +332,9 @@ e pelo `make dev` da raiz, que confere as obrigatórias antes de subir.
 
 | Variável | Obrigatória? | De onde vem |
 | --- | --- | --- |
-| `CLERK_ISSUER` | ✅ | Clerk → API keys → Frontend API URL |
-| `CLERK_WEBHOOK_SECRET` | ✅ (a API não sobe sem) | Clerk → Webhooks → seu endpoint → Signing Secret |
-| `TMDB_API_TOKEN` | ✅ | TMDB → Configurações → API → API Read Access Token |
+| `CLERK_ISSUER` | ✅ | Painel do Clerk (já configurado) → API keys → Frontend API URL |
+| `CLERK_WEBHOOK_SECRET` | ✅ (a API não sobe sem) | Painel do Clerk (já configurado) → Developers → Webhooks → o endpoint do Svix Play → Signing Secret (no fim da página) |
+| `TMDB_API_TOKEN` | ✅ | TMDB → avatar → API → Token de Leitura da API |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Não (já vêm prontas) | Banco local do `docker-compose.yml` |
 | `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` | Não (padrões do compose) | Neo4j local |
 | `CLERK_AUTHORIZED_PARTIES` | Não | Origens aceitas no claim `azp` (vazio = não confere) |
@@ -342,34 +342,88 @@ e pelo `make dev` da raiz, que confere as obrigatórias antes de subir.
 | `INVITE_BASE_URL` | Não | Link do convite do Match (padrão `cinediary://match/invite/`) |
 | `PORT` | Não | Porta da API (padrão 8080) |
 
-> [!TIP]
-> O time pode usar **a mesma instância de desenvolvimento** do Clerk e do TMDB: peça os valores para quem já
-> configurou, em vez de criar tudo de novo. O passo a passo abaixo é para quem vai criar do zero.
+> [!NOTE]
+> **O Clerk já está configurado** (login, campos do token e webhook) e o time todo usa **o mesmo painel**.
+> Você não configura nada lá: só copia dois valores para o seu `.env`. Para entrar no painel, peça a quem
+> administra para te convidar na aplicação **CineDiary** do Clerk.
 
-### 1. Clerk: `CLERK_ISSUER`
+### 1. Clerk: `CLERK_ISSUER` e `CLERK_WEBHOOK_SECRET`
 
-O Clerk cuida das contas e do login. A API usa o **issuer** para baixar a chave pública e conferir os tokens
-que o app manda.
+O Clerk cuida das contas e do login. A API usa:
+- **`CLERK_ISSUER`:** para conferir os tokens que o app manda;
+- **`CLERK_WEBHOOK_SECRET`:** para conferir a assinatura do webhook que avisa quando alguém cria a conta, muda
+  nome ou foto, ou exclui a conta.
 
-1. Entre em [dashboard.clerk.com](https://dashboard.clerk.com) e abra a aplicação do CineDiary. Para criar uma:
-   **Create application** → nome "CineDiary" → crie.
-2. No menu, vá em **Configure → API keys**.
-3. Procure a **Frontend API URL**. Ela tem o formato `https://<algo>.clerk.accounts.dev`; se não aparecer, abra
-   **Show API URLs**.
-4. Copie e cole no `.env`:
+1. Entre em [dashboard.clerk.com](https://dashboard.clerk.com) e abra a aplicação **CineDiary**.
+2. **`CLERK_ISSUER`:** vá em **Configure → API keys**.
+   - Copie a **Frontend API URL**, no formato `https://<algo>.clerk.accounts.dev`. Se ela não aparecer, abra
+     **Show API URLs**.
+
+<details open>
+<summary>Prints: <code>CLERK_ISSUER</code></summary>
+
+   **1.** Abra a aba Configure  
+   <img src="../docs/images/setup/back/clerk_backend_issuer/passo%201.png" width="520" alt="Abra a aba Configure">
+
+   **2.** No menu, API keys  
+   <img src="../docs/images/setup/back/clerk_backend_issuer/passo%202.png" width="640" alt="No menu, API keys">
+
+   **3.** Copie a Frontend API URL  
+   <img src="../docs/images/setup/back/clerk_backend_issuer/passo%203.png" width="640" alt="Copie a Frontend API URL">
+
+</details>
+
+3. **`CLERK_WEBHOOK_SECRET`:** vá em **Configure → Developers → Webhooks** e abra o endpoint que **já
+   existe**, o do Svix Play (`https://play.svix.com/in/…`).
+   - Role a página até o fim, em **Signing Secret**, clique para mostrar e copie. Começa com `whsec_`.
+   - **Não crie um endpoint novo:** todo mundo usa esse, e o `make dev` / `make back` já liga o `svix listen` que
+     traz os eventos para a sua API local.
+
+<details open>
+<summary>Prints: <code>CLERK_WEBHOOK_SECRET</code></summary>
+
+   **1.** Abra a aba Configure  
+   <img src="../docs/images/setup/back/clerk_webhook_secrets/passo%201.png" width="520" alt="Abra a aba Configure">
+
+   **2.** No menu, Developers → Webhooks  
+   <img src="../docs/images/setup/back/clerk_webhook_secrets/passo%202.png" width="640" alt="No menu, Developers → Webhooks">
+
+   **3.** Abra o endpoint que já existe (o do Svix Play)  
+   <img src="../docs/images/setup/back/clerk_webhook_secrets/passo%203.png" width="640" alt="Abra o endpoint que já existe (o do Svix Play)">
+
+   **4.** No fim da página, Signing Secret: clique no olho e copie  
+   <img src="../docs/images/setup/back/clerk_webhook_secrets/passo%204.png" width="640" alt="No fim da página, Signing Secret: clique no olho e copie">
+
+</details>
+
+4. Cole os dois no `.env`:
    ```env
    CLERK_ISSUER=https://<algo>.clerk.accounts.dev
+   CLERK_WEBHOOK_SECRET=whsec_...
    ```
+5. **Teste:** com o `make back` rodando, crie uma conta no app. A mensagem do webhook aparece no terminal do
+   `make back` (ou em `.dev-logs/svix.log`, se usar o `make dev`).
 
-<!-- 📸 Print: Clerk → API keys → Frontend API URL -->
+> [!NOTE]
+> A API **não sobe** sem o `CLERK_WEBHOOK_SECRET`, de propósito, para nunca aceitar webhook sem assinatura.
+> Se o webhook não chegar (o Svix desligado, por exemplo), nada quebra: a API cria a conta no primeiro login,
+> mas com um @ provisório (ex.: `cinefilo_1234`) e sem nome e foto. **Para resolver em desenvolvimento:** no app,
+> **Perfil → Editar perfil** e salve o @ certo. Em produção isso não acontece, porque o webhook vai direto para
+> a API.
 
-**Configurações da aplicação no Clerk** (uma vez, para o login do app funcionar como esperado):
+> [!TIP]
+> Se duas pessoas rodarem o `make back` ao mesmo tempo, os eventos do webhook podem chegar só na API de uma
+> delas. Não é um problema: a conta é criada no primeiro login de qualquer jeito.
 
-1. **Configure → User & authentication:**
+<details>
+<summary><strong>Configurar um Clerk do zero</strong> (só se um dia precisarem de uma aplicação nova, por exemplo a de produção)</summary>
+
+1. **Criar a aplicação:** [dashboard.clerk.com](https://dashboard.clerk.com) → **Create application** → nome "CineDiary".
+2. **Configure → User & authentication:**
    - **Email address:** ligado, obrigatório, verificado por **código** por e-mail;
    - **Username:** ligado e obrigatório (o cadastro do app pede um @);
    - **Password:** ligado.
-2. **Configure → Sessions → Customize session token.** Adicione os campos que a API lê do token:
+3. **Configure → Sessions → Customize session token.** Adicione os campos que a API lê do token:
    ```json
    {
      "username": "{{user.username}}",
@@ -377,63 +431,48 @@ que o app manda.
      "image_url": "{{user.image_url}}"
    }
    ```
-   Sem isso, quem entra antes do webhook chegar fica com um @ provisório (`cinefilo_…`) até o webhook chegar.
-3. **Configure → Native applications:** se o painel pedir, ligue a **Native API**. O app usa o SDK do Clerk
-   para Expo.
+   Sem isso, quem entra antes do webhook chegar fica com um @ provisório (`cinefilo_…`) até ele chegar.
+4. **Configure → Native applications:** se o painel pedir, ligue a **Native API** (o app usa o SDK do Clerk
+   para Expo).
+5. **Webhook:**
+   - **Em desenvolvimento:** use um endereço do Svix Play. Abra [play.svix.com](https://play.svix.com), que
+     gera um na hora, e troque o `SVIX_PLAY_ID` em `scripts/dev.mjs` pelo código dele. O endpoint no Clerk é
+     `https://play.svix.com/in/<SVIX_PLAY_ID>/`.
+   - **Em produção:** o endpoint é a URL pública da API (`https://…/api/v1/webhooks/clerk`).
+   - Em **Configure → Webhooks → Add Endpoint**, cole a URL, marque `user.created`, `user.updated` e
+     `user.deleted`, crie e copie o **Signing Secret**.
+6. Pegue a **Frontend API URL** e o **Signing Secret** como no passo a passo acima. A **Publishable key** vai no
+   app (veja o [README do app](../cinediary-mobile/README.md#2-expo_public_clerk_publishable_key)).
 
-<!-- 📸 Print: Clerk → Sessions → Customize session token -->
+Os nomes dos menus do Clerk mudam de vez em quando. Se não achar, procure pelo nome da opção na busca do painel.
 
-> Os nomes dos menus do Clerk mudam de vez em quando. Se não achar, procure pelo nome da opção na busca do
-> painel.
-
-### 2. Clerk: `CLERK_WEBHOOK_SECRET` (e o Svix Play)
-
-O webhook avisa a API quando alguém cria a conta, muda nome ou foto, ou exclui a conta. Em desenvolvimento, o
-Clerk não alcança o seu computador, então ele manda para o **Svix Play**, e o `svix listen` (que o `make dev`
-liga) repassa para `http://localhost:8080/api/v1/webhooks/clerk`.
-
-1. **Endereço do Svix Play.** O projeto já usa um, fixo em `scripts/dev.mjs` (`SVIX_PLAY_ID`). O endereço que o
-   Clerk precisa é:
-   ```text
-   https://play.svix.com/in/<SVIX_PLAY_ID>/
-   ```
-   Para criar um novo, abra [play.svix.com](https://play.svix.com): ele gera um endereço na hora. Troque o
-   `SVIX_PLAY_ID` no `scripts/dev.mjs` pelo código do endereço.
-2. **No Clerk:** vá em **Configure → Webhooks → Add Endpoint**:
-   - **Endpoint URL:** o endereço do Svix Play acima;
-   - **Events:** marque `user.created`, `user.updated` e `user.deleted`;
-   - clique em **Create**.
-3. **Copie o segredo:** abra o endpoint criado e procure **Signing Secret**. Clique para mostrar e copie: começa
-   com `whsec_`.
-4. Cole no `.env`:
-   ```env
-   CLERK_WEBHOOK_SECRET=whsec_...
-   ```
-5. **Teste:** com o `make dev` ou o `make back` rodando, crie uma conta no app. As mensagens aparecem no
-   terminal do `make back` ou em `.dev-logs/svix.log`, e também em `https://play.svix.com/view/<SVIX_PLAY_ID>/`.
-
-<!-- 📸 Print: Clerk → Webhooks → endpoint → Signing Secret -->
-
-> A API **não sobe** sem o `CLERK_WEBHOOK_SECRET`, de propósito, para nunca aceitar webhook sem assinatura. Se
-> o webhook não chegar (o Svix desligado, por exemplo), nada quebra: a API cria o usuário no primeiro login, a
-> partir do token.
+</details>
 
 ### 3. TMDB: `TMDB_API_TOKEN`
 
 Todo o catálogo (busca, pôsteres, elenco, trailer, nota) vem do TMDB.
 
 1. Crie uma conta em [themoviedb.org](https://www.themoviedb.org/signup) e confirme o e-mail.
-2. Clique no seu avatar → **Configurações** (*Settings*) → **API** no menu lateral.
+2. Clique no seu avatar (canto de cima, à direita) → **API**.
 3. Se for a primeira vez, peça a chave: tipo **Developer**, aceite os termos e preencha o formulário. Para uso
    pessoal ou de estudo, a aprovação é na hora.
-4. Na mesma página, copie o **API Read Access Token**. É o token **longo**, que começa com `eyJ…`. Não use a
-   "API Key" curta.
+4. Na mesma página, copie o **Token de Leitura da API** (*API Read Access Token*). É o token **longo**, que
+   começa com `eyJ…`. Não use a "Chave da API" curta.
 5. Cole no `.env`, sem espaço depois do `=`:
    ```env
    TMDB_API_TOKEN=eyJhbGciOi...
    ```
 
-<!-- 📸 Print: TMDB → Configurações → API → API Read Access Token -->
+<details open>
+<summary>Prints: <code>TMDB_API_TOKEN</code></summary>
+
+   **1.** Avatar (canto de cima, à direita) → API  
+   <img src="../docs/images/setup/back/tmdb_api/passo%201.png" width="640" alt="Avatar (canto de cima, à direita) → API">
+
+   **2.** Copie o Token de Leitura da API  
+   <img src="../docs/images/setup/back/tmdb_api/passo%202.png" width="640" alt="Copie o Token de Leitura da API">
+
+</details>
 
 ### 4. Banco e Neo4j (já vêm prontos)
 
