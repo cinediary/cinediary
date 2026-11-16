@@ -1,0 +1,52 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# Dependências
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Pastas nativas geradas (Continuous Native Generation: configure pelo app.json, nunca à mão)
+/ios
+/android
+
+# Certificados, chaves e credenciais de build (EAS, Apple, Google): nunca no git
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+credentials.json
+google-services-key.json
+*-service-account*.json
+
+# Arquivos gerados por builds locais
+*.apk
+*.aab
+*.ipa
+
+# Metro
+.metro-health-check*
+
+# Logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# Segredos (o .env.example vai para o git)
+.env
+.env.*
+!.env.example
+
+# TypeScript
+*.tsbuildinfo
+
+# macOS
+.DS_Store
