@@ -5,7 +5,9 @@ dele vai na descrição. Os caminhos de arquivo são relativos à raiz do reposi
 
 **Legenda:**
 - **Área:** `backend`, `app`, `infra`, `design`, `produto` (um card pode ter mais de uma).
-- **Tamanho:** **P** (até 1 dia), **M** (alguns dias), **G** (1 a 2 semanas), **GG** (épico: quebrar em cards antes de começar).
+- **Tamanho** (o campo *Size* do Project): **XS** (minutos a poucas horas), **S** (até 1 dia), **M** (alguns dias),
+  **L** (1 a 2 semanas), **XL** (épico: quebrar em cards antes de começar).
+- **Prioridade** (o campo *Priority* do Project): **P0** (urgente), **P1** (importante), **P2** (quando der).
 - **Depende de:** o card que precisa vir antes.
 
 Colunas sugeridas no Project: *Backlog → Próximos → Fazendo → Revisão → Pronto*. Campo extra sugerido: **Bloco**
@@ -96,7 +98,7 @@ jobs:
 ---
 
 ### 2. Repositório no GitHub e proteção da `main`
-`infra` · **P** · Depende de: nada · Bloqueia: 1
+`infra` · **S** · Depende de: nada · Bloqueia: 1
 
 **Contexto.** O repositório ainda não tem commits nem remoto. Os `.gitignore` (raiz, `cinediary-backend/`,
 `cinediary-mobile/`) já deixam de fora `.env`, `.env.local`, `node_modules`, builds, `.DS_Store` e chaves de build.
@@ -118,7 +120,7 @@ jobs:
 ---
 
 ### 3. Testes do backend em qualquer Docker (Docker Desktop, OrbStack, Colima)
-`infra` · `backend` · **P**
+`infra` · `backend` · **S**
 
 **Contexto.** Os testes sobem PostgreSQL e Neo4j pelo Testcontainers, que procura o Docker em
 `/var/run/docker.sock`. Com o **OrbStack** (ou Colima) esse arquivo pode não existir, e todos os testes falham com
@@ -153,7 +155,7 @@ test: ## Testes (precisa do Docker aberto)
 ## Bloco 2: Pendências pequenas do que já existe
 
 ### 4. "Já viu o Story" salvo na conta
-`backend` · `app` · **P**
+`backend` · `app` · **S**
 
 **Contexto.** No Taste Match, quem convidou vê a animação "Calculando…" só na **primeira** vez que abre o Story do
 Match. Hoje essa marca fica no aparelho (SecureStore), então trocar de celular ou reinstalar mostra a animação de novo.
@@ -236,7 +238,7 @@ String link = text(country, "link");
 ---
 
 ### 6. Ícone do iOS no Icon Composer
-`design` · `app` · **P**
+`design` · `app` · **XS**
 
 > **Andamento:** o `app.icon` já foi feito e ligado no `app.json`. Falta só conferir num build (card 9).
 
@@ -259,7 +261,7 @@ String link = text(country, "link");
 ---
 
 ### 7. Aviso de "sem internet" durante o uso
-`app` · **P**
+`app` · **S**
 
 **Contexto.** Na **abertura**, sem internet, já existe a tela de conexão (`useConnectionGate`). **Durante o uso**, cada
 tela mostra o próprio erro. A ideia: uma faixa discreta no topo ("Sem internet"), que some sozinha quando a conexão
@@ -296,7 +298,7 @@ onlineManager.setEventListener((setOnline) => {
 ## Bloco 3: Development build (precisa da conta da Apple)
 
 ### 8. Assinatura do Apple Developer Program
-`produto` · **P** · Bloqueia: 9, 10, 11, 24, 26
+`produto` · **S** · Bloqueia: 9, 10, 11, 24, 26
 
 **Contexto.** Sem ela não dá para instalar o app no iPhone (development build), usar TestFlight nem publicar. Uma
 conta serve para o time: o EAS guarda os certificados na organização `cinediary` do expo.dev.
@@ -314,7 +316,7 @@ conta serve para o time: o EAS guarda os certificados na organização `cinediar
 ---
 
 ### 9. Primeiro development build (EAS)
-`app` · `infra` · **P** · Depende de: 8
+`app` · `infra` · **S** · Depende de: 8
 
 **Contexto.** O development build é um "Expo Go do CineDiary", com todas as libs nativas. Ele é necessário para o
 Instagram (card 10) e as notificações (card 11). Já está configurado:
@@ -365,7 +367,7 @@ passo a passo completo está em `docs/guides/instagram-stories.md`. Tudo passa p
 ---
 
 ### 11. Notificações push
-`backend` · `app` · **G** · Depende de: 9
+`backend` · `app` · **L** · Depende de: 9
 
 **Contexto.** O sino (`/me/notifications`) já existe e grava avisos na hora em que acontecem
 (`.../modules/social/infrastructure/persistence/NotificationsAdapter.java`, método `add`, chamado pelos casos de uso
@@ -407,7 +409,7 @@ rest.post().uri("https://exp.host/--/api/v2/push/send")
 ## Bloco 4: Features
 
 ### 12. Listas personalizadas
-`backend` · `app` · **G** · *(sugestão de próxima feature)*
+`backend` · `app` · **L** · *(sugestão de próxima feature)*
 
 **Contexto.** Listas criadas pela pessoa ("Melhores de terror", "Para ver no Natal"), com ou sem ranking, públicas
 ou privadas, curtíveis. É a feature mais pedida em apps de cinema e não depende de nada que falte.
@@ -446,7 +448,7 @@ dependendo de `catalog` e `users`; a privacidade usa o `social` (perfil privado)
 ---
 
 ### 13. Marcação de amigos ("vi com…")
-`backend` · `app` · **G**
+`backend` · `app` · **L**
 
 **Contexto.** Ao registrar, marcar com quem assistiu. A pessoa marcada aprova ou recusa; aprovada, aparece no registro.
 
@@ -493,7 +495,7 @@ opcional, a média do público por temporada.
 ---
 
 ### 15. Movie Blend (Match em grupo)
-`backend` · `app` · `design` · **GG** (quebrar antes de começar)
+`backend` · `app` · `design` · **XL** (quebrar antes de começar)
 
 **Contexto.** O Taste Match para um grupo. Reaproveita o motor do `match` (`TasteSimilarityCalculator`,
 `Neo4jGdsTasteMatchEngineAdapter`) e o Story (`features/match/presentation/components/story/`).
@@ -510,7 +512,7 @@ opcional, a média do público por temporada.
 ---
 
 ### 16. Cinematic DNA
-`backend` · `app` · `design` · **G**
+`backend` · `app` · `design` · **L**
 
 **Contexto.** O "perfil de gosto" da pessoa (gêneros, décadas, diretores, ritmo), numa arte para compartilhar. Parte
 dos dados já existe em `.../modules/stats/` (`GetUserStatsUseCase`) e no grafo do `match`.
@@ -525,7 +527,7 @@ Stories (reaproveitar `EntryStoryCard` e o `storyShare.ts`).
 ---
 
 ### 17. Cinematic Wrapped
-`backend` · `app` · `design` · **G**
+`backend` · `app` · `design` · **L**
 
 **Contexto.** A retrospectiva do ano em Stories. Só faz sentido com um ano de dados: mirar o primeiro dezembro com usuários.
 
@@ -539,7 +541,7 @@ Match: `features/match/application/useStoryPlayer.ts`) e uma arte por slide para
 ---
 
 ### 18. Conversational Discovery (IA)
-`backend` · `app` · **G**
+`backend` · `app` · **L**
 
 **Contexto.** Pedir recomendação conversando ("quero algo leve para hoje, com a Ana"), usando o gosto da pessoa
 (diário, grafo) e o catálogo.
@@ -555,7 +557,7 @@ catálogo (nunca inventados: sempre validados no TMDB); tela de conversa no app.
 ---
 
 ### 19. Notificações contextuais e descoberta por lançamentos
-`backend` · `app` · **G** · Depende de: 11
+`backend` · `app` · **L** · Depende de: 11
 
 **Contexto.** "Estreou um filme do diretor que você ama", "saiu a nova temporada da série que você está vendo".
 
@@ -746,13 +748,13 @@ política de privacidade, as respostas de "privacidade do app" da Apple (quais d
 ## Bloco 6: Futuro
 
 ### 28. Monetização
-`produto` · `backend` · `app` · **GG**
+`produto` · `backend` · `app` · **XL**
 
 Premium (RevenueCat), limites do plano grátis e anúncios só no grátis. Só depois de comprovar retenção (ver
 `docs/Mvp Inicial.md`, seção "Fora do MVP"). Quebrar em cards quando for a hora.
 
 ### 29. Versão Web
-`produto` · **GG**
+`produto` · **XL**
 
 Perfis, diário, reviews, listas e feed na web, reaproveitando a API (contrato em `docs/architecture/openapi-v1.yaml`).
 Quebrar em cards quando for a hora.
