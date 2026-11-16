@@ -1,0 +1,41 @@
+# Ignorados no repositório inteiro (back, app, docs, scripts). Cada projeto tem o seu .gitignore para o resto.
+
+# ── Sistema operacional ─────────────────────────────────────────────
+# macOS: o Finder cria um .DS_Store em cada pasta aberta (posição dos ícones, visualização)
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+# Windows
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+# Linux
+*~
+.directory
+
+# ── Editores e IDEs ─────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+.history/
+
+# ── Segredos: .env e variações nunca vão para o git (os modelos .env.example vão) ──
+.env
+.env.*
+!.env.example
+
+# ── Logs ────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+# Saída do scripts/dev.mjs (make dev, make back…)
+.dev-logs/
+
+# ── Dependências do package.json da raiz (hoje não tem nenhuma) ─────
+/node_modules/
