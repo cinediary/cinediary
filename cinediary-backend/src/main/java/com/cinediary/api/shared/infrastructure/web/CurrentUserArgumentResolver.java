@@ -1,0 +1,43 @@
+package com.cinediary.api.shared.infrastructure.web;
+
+import com.cinediary.api.shared.application.CurrentUserProviderPort;
+import com.cinediary.api.shared.domain.AuthenticatedPrincipal;
+import com.cinediary.api.shared.domain.CurrentUser;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.MethodParameter;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
+
+/** Converte o JWT do Clerk em {@link CurrentUser} (com provisionamento JIT) para qualquer controller. */
+@Component
+@RequiredArgsConstructor
+public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver
+{
+    private final CurrentUserProviderPort currentUserProvider;
+
+    @Override
+    public boolean supportsParameter(MethodParameter parameter)
+    {
+        return CurrentUser.class.equals(parameter.getParameterType());
+    }
+
+    @Override
+    public CurrentUser resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                                       NativeWebRequest webRequest, WebDataBinderFactory binderFactory)
+    {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof Jwt jwt)) {
+            throw new AuthenticationCredentialsNotFoundException("Token ausente");
+        }
+        return currentUserProvider.resolve(new AuthenticatedPrincipal(
+                jwt.getSubject(), jwt.getClaimAsString("username"), jwt.getClaimAsString("name"),
+                jwt.getClaimAsString("image_url")));
+    }
+}

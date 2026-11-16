@@ -1,0 +1,9 @@
+# O build acontece dentro da imagem: nada de saídas locais, IDE ou segredos no contexto.
+.gradle
+build
+.idea
+*.iml
+.vscode
+.DS_Store
+.env
+.env.*

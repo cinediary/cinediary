@@ -1,0 +1,28 @@
+# Build do Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+out/
+
+# IDEs Java (IntelliJ, Eclipse, VS Code com a extensão de Java)
+.idea/
+*.iml
+.vscode/
+bin/
+.classpath
+.project
+.settings/
+.factorypath
+
+# Segredos (o .env.example vai para o git)
+.env
+.env.*
+!.env.example
+
+# Logs e arquivos que o Spring/a JVM podem gerar
+*.log
+hs_err_pid*.log
+HELP.md
+
+# macOS
+.DS_Store

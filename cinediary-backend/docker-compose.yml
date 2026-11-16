@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: cinediary-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-cinediary}
+      POSTGRES_USER: ${DB_USER:-cinediary}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-cinediary}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - cinediary-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Interface web para ver as tabelas do PostgreSQL: http://localhost:8082 (já conectada, sem login).
+  # Só no seu computador (127.0.0.1). Porta 8082 porque a 8081 é do Metro (Expo).
+  db-ui:
+    image: sosedoff/pgweb:0.16.2
+    container_name: cinediary-db-ui
+    command:
+      - /usr/bin/pgweb
+      - --bind=0.0.0.0
+      - --listen=8081
+      - --url=postgres://${DB_USER:-cinediary}:${DB_PASSWORD:-cinediary}@postgres:5432/${DB_NAME:-cinediary}?sslmode=disable
+    ports:
+      - "127.0.0.1:8082:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Grafo do Taste Match (ADR-06). Projetado a partir do PostgreSQL pelo Outbox.
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: cinediary-neo4j
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-cinediary-neo4j}
+      NEO4J_PLUGINS: '["graph-data-science"]'
+      NEO4J_dbms_security_procedures_unrestricted: gds.*
+      NEO4J_dbms_security_procedures_allowlist: gds.*
+      NEO4J_server_memory_heap_max__size: 1G
+    ports:
+      - "7474:7474"   # Browser: http://localhost:7474
+      - "7687:7687"   # Bolt
+    volumes:
+      - cinediary-neo4jdata:/data
+      - cinediary-neo4jplugins:/plugins
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u $${NEO4J_AUTH%%/*} -p $${NEO4J_AUTH#*/} 'RETURN gds.version()' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
+
+  # A API empacotada (Dockerfile), para quem só vai mexer no app. Fica fora do `docker compose up` comum
+  # (perfil "app"): `make dev` na raiz sobe ela. Lê o .env daqui; banco e Neo4j pelo nome do serviço.
+  api:
+    profiles: ["app"]
+    build: .
+    container_name: cinediary-api
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      NEO4J_URI: bolt://neo4j:7687
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+
+volumes:
+  cinediary-pgdata:
+  cinediary-neo4jdata:
+  cinediary-neo4jplugins:
