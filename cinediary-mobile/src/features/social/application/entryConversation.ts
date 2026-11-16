@@ -1,0 +1,77 @@
+import { useMutation, useQuery } from '@tanstack/react-query';
+
+import { analytics } from '@/shared/analytics/analytics';
+import { queryClient } from '@/shared/api/queryClient';
+import { sharedKeys } from '@/shared/api/queryKeys';
+import type { EntryComment, EntryInteractions } from '../domain/social';
+import { socialApi } from '../infrastructure/socialApi';
+
+export const conversationKeys = {
+  interactions: (entryId: string) => [...sharedKeys.social, 'entry-interactions', entryId] as const,
+  comments: (entryId: string) => [...sharedKeys.social, 'entry-comments', entryId] as const,
+};
+
+export function useEntryInteractions(entryId: string) {
+  return useQuery({ queryKey: conversationKeys.interactions(entryId), queryFn: () => socialApi.interactions(entryId), enabled: !!entryId });
+}
+
+export function useEntryComments(entryId: string) {
+  return useQuery({ queryKey: conversationKeys.comments(entryId), queryFn: () => socialApi.comments(entryId), enabled: !!entryId });
+}
+
+/** Curtir/descurtir: o coração muda na hora e volta se o servidor recusar. */
+export function useToggleEntryLike(entryId: string, ownEntry: boolean) {
+  const key = conversationKeys.interactions(entryId);
+  return useMutation({
+    mutationFn: (like: boolean) => (like ? socialApi.like(entryId) : socialApi.unlike(entryId)),
+    onMutate: async (like) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<EntryInteractions>(key);
+      if (previous) {
+        queryClient.setQueryData<EntryInteractions>(key, {
+          ...previous,
+          likedByMe: like,
+          likes: Math.max(0, previous.likes + (like === previous.likedByMe ? 0 : like ? 1 : -1)),
+        });
+      }
+      return { previous };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+    },
+    onSuccess: (data, like) => {
+      queryClient.setQueryData(key, data);
+      analytics.track('entry_liked', { own_entry: ownEntry, liked: like });
+    },
+  });
+}
+
+export function useAddReply(entryId: string, ownEntry: boolean) {
+  return useMutation({
+    mutationFn: (text: string) => socialApi.addComment(entryId, text.trim()),
+    onSuccess: (comment, text) => {
+      queryClient.setQueryData<EntryComment[]>(conversationKeys.comments(entryId), (list) => [...(list ?? []), comment]);
+      queryClient.setQueryData<EntryInteractions>(conversationKeys.interactions(entryId), (i) =>
+        i ? { ...i, comments: i.comments + 1 } : i,
+      );
+      analytics.track('entry_replied', { own_entry: ownEntry, length: text.trim().length });
+    },
+  });
+}
+
+export function useDeleteReply(entryId: string) {
+  return useMutation({
+    mutationFn: ({ comment }: { comment: EntryComment; ownReply: boolean }) => socialApi.deleteComment(entryId, comment.id),
+    onMutate: ({ comment }) => {
+      queryClient.setQueryData<EntryComment[]>(conversationKeys.comments(entryId), (list) => list?.filter((c) => c.id !== comment.id));
+      queryClient.setQueryData<EntryInteractions>(conversationKeys.interactions(entryId), (i) =>
+        i ? { ...i, comments: Math.max(0, i.comments - 1) } : i,
+      );
+    },
+    onSuccess: (_d, { ownReply }) => analytics.track('entry_reply_deleted', { own_reply: ownReply }),
+    onError: () => {
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.comments(entryId) });
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.interactions(entryId) });
+    },
+  });
+}
