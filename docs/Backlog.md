@@ -3,15 +3,18 @@
 Mapa para virar cards no GitHub Projects. Cada `###` é um card: o título já está pronto para colar e o texto abaixo
 dele vai na descrição. Os caminhos de arquivo são relativos à raiz do repositório.
 
-**Legenda:**
-- **Área:** `backend`, `app`, `infra`, `design`, `produto` (um card pode ter mais de uma).
-- **Tamanho** (o campo *Size* do Project): **XS** (minutos a poucas horas), **S** (até 1 dia), **M** (alguns dias),
-  **L** (1 a 2 semanas), **XL** (épico: quebrar em cards antes de começar).
-- **Prioridade** (o campo *Priority* do Project): **P0** (urgente), **P1** (importante), **P2** (quando der).
-- **Depende de:** o card que precisa vir antes.
+**Legenda** (os mesmos campos do Project *CineDiary Planning*):
+- **Labels:** `backend`, `app`, `infra`, `design`, `produto`.
+- **Size:** **XS** (minutos a poucas horas), **S** (até 1 dia), **M** (alguns dias), **L** (1 a 2 semanas), **XL** (épico:
+  quebrar em sub-issues antes de começar).
+- **Priority** (campo da organização): **Urgent**, **High**, **Medium**, **Low**.
+- **Bloco:** Dev, Pendências, Development build, Features, Lançamento, Futuro.
+- **Iteration:** a quinzena planejada (1: 16 a 29 nov · 2: 30 nov a 13 dez · 3: 14 a 27 dez); **—** = ainda no Backlog.
+- **Sub-issues:** os cards grandes (#11, #12, #15 e #28) listam as sub-issues numeradas como `12.1`, `12.2`…
+  Crie a issue principal e, dentro dela, cada sub-issue em **Create sub-issue**, colando o trecho `####` dela.
+- **Bloqueado por / Bloqueia:** números **dos cards deste arquivo**. No GitHub, os números das issues são outros:
+  marque em *Relationships → Mark as blocked by* procurando pelo título.
 
-Colunas sugeridas no Project: *Backlog → Próximos → Fazendo → Revisão → Pronto*. Campo extra sugerido: **Bloco**
-(Dev, Pendências, Development build, Features, Lançamento, Futuro).
 
 ---
 
@@ -37,8 +40,8 @@ Além da DoD de cada card, um card só vai para **Pronto** quando:
 
 ## Bloco 1: Dev (fazer já)
 
-### 1. CI no GitHub Actions
-`infra` · **M** · Depende de: 2
+### 1. Configurar CI com GitHub Actions
+`infra` · **Size:** M · **Priority:** Urgent · **Bloco:** Dev · **Iteration:** 1 · **Bloqueado por:** #2 · **Bloqueia:** #24
 
 **Contexto.** Hoje nada roda os testes automaticamente: só quem lembra de rodar `make test`, `npm run typecheck` e
 `npm run lint` antes de subir. O CI roda tudo a cada push ou pull request e mostra no PR se algo quebrou.
@@ -97,30 +100,27 @@ jobs:
 
 ---
 
-### 2. Repositório no GitHub e proteção da `main`
-`infra` · **S** · Depende de: nada · Bloqueia: 1
+### 2. Proteger a branch `main` no GitHub
+`infra` · **Size:** XS · **Priority:** Urgent · **Bloco:** Dev · **Iteration:** 1 · **Bloqueado por:** — · **Bloqueia:** #1
 
-**Contexto.** O repositório ainda não tem commits nem remoto. Os `.gitignore` (raiz, `cinediary-backend/`,
-`cinediary-mobile/`) já deixam de fora `.env`, `.env.local`, `node_modules`, builds, `.DS_Store` e chaves de build.
+**Contexto.** O repositório `cinediary/cinediary` já existe e a `main` já está no GitHub. Falta impedir push direto na
+`main`, para todo código entrar por pull request revisado (e, depois do #1, com o CI verde).
 
-**O que fazer:**
-1. Criar o repositório no GitHub (privado) e o Project.
-2. Primeiro commit a partir da pasta `cinediary/`. Antes, conferir com `git add -n .` que **nenhum** `.env` ou chave entra
-   (só os `.env.example`).
-3. `git remote add origin …` e `git push -u origin main`.
-4. Em *Settings → Branches*, proteger a `main`: só por PR, com uma aprovação e, depois do card 1, com os checks do CI verdes.
-5. Convidar o time.
+**O que fazer:** no repositório, **Settings → Branches → Add branch ruleset** (ou *Add rule*) para a `main`:
+- **Require a pull request before merging**, com **1 aprovação**;
+- **Require status checks to pass**: marcar os checks do CI quando o #1 estiver pronto;
+- **Block force pushes** e **Restrict deletions**.
 
 **DoD:**
-- [ ] O código está no GitHub; `git log` mostra o primeiro commit.
-- [ ] `git ls-files | grep -E '\.env$|\.env\.local$'` não retorna nada.
 - [ ] Push direto na `main` é recusado.
-- [ ] O Project existe com as colunas e o campo "Bloco".
+- [ ] Um PR sem aprovação não pode ser mesclado.
+- [ ] Depois do #1, um PR com o CI vermelho não pode ser mesclado.
+- [ ] O README da raiz diz que o fluxo é branch + PR.
 
 ---
 
-### 3. Testes do backend em qualquer Docker (Docker Desktop, OrbStack, Colima)
-`infra` · `backend` · **S**
+### 3. Rodar os testes do backend com OrbStack e Colima
+`infra` `backend` · **Size:** S · **Priority:** High · **Bloco:** Dev · **Iteration:** 1 · **Bloqueado por:** — · **Bloqueia:** —
 
 **Contexto.** Os testes sobem PostgreSQL e Neo4j pelo Testcontainers, que procura o Docker em
 `/var/run/docker.sock`. Com o **OrbStack** (ou Colima) esse arquivo pode não existir, e todos os testes falham com
@@ -154,8 +154,8 @@ test: ## Testes (precisa do Docker aberto)
 
 ## Bloco 2: Pendências pequenas do que já existe
 
-### 4. "Já viu o Story" salvo na conta
-`backend` · `app` · **S**
+### 4. Salvar na conta quem já viu o Story do Match
+`backend` `app` · **Size:** S · **Priority:** Medium · **Bloco:** Pendências · **Iteration:** 1 · **Bloqueado por:** — · **Bloqueia:** —
 
 **Contexto.** No Taste Match, quem convidou vê a animação "Calculando…" só na **primeira** vez que abre o Story do
 Match. Hoje essa marca fica no aparelho (SecureStore), então trocar de celular ou reinstalar mostra a animação de novo.
@@ -199,8 +199,8 @@ CREATE TABLE IF NOT EXISTS match_story_views (
 
 ---
 
-### 5. Onde assistir (streamings do título)
-`backend` · `app` · **M**
+### 5. Mostrar onde assistir na página do título
+`backend` `app` · **Size:** M · **Priority:** Medium · **Bloco:** Pendências · **Iteration:** 1 · **Bloqueado por:** — · **Bloqueia:** —
 
 **Contexto.** Mostrar na página do título em quais streamings ele está, no país do aparelho. O TMDB fornece em
 `watch/providers`, e o crédito ao JustWatch é obrigatório.
@@ -237,8 +237,8 @@ String link = text(country, "link");
 
 ---
 
-### 6. Ícone do iOS no Icon Composer
-`design` · `app` · **XS**
+### 6. Conferir o ícone do iOS num build
+`design` `app` · **Size:** XS · **Priority:** Medium · **Bloco:** Pendências · **Iteration:** 2 · **Bloqueado por:** #9 · **Bloqueia:** —
 
 > **Andamento:** o `app.icon` já foi feito e ligado no `app.json`. Falta só conferir num build (card 9).
 
@@ -260,8 +260,8 @@ String link = text(country, "link");
 
 ---
 
-### 7. Aviso de "sem internet" durante o uso
-`app` · **S**
+### 7. Avisar quando a internet cair durante o uso
+`app` · **Size:** S · **Priority:** Medium · **Bloco:** Pendências · **Iteration:** 1 · **Bloqueado por:** — · **Bloqueia:** —
 
 **Contexto.** Na **abertura**, sem internet, já existe a tela de conexão (`useConnectionGate`). **Durante o uso**, cada
 tela mostra o próprio erro. A ideia: uma faixa discreta no topo ("Sem internet"), que some sozinha quando a conexão
@@ -297,8 +297,8 @@ onlineManager.setEventListener((setOnline) => {
 
 ## Bloco 3: Development build (precisa da conta da Apple)
 
-### 8. Assinatura do Apple Developer Program
-`produto` · **S** · Bloqueia: 9, 10, 11, 24, 26
+### 8. Assinar o Apple Developer Program
+`produto` · **Size:** S · **Priority:** Medium · **Bloco:** Development build · **Iteration:** 2 · **Bloqueado por:** — · **Bloqueia:** #9, #24
 
 **Contexto.** Sem ela não dá para instalar o app no iPhone (development build), usar TestFlight nem publicar. Uma
 conta serve para o time: o EAS guarda os certificados na organização `cinediary` do expo.dev.
@@ -315,8 +315,8 @@ conta serve para o time: o EAS guarda os certificados na organização `cinediar
 
 ---
 
-### 9. Primeiro development build (EAS)
-`app` · `infra` · **S** · Depende de: 8
+### 9. Gerar o primeiro development build
+`app` `infra` · **Size:** S · **Priority:** Medium · **Bloco:** Development build · **Iteration:** 2 · **Bloqueado por:** #8 · **Bloqueia:** #6, #10, #11
 
 **Contexto.** O development build é um "Expo Go do CineDiary", com todas as libs nativas. Ele é necessário para o
 Instagram (card 10) e as notificações (card 11). Já está configurado:
@@ -339,8 +339,8 @@ Instagram (card 10) e as notificações (card 11). Já está configurado:
 
 ---
 
-### 10. Story direto nos Stories do Instagram
-`app` · **M** · Depende de: 9
+### 10. Compartilhar o registro direto nos Stories do Instagram
+`app` · **Size:** M · **Priority:** Medium · **Bloco:** Development build · **Iteration:** 2 · **Bloqueado por:** #9 · **Bloqueia:** —
 
 **Contexto.** Hoje "Compartilhar nos Stories" gera a imagem do registro e abre a folha de compartilhar do sistema. O
 passo a passo completo está em `docs/guides/instagram-stories.md`. Tudo passa por
@@ -366,29 +366,56 @@ passo a passo completo está em `docs/guides/instagram-stories.md`. Tudo passa p
 
 ---
 
-### 11. Notificações push
-`backend` · `app` · **L** · Depende de: 9
+### 11. Enviar notificações push do sino
+`backend` `app` · **Size:** L · **Priority:** Medium · **Bloco:** Development build · **Iteration:** 2 · **Bloqueado por:** #9 · **Bloqueia:** #19
 
-**Contexto.** O sino (`/me/notifications`) já existe e grava avisos na hora em que acontecem
-(`.../modules/social/infrastructure/persistence/NotificationsAdapter.java`, método `add`, chamado pelos casos de uso
-de seguir, curtir e responder). Falta mandar esses avisos para o celular.
+**Issue grande, com sub-issues.** A issue principal tem só o objetivo e a DoD geral; o trabalho fica nas sub-issues abaixo
+(crie cada uma dentro desta issue, em **Create sub-issue**).
 
-**O que fazer:**
+**Objetivo.** O sino (`/me/notifications`) já existe: os avisos são gravados na hora em que acontecem
+(`cinediary-backend/src/main/java/com/cinediary/api/modules/social/infrastructure/persistence/NotificationsAdapter.java`, método `add`). Falta mandar esses avisos
+para o celular, com a pessoa escolhendo o que recebe.
+
+**Sub-issues:**
+
+| # | Título | Labels | Size | Bloqueado por |
+| --- | --- | --- | --- | --- |
+| 11.1 | Registrar os aparelhos para notificações push | `backend` | S | — |
+| 11.2 | Enviar push quando um aviso do sino é criado | `backend` | M | 11.1 |
+| 11.3 | Pedir permissão e registrar o aparelho no app | `app` | S | 11.1, #9 |
+| 11.4 | Abrir a tela certa ao tocar na notificação | `app` | S | 11.3 |
+| 11.5 | Escolher quais notificações receber | `backend` `app` | S | 11.2 |
+
+**DoD geral:**
+- [ ] Todas as sub-issues fechadas.
+- [ ] Curtir, responder, seguir e aprovar pedido fazem chegar uma notificação no celular da pessoa (nunca para si mesma).
+- [ ] Testado em iOS e Android num development build.
+
+#### 11.1 Registrar os aparelhos para notificações push
+`backend` · **Size:** S · **Bloqueado por:** —
+
+Guardar o token de push de cada aparelho da pessoa.
 
 | Arquivo | O que mudar |
 | --- | --- |
-| `.../db/migration/V<próx>__push_devices.sql` (novo) | `push_devices (id, user_id, expo_token UNIQUE, platform, created_at, last_seen_at)` |
-| `.../modules/users/...` ou `.../modules/social/...` | Rota `PUT /api/v1/me/devices` (registra o token) e `DELETE /api/v1/me/devices/{token}` (no logout) |
-| `.../modules/social/infrastructure/push/ExpoPushClient.java` (novo) | `POST https://exp.host/--/api/v2/push/send`, em lotes, removendo tokens inválidos (`DeviceNotRegistered`) |
-| `.../modules/social/application/...` | Ao criar um aviso, publicar um evento (ex.: `NotificationCreatedEvent`) e um listener `@ApplicationModuleListener` (assíncrono, pelo Outbox) monta o texto no idioma da pessoa e envia |
-| `cinediary-mobile/package.json` | `npx expo install expo-notifications` |
-| `cinediary-mobile/app.json` | Plugin `expo-notifications` (ícone e cor no Android) |
-| `cinediary-mobile/src/shared/notifications/push.ts` (novo) | Pedir permissão, pegar o `ExpoPushToken` (com o `projectId` do `app.json`), mandar para a API |
-| `cinediary-mobile/src/shared/auth/AuthProvider.tsx` | Registrar o token depois do login; apagar no logout |
-| `cinediary-mobile/src/features/auth/presentation/screens/SettingsScreen.tsx` | Seção "Notificações" com liga/desliga por tipo (guardado no perfil) |
-| Tocar na notificação | Abrir a tela certa (registro, perfil, pedidos) pelo `data` da notificação + `router.push` |
+| `cinediary-backend/src/main/resources/db/migration/V<próx>__push_devices.sql` (novo) | `push_devices (id, user_id, expo_token UNIQUE, platform, created_at, last_seen_at)` |
+| `cinediary-backend/src/main/java/com/cinediary/api/modules/users/presentation/MeController.java` | `PUT /api/v1/me/devices` (cria ou atualiza o token) e `DELETE /api/v1/me/devices/{token}` (no logout) |
+| `cinediary-backend/src/main/java/com/cinediary/api/modules/users/...` (domain, application, persistence) | Caso de uso e adapter dos aparelhos; o `api/` do `users` expõe "tokens da pessoa" para o `social` |
+| `docs/architecture/openapi-v1.yaml` | As duas rotas |
 
-**Exemplo** (envio):
+**DoD:**
+- [ ] O mesmo token não duplica; um token que muda de dono passa para a pessoa nova.
+- [ ] Teste de integração: registrar, atualizar, apagar.
+
+#### 11.2 Enviar push quando um aviso do sino é criado
+`backend` · **Size:** M · **Bloqueado por:** 11.1
+
+| Arquivo | O que mudar |
+| --- | --- |
+| `cinediary-backend/src/main/java/com/cinediary/api/modules/social/...` | Ao gravar um aviso (`NotificationsAdapter.add`), publicar um evento (ex.: `NotificationCreatedEvent`) |
+| `cinediary-backend/src/main/java/com/cinediary/api/modules/social/application/PushListener.java` (novo) | `@ApplicationModuleListener` (assíncrono, pelo Outbox): monta o texto no idioma da pessoa e envia |
+| `cinediary-backend/src/main/java/com/cinediary/api/modules/social/infrastructure/push/ExpoPushClient.java` (novo) | `POST https://exp.host/--/api/v2/push/send` em lotes; remove os tokens com `DeviceNotRegistered` |
+
 ```java
 record ExpoMessage(String to, String title, String body, Map<String, String> data) {}
 rest.post().uri("https://exp.host/--/api/v2/push/send")
@@ -397,58 +424,150 @@ rest.post().uri("https://exp.host/--/api/v2/push/send")
 ```
 
 **DoD:**
-- [ ] Curtir, responder, seguir e aprovar pedido fazem chegar uma notificação no celular da pessoa (nunca para si mesma).
-- [ ] Curtidas no mesmo registro não viram uma rajada (agrupar ou limitar).
-- [ ] Tocar na notificação abre a tela certa.
-- [ ] A pessoa desliga cada tipo em Configurações; o pedido de permissão aparece numa hora com contexto (não na abertura).
-- [ ] Tokens inválidos são removidos.
-- [ ] Testes: registro de token, envio simulado (cliente falso) e preferências.
+- [ ] Curtidas no mesmo registro não viram uma rajada (agrupar em alguns minutos ou mandar uma só).
+- [ ] O texto sai no idioma da pessoa (PT ou EN).
+- [ ] Teste de integração com um cliente de push falso: o envio acontece e os tokens inválidos somem.
+
+#### 11.3 Pedir permissão e registrar o aparelho no app
+`app` · **Size:** S · **Bloqueado por:** 11.1, #9
+
+| Arquivo | O que mudar |
+| --- | --- |
+| `cinediary-mobile/package.json` | `npx expo install expo-notifications` |
+| `cinediary-mobile/app.json` | Plugin `expo-notifications` (ícone e cor no Android) |
+| `cinediary-mobile/src/shared/notifications/push.ts` (novo) | Pedir permissão, pegar o `ExpoPushToken` (com o `projectId` do `app.json`) e mandar para a API |
+| `cinediary-mobile/src/shared/auth/AuthProvider.tsx` | Registrar depois do login; apagar no logout |
+
+**DoD:**
+- [ ] O pedido de permissão aparece numa hora com contexto (ex.: depois do primeiro "seguir"), não na abertura.
+- [ ] Recusar a permissão não quebra nada.
+
+#### 11.4 Abrir a tela certa ao tocar na notificação
+`app` · **Size:** S · **Bloqueado por:** 11.3
+
+Com o `data` da notificação (`entryId`, `username`…), abrir o registro, o perfil ou os pedidos com `router.push`, inclusive
+com o app fechado.
+
+**DoD:**
+- [ ] Tocar abre a tela certa com o app aberto, em segundo plano e fechado.
+
+#### 11.5 Escolher quais notificações receber
+`backend` `app` · **Size:** S · **Bloqueado por:** 11.2
+
+Seção "Notificações" em `cinediary-mobile/src/features/auth/presentation/screens/SettingsScreen.tsx`, com liga/desliga por tipo
+(seguidores, curtidas, respostas), guardado no perfil (`PATCH /api/v1/me`). O envio (11.2) respeita a escolha.
+
+**DoD:**
+- [ ] Desligar um tipo para de mandar esse tipo; o sino continua mostrando.
+- [ ] Textos em PT e EN; evento `setting_changed`.
 
 ---
 
 ## Bloco 4: Features
 
-### 12. Listas personalizadas
-`backend` · `app` · **L** · *(sugestão de próxima feature)*
+### 12. Criar listas personalizadas
+`backend` `app` · **Size:** L · **Priority:** High · **Bloco:** Features · **Iteration:** 1 · **Bloqueado por:** — · **Bloqueia:** —
 
-**Contexto.** Listas criadas pela pessoa ("Melhores de terror", "Para ver no Natal"), com ou sem ranking, públicas
-ou privadas, curtíveis. É a feature mais pedida em apps de cinema e não depende de nada que falte.
+**Issue grande, com sub-issues.** A issue principal tem só o objetivo e a DoD geral; o trabalho fica nas sub-issues.
 
-**O que fazer (backend).** Novo módulo `lists` (`.../modules/lists/`, com `package-info.java` `@ApplicationModule`),
-dependendo de `catalog` e `users`; a privacidade usa o `social` (perfil privado) pelo `SocialModulePort`.
+**Objetivo.** Listas criadas pela pessoa ("Melhores de terror", "Para ver no Natal"), com ou sem ranking, públicas ou
+privadas, que outras pessoas podem curtir. No backend, um módulo novo `lists` (depende de `catalog` e `users`; a
+privacidade usa o `social` pelo `SocialModulePort`). No app, uma feature nova `cinediary-mobile/src/features/lists/`.
+
+**Sub-issues:**
+
+| # | Título | Labels | Size | Bloqueado por |
+| --- | --- | --- | --- | --- |
+| 12.1 | Criar o módulo de listas no backend | `backend` | M | — |
+| 12.2 | Adicionar, remover e reordenar títulos de uma lista | `backend` | S | 12.1 |
+| 12.3 | Curtir listas e avisar no sino | `backend` | S | 12.1 |
+| 12.4 | Ver, criar e editar listas no app | `app` | M | 12.1 |
+| 12.5 | Adicionar à lista pela página do título e reordenar | `app` | M | 12.2, 12.4 |
+| 12.6 | Curtir listas no app | `app` | XS | 12.3, 12.4 |
+
+**DoD geral:**
+- [ ] Todas as sub-issues fechadas.
+- [ ] Dá para criar uma lista, adicionar e reordenar títulos e ver a lista de um amigo (e não a de um perfil privado
+      que você não segue).
+- [ ] Eventos `list_created`, `list_item_added` e `list_liked` registrados.
+
+#### 12.1 Criar o módulo de listas no backend
+`backend` · **Size:** M · **Bloqueado por:** —
 
 | Arquivo | O que mudar |
 | --- | --- |
-| `.../db/migration/V<próx>__lists.sql` | `lists (id, user_id, name, description, ranked, visibility, created_at, updated_at)`, `list_items (list_id, title_id, position, note)`, `list_likes (list_id, user_id, created_at)` |
-| `.../modules/lists/domain/` | `UserList`, `ListItem`, `ListsRepositoryPort` (regras: nome obrigatório, até 500 itens, sem título repetido) |
-| `.../modules/lists/application/` | `CreateListUseCase`, `UpdateListUseCase`, `AddToListUseCase`, `ReorderListUseCase`, `GetListUseCase`, `ListsOfUserUseCase`, `LikeListUseCase` |
-| `.../modules/lists/presentation/ListsController.java` | `GET /users/{u}/lists`, `POST /lists`, `GET/PATCH/DELETE /lists/{id}`, `POST /lists/{id}/items`, `PUT /lists/{id}/items/order`, `PUT/DELETE /lists/{id}/like`, `GET /titles/{id}/my-lists` (em quais listas o título está) |
-| `.../architecture/ArchitectureFitnessTest.java` | Incluir `lists` na lista de módulos |
-| `docs/architecture/openapi-v1.yaml` | Todas as rotas |
-
-**O que fazer (app).** Nova feature `cinediary-mobile/src/features/lists/` com as 4 camadas.
-
-| Arquivo | O que mudar |
-| --- | --- |
-| `features/lists/infrastructure/listsApi.ts` | Chamadas |
-| `features/lists/application/listsQueries.ts` | Hooks (otimistas ao adicionar, reordenar e curtir) |
-| `features/lists/presentation/screens/` | `ListScreen` (ver), `EditListScreen` (criar/editar, reordenar arrastando: reaproveitar o padrão de `SortableFavorites.tsx`) |
-| `features/lists/presentation/components/AddToListSheet.tsx` | "Adicionar à lista" (folha com as listas + "Nova lista") |
-| `src/app/lists/[listId].tsx`, `src/app/lists/new.tsx` | Rotas (registrar no `RootNavigator`) |
-| `features/catalog/presentation/screens/TitleDetailScreen.tsx` | Ação "Adicionar à lista" |
-| `features/social/presentation/components/ProfileHeader.tsx` (ou a tela de perfil) | Seção "Listas" no perfil (seu e dos outros) |
+| `cinediary-backend/src/main/resources/db/migration/V<próx>__lists.sql` (novo) | `lists (id, user_id, name, description, ranked, visibility, created_at, updated_at)` e `list_items (list_id, title_id, position, note)` |
+| `cinediary-backend/src/main/java/com/cinediary/api/modules/lists/package-info.java` (novo) | `@ApplicationModule(displayName = "Lists")` |
+| `cinediary-backend/src/main/java/com/cinediary/api/modules/lists/domain/` (novo) | `UserList`, `ListItem`, `ListsRepositoryPort`. Regras: nome obrigatório, até 500 itens, sem título repetido |
+| `cinediary-backend/src/main/java/com/cinediary/api/modules/lists/application/` (novo) | `CreateListUseCase`, `UpdateListUseCase`, `DeleteListUseCase`, `GetListUseCase`, `ListsOfUserUseCase` |
+| `cinediary-backend/src/main/java/com/cinediary/api/modules/lists/presentation/ListsController.java` (novo) | `GET /users/{u}/lists`, `POST /lists`, `GET/PATCH/DELETE /lists/{id}` |
+| `cinediary-backend/src/test/java/com/cinediary/api/architecture/ArchitectureFitnessTest.java` | Incluir `lists` na lista de módulos |
+| `docs/architecture/openapi-v1.yaml` | As rotas |
 
 **DoD:**
-- [ ] Criar, editar, excluir lista; adicionar e remover títulos; reordenar arrastando.
-- [ ] Lista privada e perfil privado respeitados (403 para quem não pode ver).
-- [ ] Curtir a lista de alguém gera aviso no sino (novo `NotificationKind.LIST_LIKED`).
-- [ ] Testes de integração das regras (privacidade, limite, repetidos, ordem).
-- [ ] Eventos: `list_created`, `list_item_added`, `list_liked`.
+- [ ] Lista privada e perfil privado: 403 para quem não pode ver.
+- [ ] Só o dono edita e exclui.
+- [ ] Testes de integração das regras.
+
+#### 12.2 Adicionar, remover e reordenar títulos de uma lista
+`backend` · **Size:** S · **Bloqueado por:** 12.1
+
+Rotas `POST /lists/{id}/items`, `DELETE /lists/{id}/items/{titleId}`, `PUT /lists/{id}/items/order` e
+`GET /titles/{id}/my-lists` (em quais listas suas o título está, para o app marcar).
+
+**DoD:**
+- [ ] Título repetido na mesma lista é recusado; a ordem é mantida depois de reordenar.
+- [ ] Testes de integração.
+
+#### 12.3 Curtir listas e avisar no sino
+`backend` · **Size:** S · **Bloqueado por:** 12.1
+
+`list_likes (list_id, user_id, created_at)`, rotas `PUT/DELETE /lists/{id}/like`, um novo `NotificationKind.LIST_LIKED`
+(e o `CHECK` da tabela `notifications` numa migração) e a curtida na atividade dos amigos.
+
+**DoD:**
+- [ ] Curtir de novo não duplica; descurtir apaga o aviso.
+- [ ] Testes de integração.
+
+#### 12.4 Ver, criar e editar listas no app
+`app` · **Size:** M · **Bloqueado por:** 12.1
+
+| Arquivo | O que mudar |
+| --- | --- |
+| `cinediary-mobile/src/features/lists/infrastructure/listsApi.ts` (novo) | Chamadas |
+| `cinediary-mobile/src/features/lists/application/listsQueries.ts` (novo) | Hooks (TanStack Query) |
+| `cinediary-mobile/src/features/lists/presentation/screens/ListScreen.tsx` e `EditListScreen.tsx` (novos) | Ver a lista; criar e editar (nome, descrição, ranking, pública ou privada) |
+| `cinediary-mobile/src/app/lists/[listId].tsx` e `cinediary-mobile/src/app/lists/new.tsx` (novos) | Rotas (registrar no `RootNavigator`) |
+| Perfil (`cinediary-mobile/src/features/stats/presentation/screens/ProfileScreen.tsx` e `cinediary-mobile/src/features/social/presentation/screens/PersonProfileScreen.tsx`) | Seção "Listas" |
+
+**DoD:**
+- [ ] O seu perfil e o dos outros mostram as listas (respeitando privacidade).
+- [ ] Textos em PT e EN; exemplo no catálogo do Design System.
+
+#### 12.5 Adicionar à lista pela página do título e reordenar
+`app` · **Size:** M · **Bloqueado por:** 12.2, 12.4
+
+"Adicionar à lista" na página do título (`cinediary-mobile/src/features/catalog/presentation/screens/TitleDetailScreen.tsx`), abrindo
+uma folha com as suas listas (marcadas as que já têm o título) e "Nova lista". Reordenar arrastando na tela da lista,
+reaproveitando o padrão de `cinediary-mobile/src/features/auth/presentation/components/SortableFavorites.tsx`.
+
+**DoD:**
+- [ ] Adicionar e remover são otimistas (a tela muda na hora).
+- [ ] Reordenar salva a ordem nova.
+
+#### 12.6 Curtir listas no app
+`app` · **Size:** XS · **Bloqueado por:** 12.3, 12.4
+
+Botão de curtir na tela da lista (reaproveitar `cinediary-mobile/src/shared/ui/LikeButton.tsx`), com o contador; aviso
+"curtiu sua lista" no sino (`cinediary-mobile/src/features/social/presentation/screens/NotificationsScreen.tsx`).
+
+**DoD:**
+- [ ] Curtir é otimista; o aviso aparece para o dono da lista.
 
 ---
 
-### 13. Marcação de amigos ("vi com…")
-`backend` · `app` · **L**
+### 13. Marcar amigos num registro ("vi com…")
+`backend` `app` · **Size:** L · **Priority:** High · **Bloco:** Features · **Iteration:** 1 · **Bloqueado por:** — · **Bloqueia:** —
 
 **Contexto.** Ao registrar, marcar com quem assistiu. A pessoa marcada aprova ou recusa; aprovada, aparece no registro.
 
@@ -473,8 +592,8 @@ dependendo de `catalog` e `users`; a privacidade usa o `social` (perfil privado)
 
 ---
 
-### 14. Notas por temporada (exibir)
-`app` · `backend` · **M**
+### 14. Mostrar a nota de cada temporada nas séries
+`app` `backend` · **Size:** M · **Priority:** Medium · **Bloco:** Features · **Iteration:** 1 · **Bloqueado por:** — · **Bloqueia:** —
 
 **Contexto.** **Já dá** para registrar uma temporada com nota: um registro de escopo "temporada" (`diary_entries.season_number`,
 e `LogScope = 'season'` no app). O que falta é **mostrar**: a sua nota de cada temporada na lista de temporadas e,
@@ -494,25 +613,84 @@ opcional, a média do público por temporada.
 
 ---
 
-### 15. Movie Blend (Match em grupo)
-`backend` · `app` · `design` · **XL** (quebrar antes de começar)
+### 15. Movie Blend: Taste Match em grupo
+`backend` `app` `design` · **Size:** XL · **Priority:** Low · **Bloco:** Features · **Iteration:** — · **Bloqueado por:** — · **Bloqueia:** —
 
-**Contexto.** O Taste Match para um grupo. Reaproveita o motor do `match` (`TasteSimilarityCalculator`,
-`Neo4jGdsTasteMatchEngineAdapter`) e o Story (`features/match/presentation/components/story/`).
+**Issue grande, com sub-issues.** O Taste Match para um grupo. Reaproveita o motor do `match`
+(`TasteSimilarityCalculator`, `Neo4jGdsTasteMatchEngineAdapter`) e o player do Story
+(`cinediary-mobile/src/features/match/presentation/components/story/`).
 
-**Cards a criar a partir deste:**
-1. **Design:** fluxo de criar o grupo, convidar, esperar e "Iniciar Blend"; o Story do grupo.
-2. **Backend: grupos e convites.** Tabelas `blends` e `blend_members`, link de convite (reaproveitar `InviteCodes`), entrar e sair.
-3. **Backend: cálculo do grupo.** Compatibilidade de cada par e a média; o "gosto do grupo" no grafo.
-4. **Backend: recomendações para o grupo** (`CollaborativeRecommendationPort` para N pessoas).
-5. **App:** telas do grupo, convites e o Story do Blend.
+**Sub-issues:**
 
-**DoD:** definida em cada card filho.
+| # | Título | Labels | Size | Bloqueado por |
+| --- | --- | --- | --- | --- |
+| 15.1 | Desenhar o fluxo e o Story do Movie Blend | `design` | M | — |
+| 15.2 | Criar grupos e convites do Blend no backend | `backend` | M | 15.1 |
+| 15.3 | Calcular a compatibilidade do grupo | `backend` | L | 15.2 |
+| 15.4 | Recomendar títulos para o grupo | `backend` | M | 15.3 |
+| 15.5 | Criar o grupo, convidar e iniciar o Blend no app | `app` | M | 15.1, 15.2 |
+| 15.6 | Mostrar o Story e as recomendações do Blend | `app` | M | 15.3, 15.4, 15.5 |
+
+**DoD geral:**
+- [ ] Todas as sub-issues fechadas.
+- [ ] Um grupo de 3 a 8 pessoas vê a compatibilidade do grupo e o que assistir junto.
+
+#### 15.1 Desenhar o fluxo e o Story do Movie Blend
+`design` · **Size:** M · **Bloqueado por:** —
+
+Telas de criar o grupo, convidar, esperar os convidados e "Iniciar Blend"; os slides do Story do grupo; o que acontece
+quando alguém sai. Referências: o Story do Match e `docs/design/UX-02-a-05-Fluxos-e-Telas.md`.
+
+**DoD:**
+- [ ] Fluxo e Story aprovados pelo time; casos de borda definidos (grupo pequeno, alguém sem registros).
+
+#### 15.2 Criar grupos e convites do Blend no backend
+`backend` · **Size:** M · **Bloqueado por:** 15.1
+
+Tabelas `blends` e `blend_members`; link de convite (reaproveitar `cinediary-backend/src/main/java/com/cinediary/api/modules/match/domain/InviteCodes.java`); entrar,
+sair e "Iniciar" (fecha o grupo). Rotas em `cinediary-backend/src/main/java/com/cinediary/api/modules/match/presentation/` (ou um módulo `blend` novo, se crescer).
+
+**DoD:**
+- [ ] Só quem criou inicia; depois de iniciado, ninguém entra.
+- [ ] Testes de integração.
+
+#### 15.3 Calcular a compatibilidade do grupo
+`backend` · **Size:** L · **Bloqueado por:** 15.2
+
+Compatibilidade de cada par (o motor que já existe) e a do grupo; os gêneros e títulos que o grupo tem em comum,
+calculados no Neo4j, com o mesmo plano B no PostgreSQL.
+
+**DoD:**
+- [ ] O resultado é o mesmo pelo Neo4j e pelo plano B (teste como o do Match).
+
+#### 15.4 Recomendar títulos para o grupo
+`backend` · **Size:** M · **Bloqueado por:** 15.3
+
+Estender o `CollaborativeRecommendationPort` para N pessoas: títulos que ninguém viu e que combinam com o grupo.
+
+**DoD:**
+- [ ] As recomendações não incluem o que alguém do grupo já viu.
+
+#### 15.5 Criar o grupo, convidar e iniciar o Blend no app
+`app` · **Size:** M · **Bloqueado por:** 15.1, 15.2
+
+Telas na aba Juntos (`cinediary-mobile/src/features/match/`): criar, compartilhar o link, ver quem entrou, iniciar.
+
+**DoD:**
+- [ ] O link de convite abre o app direto no grupo.
+
+#### 15.6 Mostrar o Story e as recomendações do Blend
+`app` · **Size:** M · **Bloqueado por:** 15.3, 15.4, 15.5
+
+O Story do grupo (reaproveitar `cinediary-mobile/src/features/match/application/useStoryPlayer.ts`) e a lista de recomendações.
+
+**DoD:**
+- [ ] O Story pode ser compartilhado nos Stories, como o do Match.
 
 ---
 
-### 16. Cinematic DNA
-`backend` · `app` · `design` · **L**
+### 16. Cinematic DNA: perfil de gosto compartilhável
+`backend` `app` `design` · **Size:** L · **Priority:** Medium · **Bloco:** Features · **Iteration:** 2 · **Bloqueado por:** — · **Bloqueia:** —
 
 **Contexto.** O "perfil de gosto" da pessoa (gêneros, décadas, diretores, ritmo), numa arte para compartilhar. Parte
 dos dados já existe em `.../modules/stats/` (`GetUserStatsUseCase`) e no grafo do `match`.
@@ -526,8 +704,8 @@ Stories (reaproveitar `EntryStoryCard` e o `storyShare.ts`).
 
 ---
 
-### 17. Cinematic Wrapped
-`backend` · `app` · `design` · **L**
+### 17. Cinematic Wrapped: retrospectiva do ano
+`backend` `app` `design` · **Size:** L · **Priority:** Low · **Bloco:** Features · **Iteration:** — · **Bloqueado por:** — · **Bloqueia:** —
 
 **Contexto.** A retrospectiva do ano em Stories. Só faz sentido com um ano de dados: mirar o primeiro dezembro com usuários.
 
@@ -540,8 +718,8 @@ Match: `features/match/application/useStoryPlayer.ts`) e uma arte por slide para
 
 ---
 
-### 18. Conversational Discovery (IA)
-`backend` · `app` · **L**
+### 18. Recomendar títulos conversando, com IA
+`backend` `app` · **Size:** L · **Priority:** Low · **Bloco:** Features · **Iteration:** 3 · **Bloqueado por:** — · **Bloqueia:** —
 
 **Contexto.** Pedir recomendação conversando ("quero algo leve para hoje, com a Ana"), usando o gosto da pessoa
 (diário, grafo) e o catálogo.
@@ -556,8 +734,8 @@ catálogo (nunca inventados: sempre validados no TMDB); tela de conversa no app.
 
 ---
 
-### 19. Notificações contextuais e descoberta por lançamentos
-`backend` · `app` · **L** · Depende de: 11
+### 19. Avisar sobre lançamentos ligados ao gosto da pessoa
+`backend` `app` · **Size:** L · **Priority:** Low · **Bloco:** Features · **Iteration:** — · **Bloqueado por:** #11 · **Bloqueia:** —
 
 **Contexto.** "Estreou um filme do diretor que você ama", "saiu a nova temporada da série que você está vendo".
 
@@ -571,8 +749,10 @@ cada pessoa e cria avisos no sino (e push, card 11). Preferência em Configuraç
 
 ---
 
-### 20. Outros provedores de importação
-`backend` · `app` · **M** (cada)
+### 20. Importar de outros apps além do Letterboxd
+`backend` `app` · **Size:** M · **Priority:** Low · **Bloco:** Features · **Iteration:** 3 · **Bloqueado por:** — · **Bloqueia:** —
+
+Tamanho por provedor.
 
 **Contexto.** Hoje só o Letterboxd (`.../modules/importing/infrastructure/letterboxd/`). Fazer sob demanda (IMDb, Trakt, TV Time).
 
@@ -588,8 +768,10 @@ escolher o provedor em `features/importing/presentation/screens/ImportScreen.tsx
 
 ## Bloco 5: Lançamento
 
-### 21. Exclusão de conta dentro do app
-`app` · `backend` · **M** · **Obrigatório para a App Store**
+### 21. Permitir excluir a conta pelo app
+`app` `backend` · **Size:** M · **Priority:** High · **Bloco:** Lançamento · **Iteration:** 1 · **Bloqueado por:** — · **Bloqueia:** #26
+
+**Obrigatório para a App Store.**
 
 **Contexto.** A Apple exige que todo app com cadastro permita excluir a conta **pelo próprio app**, ou ela recusa na
 revisão. O backend **já trata** a exclusão: o webhook `user.deleted` do Clerk faz o soft delete
@@ -629,8 +811,8 @@ export function useDeleteAccount() {
 
 ---
 
-### 22. Privacidade e LGPD
-`produto` · `backend` · `app` · **M**
+### 22. Adequar o app à LGPD (termos, política, exportar dados)
+`produto` `backend` `app` · **Size:** M · **Priority:** Medium · **Bloco:** Lançamento · **Iteration:** 2 · **Bloqueado por:** — · **Bloqueia:** #26
 
 **Contexto.** Para publicar: termos de uso e política de privacidade (links no cadastro e em Configurações), exportar os
 próprios dados (LGPD) e revisar o que vai para terceiros (Clerk, PostHog, TMDB).
@@ -652,8 +834,8 @@ próprios dados (LGPD) e revisar o que vai para terceiros (Clerk, PostHog, TMDB)
 
 ---
 
-### 23. Variáveis de produção no EAS e ambiente de homologação
-`infra` · **M**
+### 23. Criar o ambiente de homologação e as variáveis de build
+`infra` · **Size:** M · **Priority:** Medium · **Bloco:** Lançamento · **Iteration:** 2 · **Bloqueado por:** — · **Bloqueia:** #24, #26
 
 **Contexto.** Os builds `preview` e `production` (`cinediary-mobile/eas.json`) não leem o `.env.local` do seu
 computador: as chaves precisam estar cadastradas no EAS. E eles precisam de uma API pública (não `localhost`).
@@ -680,8 +862,8 @@ computador: as chaves precisam estar cadastradas no EAS. E eles precisam de uma 
 
 ---
 
-### 24. CD: builds e deploy automáticos
-`infra` · **M** · Depende de: 1, 8, 23
+### 24. Automatizar deploy da API e builds do app (CD)
+`infra` · **Size:** M · **Priority:** Medium · **Bloco:** Lançamento · **Iteration:** — · **Bloqueado por:** #1, #8, #23 · **Bloqueia:** —
 
 **O que fazer:**
 
@@ -700,8 +882,8 @@ Segredos no GitHub: `EXPO_TOKEN` (expo.dev → Access tokens) e os do servidor d
 
 ---
 
-### 25. Monitoramento em produção
-`infra` · `backend` · **M**
+### 25. Monitorar erros e disponibilidade em produção
+`infra` `backend` · **Size:** M · **Priority:** Medium · **Bloco:** Lançamento · **Iteration:** 2 · **Bloqueado por:** — · **Bloqueia:** —
 
 **Contexto.** Os erros do app já vão para o PostHog (`cinediary-mobile/src/shared/analytics/analytics.tsx`,
 `posthogLogger`). Falta o backend e os alertas.
@@ -719,8 +901,8 @@ Segredos no GitHub: `EXPO_TOKEN` (expo.dev → Access tokens) e os do servidor d
 
 ---
 
-### 26. Beta fechado
-`produto` · **M** · Depende de: 21, 22, 23
+### 26. Rodar o beta fechado (TestFlight e Play)
+`produto` · **Size:** M · **Priority:** Medium · **Bloco:** Lançamento · **Iteration:** — · **Bloqueado por:** #21, #22, #23 · **Bloqueia:** #27
 
 **O que fazer:** grupo de teste no TestFlight (até 10 mil pessoas por link) e no teste interno da Play Console; um
 jeito fácil de mandar feedback (link em Configurações, ou o feedback do próprio TestFlight); acompanhar crashes e
@@ -733,8 +915,8 @@ eventos no PostHog.
 
 ---
 
-### 27. Publicação nas lojas
-`produto` · `design` · **M** · Depende de: 26
+### 27. Publicar na App Store e na Play Store
+`produto` `design` · **Size:** M · **Priority:** Medium · **Bloco:** Lançamento · **Iteration:** — · **Bloqueado por:** #26 · **Bloqueia:** —
 
 **O que fazer:** prints (iPhone e Android), textos das lojas em PT e EN, ícone final, classificação etária, URL da
 política de privacidade, as respostas de "privacidade do app" da Apple (quais dados coletamos) e o envio para revisão.
@@ -747,23 +929,69 @@ política de privacidade, as respostas de "privacidade do app" da Apple (quais d
 
 ## Bloco 6: Futuro
 
-### 28. Monetização
-`produto` · `backend` · `app` · **XL**
+### 28. Monetização: Premium e anúncios
+`produto` `backend` `app` · **Size:** XL · **Priority:** Low · **Bloco:** Futuro · **Iteration:** — · **Bloqueado por:** — · **Bloqueia:** —
 
-Premium (RevenueCat), limites do plano grátis e anúncios só no grátis. Só depois de comprovar retenção (ver
-`docs/Mvp Inicial.md`, seção "Fora do MVP"). Quebrar em cards quando for a hora.
+**Issue grande, com sub-issues.** Só depois de comprovar retenção (ver `docs/Mvp Inicial.md`, seção "Fora do MVP").
 
-### 29. Versão Web
-`produto` · **XL**
+**Sub-issues:**
+
+| # | Título | Labels | Size | Bloqueado por |
+| --- | --- | --- | --- | --- |
+| 28.1 | Definir o que é Premium e os limites do plano grátis | `produto` | S | — |
+| 28.2 | Integrar as assinaturas com o RevenueCat | `app` `backend` | L | 28.1, #9 |
+| 28.3 | Aplicar o plano da pessoa no backend | `backend` | M | 28.2 |
+| 28.4 | Criar a tela de assinatura e mostrar os limites | `app` `design` | M | 28.1, 28.2 |
+| 28.5 | Mostrar anúncios só no plano grátis | `app` | M | 28.3 |
+
+**DoD geral:**
+- [ ] Todas as sub-issues fechadas.
+- [ ] Assinar, cancelar e restaurar compra funcionam no iOS e no Android (sandbox das lojas).
+
+#### 28.1 Definir o que é Premium e os limites do plano grátis
+`produto` · **Size:** S · **Bloqueado por:** —
+
+O que o Premium libera (ex.: estatísticas completas, Blend com mais pessoas, sem anúncios), preço por mês e por ano, e
+os limites do grátis. Registrar a decisão num ADR em `docs/architecture/`.
+
+#### 28.2 Integrar as assinaturas com o RevenueCat
+`app` `backend` · **Size:** L · **Bloqueado por:** 28.1, #9
+
+Produtos criados na App Store e na Play Store, configurados no RevenueCat; SDK `react-native-purchases` no app
+(precisa de development build); webhook do RevenueCat no backend para saber quem assinou.
+
+#### 28.3 Aplicar o plano da pessoa no backend
+`backend` · **Size:** M · **Bloqueado por:** 28.2
+
+Campo de plano no usuário (atualizado pelo webhook) e os limites aplicados nos casos de uso, com um erro claro quando a
+pessoa passa do limite.
+
+#### 28.4 Criar a tela de assinatura e mostrar os limites
+`app` `design` · **Size:** M · **Bloqueado por:** 28.1, 28.2
+
+A tela de assinatura (paywall), o aviso quando a pessoa chega num limite e o plano em Configurações.
+
+#### 28.5 Mostrar anúncios só no plano grátis
+`app` · **Size:** M · **Bloqueado por:** 28.3
+
+Anúncios em pontos discretos (ex.: entre itens do feed), nunca no meio de um registro; somem para quem é Premium.
+
+### 29. Criar a versão Web
+`produto` · **Size:** XL · **Priority:** Low · **Bloco:** Futuro · **Iteration:** — · **Bloqueado por:** — · **Bloqueia:** —
+
+Épico: quebrar em sub-issues quando for a hora.
 
 Perfis, diário, reviews, listas e feed na web, reaproveitando a API (contrato em `docs/architecture/openapi-v1.yaml`).
 Quebrar em cards quando for a hora.
 
 ---
 
-## Ordem sugerida
-1. **Dev:** 2 → 1 → 3.
-2. **Features:** 12 (listas) → 13 (marcação).
-3. **Pendências pequenas** (4 a 7) entre uma feature e outra.
-4. **Quando assinarem a Apple:** 8 → 9 → 10 e 11.
-5. **Antes do beta:** 21, 22, 23, 25 → 26 → 27.
+## Planejamento por iteração
+| Iteration | Cards |
+| --- | --- |
+| **1** (16 a 29 nov) | #2 → #1, #3, #4, #5, #7, #12, #13, #14, #21 |
+| **2** (30 nov a 13 dez) | #8 → #9 → #6, #10 e #11 · #16, #22, #23, #25 |
+| **3** (14 a 27 dez) | #18, #20 |
+| **Backlog** | #15, #17, #19, #24, #26, #27, #28, #29 |
+
+Sobrou tempo na iteração? Puxe o próximo card da seguinte, em vez de planejar demais.
