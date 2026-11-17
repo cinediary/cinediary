@@ -11,9 +11,11 @@ export function useFinishOnboarding() {
   const complete = useCompleteOnboarding();
   const toast = useToast();
 
-  const finish = () =>
+  /** `afterSuccess`: o que mais fazer quando o onboarding foi salvo (ex.: limpar a importação concluída). */
+  const finish = (afterSuccess?: () => void) =>
     complete.mutate(undefined, {
       onSuccess: ({ activatedMatchId }) => {
+        afterSuccess?.();
         if (!activatedMatchId) toast(strings.onboarding.welcomeToast);
       },
       onError: () => toast(strings.onboarding.submitError),

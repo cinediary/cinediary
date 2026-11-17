@@ -9,7 +9,7 @@ import { useOnboardingDraft } from '../../application/useOnboarding';
 import { ctaKind } from '../../domain/onboarding';
 import { OnboardingFrame } from '../components/OnboardingFrame';
 
-/** ON-01 · "Do que você gosta?" — opcional, sem mínimo nem máximo. */
+/** ON-01 · "Do que você gosta?" — opcional, sem mínimo nem máximo. Vem depois do "Faço depois" do Letterboxd. */
 export function OnboardingGenresScreen() {
   const t = strings.onboarding;
   const genres = useGenres();
@@ -30,7 +30,7 @@ export function OnboardingGenresScreen() {
   );
 
   return (
-    <OnboardingFrame step={1} title={t.genresTitle} footer={footer}>
+    <OnboardingFrame step={1} canGoBack title={t.genresTitle} footer={footer}>
       {genres.isPending ? (
         <View style={styles.wrap}>
           {[96, 120, 84, 140, 104, 76, 132, 92, 116, 88, 124, 100].map((w, i) => (

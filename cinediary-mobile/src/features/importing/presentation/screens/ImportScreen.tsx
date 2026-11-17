@@ -16,10 +16,21 @@ import { ImportReview } from '../components/ImportReview';
 const LETTERBOXD_EXPORT_URL = 'https://letterboxd.com/settings/data/';
 
 /**
+ * A importação dentro do onboarding (a primeira pergunta dele): a pessoa espera o processamento na tela (sem
+ * "Continuar usando o app") e o fim conclui o onboarding, em vez de ir para o diário ou para o Juntos.
+ * `onDone(cleanup)`: concluir o onboarding e, quando der certo, chamar `cleanup` (limpa a importação salva).
+ */
+export interface ImportOnboarding {
+  onDone: (cleanup: () => Promise<void>) => void;
+  finishing: boolean;
+}
+
+/**
  * IM-01 a IM-04 · Importação do ZIP do Letterboxd, em tela inteira (antes era um modal).
  * Todos os passos usam a mesma moldura (ImportFrame): voltar no topo e ações fixas no rodapé.
+ * Voltar (ou falhar) dentro do onboarding volta para a pergunta do Letterboxd.
  */
-export function ImportScreen() {
+export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } = {}) {
   const t = strings.importing;
   const flow = useImportFlow();
   const job = flow.job;
@@ -55,14 +66,16 @@ export function ImportScreen() {
   if (flow.step === 'uploading' || (flow.step === 'job' && (!job || job.status === 'PARSING' || job.status === 'APPLYING'))) {
     const label = flow.step === 'uploading' ? t.uploading : job?.status === 'APPLYING' ? t.applying : t.parsing(job?.totalItemsRead ?? 0);
     return (
-      <ImportFrame centered footer={<Button label={t.keepUsing} variant="secondary" onPress={() => router.back()} />}>
+      <ImportFrame centered footer={onboarding ? undefined : <Button label={t.keepUsing} variant="secondary" onPress={() => router.back()} />}>
         <SpinningReel />
         <Text variant="h2" style={styles.textCenter} accessibilityLiveRegion="polite">
           {label}
         </Text>
-        <Text tone="secondary" style={styles.textCenter}>
-          {t.canLeave}
-        </Text>
+        {onboarding ? null : (
+          <Text tone="secondary" style={styles.textCenter}>
+            {t.canLeave}
+          </Text>
+        )}
       </ImportFrame>
     );
   }
@@ -74,7 +87,11 @@ export function ImportScreen() {
       <ImportFrame
         footer={
           nothingNew ? (
-            <Button label={t.ok} onPress={() => void flow.reset().then(() => router.back())} />
+            onboarding ? (
+              <Button label={strings.onboarding.continue} loading={onboarding.finishing} onPress={() => onboarding.onDone(flow.reset)} />
+            ) : (
+              <Button label={t.ok} onPress={() => void flow.reset().then(() => router.back())} />
+            )
           ) : (
             <>
               <Button label={t.confirm} loading={flow.confirming} onPress={() => flow.confirm(favoritesMode)} />
@@ -95,10 +112,14 @@ export function ImportScreen() {
       <ImportFrame
         centered
         footer={
-          <>
-            <Button label={t.seeDiary} onPress={() => goTo('/(tabs)')} />
-            <Button label={t.createMatch} variant="secondary" onPress={() => goTo('/(tabs)/together')} />
-          </>
+          onboarding ? (
+            <Button label={strings.onboarding.continue} loading={onboarding.finishing} onPress={() => onboarding.onDone(flow.reset)} />
+          ) : (
+            <>
+              <Button label={t.seeDiary} onPress={() => goTo('/(tabs)')} />
+              <Button label={t.createMatch} variant="secondary" onPress={() => goTo('/(tabs)/together')} />
+            </>
+          )
         }
       >
         <Badge tone="success" icon={<CheckCircle size={44} color={semantic.success} weight="duotone" />} />

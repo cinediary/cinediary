@@ -1,5 +1,5 @@
-import { OnboardingGenresScreen } from '@/features/auth/presentation/screens/OnboardingGenresScreen';
+import { OnboardingLetterboxdScreen } from '@/features/auth/presentation/screens/OnboardingLetterboxdScreen';
 
-export default function OnboardingGenresRoute() {
-  return <OnboardingGenresScreen />;
+export default function OnboardingLetterboxdRoute() {
+  return <OnboardingLetterboxdScreen />;
 }

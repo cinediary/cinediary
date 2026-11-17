@@ -25,7 +25,7 @@ export function OnboardingFavoritesScreen() {
       <Text variant="caption" tone="muted" style={styles.center} accessibilityLiveRegion="polite">
         {t.favoritesCount(draft.favoriteIds.length)}
       </Text>
-      <Button label={code ? t.seeOurMatch : t.finish} loading={isPending} onPress={finish} />
+      <Button label={code ? t.seeOurMatch : t.finish} loading={isPending} onPress={() => finish()} />
     </>
   );
 
@@ -35,7 +35,7 @@ export function OnboardingFavoritesScreen() {
       title={t.favoritesTitle}
       caption={t.favoritesCaption}
       footer={footer}
-      topAction={{ label: t.skip, onPress: finish }}
+      topAction={{ label: t.skip, onPress: () => finish() }}
     >
       <View style={styles.grid}>
         {draft.seen.map((title) => {

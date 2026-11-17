@@ -28,8 +28,11 @@ export interface AnalyticsEvents {
     added_to_history: boolean;
     skipped: boolean;
     from_invite: boolean;
+    imported_from_letterboxd: boolean;
     duration_seconds: number;
   };
+  /** A pergunta do Letterboxd no onboarding: importar agora ou depois. */
+  onboarding_import_choice: { choice: 'import' | 'later' };
   title_logged: {
     tmdb_id: number;
     media_type: MediaType;
