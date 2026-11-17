@@ -5,11 +5,13 @@ import { analytics } from '@/shared/analytics/analytics';
 import type { QuickLogEntryPoint } from '@/shared/analytics/events';
 
 import { primeTitle } from '../application/catalogQueries';
+import { prefetchTitlePage } from '../application/titlePage';
 import type { TitleSummary } from '../domain/title';
 
-/** Abre a página do título já com o resumo em cache (abre na hora). */
+/** Abre a página do título já com o resumo em cache (abre na hora) e começa a buscar o resto. */
 export function openTitle(title: TitleSummary) {
   primeTitle(title);
+  prefetchTitlePage(title);
   router.push({
     pathname: '/title/[mediaType]/[tmdbId]',
     params: { mediaType: title.mediaType, tmdbId: String(title.tmdbId) },

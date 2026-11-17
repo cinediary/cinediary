@@ -19,6 +19,7 @@ import {
   APP_CONNECTION_ERROR_VARIANT,
   type ConnectionErrorVariant,
   type ConnectionProblem,
+  StarSpinner,
 } from '@/shared/ui';
 import { palette, semantic, space } from '@/shared/theme';
 import { AnimatedSplash } from '../splash/AnimatedSplash';
@@ -46,6 +47,7 @@ export function DesignSystemScreen() {
       {tab === 'screens' ? (
         <>
           <SplashSection />
+          <TitleLoadingSection />
           <ErrorScreensTab />
         </>
       ) : (
@@ -275,6 +277,20 @@ function ErrorScreensTab() {
   );
 }
 
+/**
+ * Carregamento da página do título: a estrela do logo girando enquanto o essencial chega (por pelo menos uma
+ * volta), e a página entra de uma vez. Para ver de verdade, abra um título que ainda não estava em cache.
+ */
+function TitleLoadingSection() {
+  return (
+    <Section title="Carregando (página do título)">
+      <View style={styles.spinnerPreview}>
+        <StarSpinner />
+      </View>
+    </Section>
+  );
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={styles.section}>
@@ -291,6 +307,7 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
   swatch: { width: 36, height: 36, borderRadius: 8, borderWidth: 1, borderColor: palette.border },
+  spinnerPreview: { height: 120, alignItems: 'center', justifyContent: 'center' },
   preview: { height: 640, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: palette.border },
   previewSplash: { height: 520, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: palette.border },
   fakeApp: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: semantic.background },

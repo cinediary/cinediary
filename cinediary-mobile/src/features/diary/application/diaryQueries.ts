@@ -31,6 +31,10 @@ export function useTitleEntries(titleId: number) {
   return useQuery({ queryKey: diaryKeys.ofTitle(titleId), queryFn: () => diaryApi.entriesOfTitle(titleId), enabled: titleId > 0 });
 }
 
+/** Começa a buscar os seus registros do título antes de a página abrir (ao tocar no título). */
+export const prefetchTitleEntries = (titleId: number) =>
+  queryClient.prefetchQuery({ queryKey: diaryKeys.ofTitle(titleId), queryFn: () => diaryApi.entriesOfTitle(titleId) });
+
 export function useUndatedWatched() {
   return useQuery({ queryKey: diaryKeys.undated, queryFn: diaryApi.undated });
 }

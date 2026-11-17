@@ -1,17 +1,18 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
+import Animated, { FadeIn, useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
 import { semantic, space } from '@/shared/theme';
-import { Button, ErrorState, SectionHeader, Text } from '@/shared/ui';
+import { Button, ErrorState, SectionHeader, STAR_SPIN_MS, StarSpinner, Text } from '@/shared/ui';
 import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
 import { useTitleDetail, useTitleExtras } from '../../application/catalogQueries';
+import { useTitlePageGate } from '../../application/titlePage';
 import type { MediaType } from '../../domain/title';
 import { CastSection } from '../components/CastSection';
-import { ExtrasSkeleton, SeasonsSkeleton, TitleDetailSkeleton } from '../components/Skeletons';
+import { ExtrasSkeleton, SeasonsSkeleton } from '../components/Skeletons';
 import { SeriesProgressSection } from '../components/SeriesProgressSection';
 import { TitleActions } from '../components/TitleActions';
 import { AboutSection, CrewSection, RelatedSections } from '../components/TitleExtrasSections';
@@ -33,6 +34,17 @@ export function TitleDetailScreen() {
   const tmdbId = Number(params.tmdbId);
   const detail = useTitleDetail(mediaType, tmdbId);
   const extras = useTitleExtras(mediaType, tmdbId);
+  // A página aparece de uma vez quando o essencial chega (ver useTitlePageGate). Até lá, a estrela girando,
+  // por pelo menos uma volta (sem piscar quando a internet é rápida).
+  const gate = useTitlePageGate({
+    mediaType,
+    tmdbId,
+    titleId: detail.data?.id ?? 0,
+    detailReady: !!detail.data && !detail.isPlaceholderData,
+    backdropUrl: detail.data?.backdropUrl,
+    posterUrl: detail.data?.posterUrl,
+    minWaitMs: STAR_SPIN_MS,
+  });
   const [trailerOpen, setTrailerOpen] = useState(false);
   const trailerPos = useTrailerPlacement();
   const scrollY = useSharedValue(0);
@@ -41,10 +53,18 @@ export function TitleDetailScreen() {
   });
   const t = strings.catalog;
 
-  if (!detail.data) {
+  if (!detail.data && detail.isError) {
     return (
-      <View style={detail.isError ? styles.center : styles.root}>
-        {detail.isError ? <ErrorState message={t.detailError} onRetry={() => detail.refetch()} /> : <TitleDetailSkeleton />}
+      <View style={styles.center}>
+        <ErrorState message={t.detailError} onRetry={() => detail.refetch()} />
+        <FloatingBackButton />
+      </View>
+    );
+  }
+  if (!detail.data || !gate.ready) {
+    return (
+      <View style={styles.spinner}>
+        <StarSpinner />
         <FloatingBackButton />
       </View>
     );
@@ -66,7 +86,8 @@ export function TitleDetailScreen() {
   };
 
   return (
-    <View style={styles.root}>
+    // Entra com um fade depois da estrela. Já estava tudo em cache: aparece direto.
+    <Animated.View style={styles.root} entering={gate.animate ? FadeIn.duration(280) : undefined}>
       <Animated.ScrollView
         style={styles.root}
         contentContainerStyle={styles.content}
@@ -79,6 +100,7 @@ export function TitleDetailScreen() {
           title={title}
           scrollY={scrollY}
           loading={detail.isPlaceholderData}
+          imagesReady={gate.imagesReady}
           trailer={placement === 'meta' ? { status: trailerStatus, onPress: openTrailer } : undefined}
         />
         <View style={styles.body}>
@@ -113,7 +135,7 @@ export function TitleDetailScreen() {
       </Animated.ScrollView>
       <FloatingBackButton />
       {trailerKey ? <TrailerPlayer youtubeKey={trailerKey} visible={trailerOpen} onClose={() => setTrailerOpen(false)} /> : null}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -127,6 +149,13 @@ const styles = StyleSheet.create({
   },
   center: {
     flex: 1,
+    justifyContent: 'center',
+    backgroundColor: semantic.background,
+  },
+  // A estrela no meio da tela, nos dois eixos.
+  spinner: {
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: semantic.background,
   },

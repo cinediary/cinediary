@@ -30,3 +30,4 @@ export * from './Title';
 export * from './Toast';
 export * from './useKeepAboveKeyboard';
 export * from './layout';
+export * from './loading/StarSpinner';

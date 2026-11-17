@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
+import { queryClient } from '@/shared/api/queryClient';
 import { sharedKeys } from '@/shared/api/queryKeys';
 import type { ReviewSort } from '../domain/social';
 import { socialApi } from '../infrastructure/socialApi';
@@ -20,6 +21,10 @@ export function useTitleCommunity(titleId: number) {
     enabled: titleId > 0,
   });
 }
+
+/** Começa a buscar a comunidade do título antes de a página abrir (ao tocar no título). */
+export const prefetchTitleCommunity = (titleId: number) =>
+  queryClient.prefetchQuery({ queryKey: titleCommunityKeys.summary(titleId), queryFn: () => socialApi.titleCommunity(titleId) });
 
 /** "Ver todas as reviews": 20 por vez, por ordem (populares, recentes, de quem você segue). */
 export function useTitleReviews(titleId: number, sort: ReviewSort) {

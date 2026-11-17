@@ -25,8 +25,11 @@ export function TitleHeader({
   scrollY,
   trailer,
   loading = false,
+  imagesReady = false,
 }: {
   title: TitleDetail;
+  /** O fundo já foi baixado antes de a página aparecer: entra junto com ela, sem fade próprio. */
+  imagesReady?: boolean;
   /**
    * A página ainda é a prévia montada da busca (sem sinopse nem imagem de fundo): a sinopse vira um esqueleto
    * do mesmo tamanho do texto, para nada pular quando o detalhe chegar.
@@ -76,7 +79,13 @@ export function TitleHeader({
       <Animated.View style={[styles.backdrop, stretch]}>
         {/* Entra com fade (antes "piscava" ao chegar); até lá, o fundo areia do próprio quadro. */}
         {title.backdropUrl ? (
-          <Image source={title.backdropUrl} style={StyleSheet.absoluteFill} contentFit="cover" transition={350} cachePolicy="memory-disk" />
+          <Image
+            source={title.backdropUrl}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={imagesReady ? 0 : 350}
+            cachePolicy="memory-disk"
+          />
         ) : null}
         <LinearGradient colors={['rgba(250,246,240,0)', palette.bg]} style={StyleSheet.absoluteFill} />
       </Animated.View>
