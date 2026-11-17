@@ -9,6 +9,8 @@ export interface OnboardingDraft {
   favoriteIds: number[];
   /** Desmarcado por padrão (UX-02, ON-02). */
   addToHistory: boolean;
+  /** Importou o Letterboxd no onboarding (o histórico e os favoritos vieram de lá). */
+  importedFromLetterboxd: boolean;
   startedAt: number;
 }
 
@@ -17,6 +19,7 @@ export const emptyDraft = (now = Date.now()): OnboardingDraft => ({
   seen: [],
   favoriteIds: [],
   addToHistory: false,
+  importedFromLetterboxd: false,
   startedAt: now,
 });
 

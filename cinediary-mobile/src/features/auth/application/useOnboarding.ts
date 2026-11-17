@@ -33,6 +33,7 @@ export function useOnboardingDraft() {
     toggleSeen: (title: TitleSummary) => setDraft(toggleSeen(draft, title)),
     toggleFavorite: (id: number) => setDraft(toggleFavorite(draft, id)),
     setAddToHistory: (value: boolean) => setDraft({ ...draft, addToHistory: value }),
+    setImportedFromLetterboxd: () => setDraft({ ...draft, importedFromLetterboxd: true }),
     reset: () => setDraft(emptyDraft()),
   };
 }
@@ -65,6 +66,7 @@ export function useCompleteOnboarding() {
         added_to_history: draft.addToHistory && draft.seen.length > 0,
         skipped: isSkipped(draft),
         from_invite: fromInvite,
+        imported_from_letterboxd: draft.importedFromLetterboxd,
         duration_seconds: Math.round((Date.now() - draft.startedAt) / 1000),
       });
       if (fromInvite) {
