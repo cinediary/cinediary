@@ -68,7 +68,8 @@ public class UpdateUserProfileUseCase
                 text(cmd.bio(), user.bio(), 200, "A bio"),
                 pronouns(cmd.pronouns(), user.pronouns()),
                 cmd.showSpoilers() != null ? cmd.showSpoilers() : user.showSpoilers(),
-                cmd.defaultReplyPolicy() != null ? cmd.defaultReplyPolicy() : user.defaultReplyPolicy());
+                cmd.defaultReplyPolicy() != null ? cmd.defaultReplyPolicy() : user.defaultReplyPolicy(),
+                cmd.approveCompanions() != null ? cmd.approveCompanions() : user.approveCompanions());
         if (cmd.favoriteTitleIds() != null) {
             diary.setFavorites(userId, cmd.favoriteTitleIds());
         }

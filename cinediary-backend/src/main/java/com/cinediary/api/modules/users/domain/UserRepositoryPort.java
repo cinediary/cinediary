@@ -38,7 +38,7 @@ public interface UserRepositoryPort
 
     /** Nome e sobrenome (espelho do Clerk), bio, pronomes e a preferência de spoilers. */
     void updateDetails(UUID id, String firstName, String lastName, String bio, String pronouns, boolean showSpoilers,
-                       com.cinediary.api.shared.domain.ReplyPolicy defaultReplyPolicy);
+                       com.cinediary.api.shared.domain.ReplyPolicy defaultReplyPolicy, boolean approveCompanions);
 
     void markOnboardingCompleted(UUID id);
 }

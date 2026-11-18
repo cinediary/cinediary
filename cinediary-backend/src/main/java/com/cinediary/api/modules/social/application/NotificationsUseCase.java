@@ -2,10 +2,13 @@ package com.cinediary.api.modules.social.application;
 
 import com.cinediary.api.modules.diary.api.DiaryEntryView;
 import com.cinediary.api.modules.diary.api.DiaryModulePort;
+import com.cinediary.api.modules.social.domain.CompanionStatus;
+import com.cinediary.api.modules.social.domain.EntryCompanionsPort;
 import com.cinediary.api.modules.social.domain.EntryInteractionsPort;
 import com.cinediary.api.modules.social.domain.Follow;
 import com.cinediary.api.modules.social.domain.FollowRepositoryPort;
 import com.cinediary.api.modules.social.domain.Notification;
+import com.cinediary.api.modules.social.domain.NotificationKind;
 import com.cinediary.api.modules.social.domain.NotificationsPort;
 import com.cinediary.api.modules.social.domain.Relationship;
 import com.cinediary.api.modules.users.api.UserView;
@@ -35,6 +38,7 @@ public class NotificationsUseCase
     private final DiaryModulePort diary;
     private final EntryInteractionsPort interactions;
     private final FollowRepositoryPort follows;
+    private final EntryCompanionsPort companions;
 
     @Transactional(readOnly = true)
     public List<NotificationItem> list(UUID recipientId)
@@ -55,6 +59,8 @@ public class NotificationsUseCase
                 .forEach(e -> entries.put(e.id(), e));
         Map<UUID, String> texts = interactions.commentTexts(rows.stream().map(Notification::commentId).filter(Objects::nonNull).distinct().toList());
         Map<UUID, Follow> mine = follows.findAllFrom(recipientId, people.keySet());
+        Map<UUID, CompanionStatus> marked = companions.statusesOf(recipientId, rows.stream()
+                .filter(n -> n.kind() == NotificationKind.ENTRY_COMPANION).map(Notification::entryId).distinct().toList());
 
         List<NotificationItem> out = new ArrayList<>();
         groups.forEach((key, list) -> {
@@ -63,11 +69,15 @@ public class NotificationsUseCase
             if (actors.isEmpty() || (first.entryId() != null && !entries.containsKey(first.entryId()))) {
                 return; // conta excluída ou registro apagado
             }
+            CompanionStatus companionStatus = first.kind() == NotificationKind.ENTRY_COMPANION ? marked.get(first.entryId()) : null;
+            if (first.kind() == NotificationKind.ENTRY_COMPANION && (companionStatus == null || companionStatus == CompanionStatus.DECLINED)) {
+                return; // a marcação foi tirada ou recusada
+            }
             Relationship rel = Relationship.of(false, Optional.ofNullable(mine.get(actors.getFirst().id())));
             out.add(new NotificationItem(key, first.kind(), actors.subList(0, Math.min(MAX_ACTORS, actors.size())), actors.size(),
                     first.entryId() == null ? null : entries.get(first.entryId()),
                     first.commentId() == null ? null : texts.get(first.commentId()),
-                    first.createdAt(), list.stream().anyMatch(Notification::unseen), rel));
+                    first.createdAt(), list.stream().anyMatch(Notification::unseen), rel, companionStatus));
         });
         return out;
     }

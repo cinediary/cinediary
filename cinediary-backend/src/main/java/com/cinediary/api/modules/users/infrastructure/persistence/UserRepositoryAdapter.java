@@ -88,7 +88,7 @@ class UserRepositoryAdapter implements UserRepositoryPort
 
     @Override
     public void updateDetails(UUID id, String firstName, String lastName, String bio, String pronouns, boolean showSpoilers,
-                              com.cinediary.api.shared.domain.ReplyPolicy defaultReplyPolicy)
+                              com.cinediary.api.shared.domain.ReplyPolicy defaultReplyPolicy, boolean approveCompanions)
     {
         UserJpaEntity e = repository.findById(id).orElseThrow();
         e.setFirstName(firstName);
@@ -97,6 +97,7 @@ class UserRepositoryAdapter implements UserRepositoryPort
         e.setPronouns(pronouns);
         e.setShowSpoilers(showSpoilers);
         e.setDefaultReplyPolicy(defaultReplyPolicy.name());
+        e.setApproveCompanions(approveCompanions);
         e.setUpdatedAt(Instant.now());
         repository.save(e);
     }
@@ -127,6 +128,6 @@ class UserRepositoryAdapter implements UserRepositoryPort
         return new UserAccount(e.getId(), e.getClerkId(), e.getUsername(), e.getDisplayName(), e.getFirstName(),
                 e.getLastName(), e.getEmail(), e.getAvatarUrl(), e.isPrivateProfile(), e.isOnboardingCompleted(),
                 e.getDeletedAt() != null, e.getBio(), e.getPronouns(), e.isShowSpoilers(),
-                com.cinediary.api.shared.domain.ReplyPolicy.valueOf(e.getDefaultReplyPolicy()));
+                com.cinediary.api.shared.domain.ReplyPolicy.valueOf(e.getDefaultReplyPolicy()), e.isApproveCompanions());
     }
 }

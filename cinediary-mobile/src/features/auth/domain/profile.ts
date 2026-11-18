@@ -20,6 +20,8 @@ export interface UserProfile {
   showSpoilers: boolean;
   /** Padrão de quem pode responder suas entradas (cada entrada pode trocar). */
   defaultReplyPolicy: 'ME' | 'FOLLOWING' | 'EVERYONE';
+  /** "Aprovar marcações": ligado, você aceita ou recusa quando te marcam ("vi com…"); desligado, já entra aceita. */
+  approveCompanions: boolean;
 }
 
 export interface ProfileChanges {
@@ -32,6 +34,7 @@ export interface ProfileChanges {
   pronouns?: PronounCode | '';
   showSpoilers?: boolean;
   defaultReplyPolicy?: 'ME' | 'FOLLOWING' | 'EVERYONE';
+  approveCompanions?: boolean;
   username?: string;
   avatarUrl?: string;
   isPrivate?: boolean;

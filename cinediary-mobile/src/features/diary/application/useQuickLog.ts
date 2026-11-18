@@ -3,6 +3,8 @@ import * as Haptics from 'expo-haptics';
 import { useRef, useState } from 'react';
 
 import type { TitleSummary } from '@/features/catalog/domain/title';
+import { linkLoggedEntry, saveEntryCompanions } from '@/features/social/application/companionQueries';
+import type { Actor } from '@/features/social/domain/social';
 import { analytics } from '@/shared/analytics/analytics';
 import { toIsoDate } from '@/shared/i18n';
 import { initialDraft, isLoggable, quickLogCta, type EntryScope, type QuickLogCta, type QuickLogDraft } from '../domain/diary';
@@ -15,14 +17,25 @@ import { invalidateAfterLog } from './diaryQueries';
  * `scope` (séries): registrar uma temporada ou um episódio. Aí só a entrada do diário é gravada (nota,
  * curtida e review daquela parte); o estado da série (nota geral, watchlist, status) não muda.
  */
-export function useQuickLog(title: TitleSummary, { undated = false, scope = null }: { undated?: boolean; scope?: EntryScope | null } = {}) {
+export function useQuickLog(
+  title: TitleSummary,
+  {
+    undated = false,
+    scope = null,
+    date,
+    fromEntry,
+  }: { undated?: boolean; scope?: EntryScope | null; date?: string; fromEntry?: string } = {},
+) {
+  const startDate = date ?? toIsoDate(new Date());
   const isSeries = title.mediaType === 'SERIES' && !scope;
   const [draft, setDraft] = useState<QuickLogDraft>(() =>
     scope
-      ? { ...initialDraft(title.state, false, toIsoDate(new Date()), true), liked: false, rating: 0, inWatchlist: false }
-      : initialDraft(title.state, isSeries, toIsoDate(new Date()), undated),
+      ? { ...initialDraft(title.state, false, startDate, true), liked: false, rating: 0, inWatchlist: false }
+      : initialDraft(title.state, isSeries, startDate, undated),
   );
   const touches = useRef(1);
+  // "Vi com…": amigos marcados no registro (gravados depois da entrada, pelo social).
+  const [companions, setCompanions] = useState<Actor[]>([]);
   // Episódios marcados no sheet salvam na hora e o backend ajusta o status (ex.: tudo visto = COMPLETED).
   // Enquanto a pessoa não escolher um status, vale o atual do título, para "Salvar" não desfazer isso.
   const [statusTouched, setStatusTouched] = useState(false);
@@ -37,11 +50,21 @@ export function useQuickLog(title: TitleSummary, { undated = false, scope = null
 
   const cta: QuickLogCta = scope ? 'log' : quickLogCta(effective, isSeries);
 
+  /**
+   * Marca quem viu junto no registro recém-criado e, se veio de uma marcação aceita, liga a quem te marcou (depois,
+   * para a lista escolhida não tirar essa pessoa). false: o registro foi salvo, mas as marcações não.
+   */
+  const markCompanions = async (entryId: string) => {
+    const marked = companions.length > 0 ? await saveEntryCompanions(entryId, companions.map((c) => c.username)) : true;
+    const linked = fromEntry ? await linkLoggedEntry(fromEntry, entryId) : true;
+    return marked && linked;
+  };
+
   const mutation = useMutation({
-    mutationFn: async (): Promise<QuickLogCta> => {
+    mutationFn: async (): Promise<{ cta: QuickLogCta; companionsSaved: boolean }> => {
       const rating = draft.rating > 0 ? draft.rating : null;
       if (scope) {
-        await diaryApi.createEntry({
+        const entry = await diaryApi.createEntry({
           titleId: title.id,
           watchedDate: draft.watchedDate,
           rating,
@@ -51,7 +74,7 @@ export function useQuickLog(title: TitleSummary, { undated = false, scope = null
           containsSpoilers: !!draft.reviewText.trim() && draft.containsSpoilers,
           scope,
         });
-        return 'log';
+        return { cta: 'log', companionsSaved: await markCompanions(entry.id) };
       }
       await diaryApi.updateState(title.id, {
         liked: draft.liked,
@@ -60,7 +83,7 @@ export function useQuickLog(title: TitleSummary, { undated = false, scope = null
         ...(isSeries ? { seriesStatus } : { watched: draft.watched || title.state.watched }),
       });
       if (cta === 'log') {
-        await diaryApi.createEntry({
+        const entry = await diaryApi.createEntry({
           titleId: title.id,
           watchedDate: draft.watchedDate,
           rating,
@@ -69,8 +92,9 @@ export function useQuickLog(title: TitleSummary, { undated = false, scope = null
           reviewText: draft.reviewText.trim() || null,
           containsSpoilers: !!draft.reviewText.trim() && draft.containsSpoilers,
         });
+        return { cta, companionsSaved: await markCompanions(entry.id) };
       }
-      return cta;
+      return { cta, companionsSaved: true };
     },
     onSuccess: () => {
       touches.current += 1; // toque em "Registrar"
@@ -84,6 +108,7 @@ export function useQuickLog(title: TitleSummary, { undated = false, scope = null
           is_rewatch: draft.isRewatch,
           touch_count: touches.current,
           scope: scope ? (scope.episode ? 'episode' : 'season') : 'title',
+          companions_count: companions.length,
         });
       }
       invalidateAfterLog();
@@ -91,5 +116,14 @@ export function useQuickLog(title: TitleSummary, { undated = false, scope = null
     onError: () => void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
   });
 
-  return { draft: effective, update, cta, isSeries, submit: mutation.mutateAsync, isSaving: mutation.isPending };
+  return {
+    draft: effective,
+    update,
+    cta,
+    isSeries,
+    companions,
+    setCompanions,
+    submit: mutation.mutateAsync,
+    isSaving: mutation.isPending,
+  };
 }

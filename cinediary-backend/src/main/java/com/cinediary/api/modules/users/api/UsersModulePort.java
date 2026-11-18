@@ -22,4 +22,7 @@ public interface UsersModulePort
 
     /** Perfil completo (totais + favoritos); estados dos títulos vistos por {@code viewerId}. */
     UserProfileView profile(UUID userId, UUID viewerId);
+
+    /** "Aprovar marcações": true (padrão) = quem é marcado aceita ou recusa; false = a marcação já entra aceita. */
+    boolean approvesCompanions(UUID userId);
 }

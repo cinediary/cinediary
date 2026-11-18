@@ -14,6 +14,7 @@ import { palette, semantic, space, touch } from '@/shared/theme';
 import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
 import { conversationKeys, useEntryInteractions } from '../../application/entryConversation';
 import { EntryActionBar, ReplyComposer, ReplyList } from './EntryConversation';
+import { WatchedWith } from './WatchedWith';
 
 /**
  * Moldura comum da tela de uma entrada (sua ou de outra pessoa): topo com o pôster, corpo com a review,
@@ -99,13 +100,21 @@ export function EntryScreenFrame({
             revealed={revealed}
             onReveal={() => setRevealed(true)}
           />
+          {/* "Com Ana e Bia" e, se você foi marcado, Aceitar/Recusar ou tirar a marcação. */}
+          {/* Sem review, o botão dos Stories fica na mesma linha do "Com…" (antes ficava solto numa linha só dele). */}
+          <WatchedWith
+            entry={entry}
+            ownEntry={ownEntry}
+            ownerName={author.name || author.username}
+            trailing={
+              !interactive && onShare ? <EntryActionBar entryId={entry.id} ownEntry={ownEntry} onShare={onShare} shareOnly /> : undefined
+            }
+          />
           {interactive ? (
             <>
               <EntryActionBar entryId={entry.id} ownEntry={ownEntry} onShare={onShare} />
               <ReplyList entryId={entry.id} meId={me.data?.id} hidden={hides && !revealed} onReveal={() => setRevealed(true)} />
             </>
-          ) : onShare ? (
-            <EntryActionBar entryId={entry.id} ownEntry={ownEntry} onShare={onShare} shareOnly />
           ) : null}
         </View>
       </Animated.ScrollView>

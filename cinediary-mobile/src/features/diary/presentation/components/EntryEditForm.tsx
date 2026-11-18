@@ -1,8 +1,11 @@
-import { ArrowCounterClockwise, ChatCircle, EyeSlash, Heart } from 'phosphor-react-native';
+import { ArrowCounterClockwise, ChatCircle, EyeSlash, Heart, UsersThree } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, ScrollView, StyleSheet, TextInput, View, type ScrollViewInstance } from 'react-native';
 
 import { useMe } from '@/features/auth/application/profileQueries';
+import { saveEntryCompanions, useEntryCompanions } from '@/features/social/application/companionQueries';
+import type { Actor } from '@/features/social/domain/social';
+import { CompanionPicker } from '@/features/social/presentation/components/CompanionPicker';
 import { strings, toIsoDate } from '@/shared/i18n';
 import { palette, radius, semantic, space, type as typeScale } from '@/shared/theme';
 import { ActionSheet, Button, IconButton, ListRow, PosterArt, StarRating, Text, useBottomSheet, useToast } from '@/shared/ui';
@@ -37,6 +40,12 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
   const replyLabel = (choice: EntryReplyChoice) =>
     choice === 'DEFAULT' ? ac.replyDefault(ac.replyPolicies[accountDefault]) : ac.replyPolicies[choice];
   const set = (patch: Partial<EntryChanges>) => setDraft((d) => ({ ...d, ...patch }));
+  // "Vi com…": começa com quem já está marcado (esperando ou aceito); null = a pessoa ainda não mexeu.
+  const ct = strings.social.companions;
+  const marked = useEntryCompanions(entry.id);
+  const [picked, setPicked] = useState<Actor[] | null>(null);
+  const companions: Actor[] = picked ?? marked.data?.companions ?? [];
+  const [showCompanions, setShowCompanions] = useState(false);
   const hasReview = !!draft.reviewText?.trim();
 
   const scrollRef = useRef<ScrollViewInstance>(null);
@@ -52,8 +61,9 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
     try {
       const review = draft.reviewText?.trim() || null;
       await update.mutateAsync({ ...draft, reviewText: review, containsSpoilers: !!review && draft.containsSpoilers });
+      const companionsSaved = picked === null || (await saveEntryCompanions(entry.id, picked.map((c) => c.username)));
       sheet?.close();
-      toast(t.entrySaved);
+      toast(companionsSaved ? t.entrySaved : ct.saveError);
     } catch {
       toast(t.saveError, { actionLabel: strings.common.retry, onAction: () => void onSave() });
     }
@@ -108,6 +118,13 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
           switchValue={draft.isRewatch}
           onSwitchChange={(isRewatch) => set({ isRewatch })}
         />
+        <ListRow
+          icon={<UsersThree size={20} color={palette.ink700} />}
+          label={ct.row}
+          hint={companions.length > 0 ? ct.withNames(ct.names(companions.map((c) => c.displayName || c.username))) : undefined}
+          onPress={() => setShowCompanions((open) => !open)}
+        />
+        {showCompanions ? <CompanionPicker selected={companions} onChange={setPicked} /> : null}
         <TextInput
           style={styles.review}
           value={draft.reviewText ?? ''}

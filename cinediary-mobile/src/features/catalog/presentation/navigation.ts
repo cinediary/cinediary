@@ -25,7 +25,16 @@ export function openTitle(title: TitleSummary) {
  */
 export function openQuickLog(
   title: TitleSummary,
-  options: { undated?: boolean; season?: number; episode?: number; from?: QuickLogEntryPoint } = {},
+  options: {
+    undated?: boolean;
+    season?: number;
+    episode?: number;
+    from?: QuickLogEntryPoint;
+    /** Data já escolhida (ex.: a do registro de quem te marcou). */
+    date?: string;
+    /** O registro de quem te marcou: ao registrar, o seu ganha "vi com" essa pessoa. */
+    fromEntry?: string;
+  } = {},
 ) {
   analytics.track('quick_log_opened', {
     entry_point: options.from ?? (options.episode ? 'series_episode' : options.season ? 'series_season' : 'other'),
@@ -44,6 +53,8 @@ export function openQuickLog(
       // Séries: registrar só uma temporada (season) ou um episódio (season + episode).
       ...(options.season ? { season: String(options.season) } : {}),
       ...(options.episode ? { episode: String(options.episode) } : {}),
+      ...(options.date ? { date: options.date } : {}),
+      ...(options.fromEntry ? { fromEntry: options.fromEntry } : {}),
     },
   });
 }

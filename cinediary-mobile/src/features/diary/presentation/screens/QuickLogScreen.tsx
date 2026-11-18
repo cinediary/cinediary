@@ -12,10 +12,19 @@ import { QuickLogForm } from '../components/QuickLogForm';
 /**
  * BU-02 · Registro rápido (rota transparentModal + BottomSheet do app).
  * Parâmetros: undated=1 (filme já visto ganhando a primeira data) e, em séries, season (temporada) e
- * episode (episódio) para registrar só aquela parte.
+ * episode (episódio) para registrar só aquela parte; date (data já escolhida) e fromEntry (o registro de quem te
+ * marcou: o seu ganha "vi com" essa pessoa).
  */
 export function QuickLogScreen() {
-  const params = useLocalSearchParams<{ mediaType: string; tmdbId: string; undated?: string; season?: string; episode?: string }>();
+  const params = useLocalSearchParams<{
+    mediaType: string;
+    tmdbId: string;
+    undated?: string;
+    season?: string;
+    episode?: string;
+    date?: string;
+    fromEntry?: string;
+  }>();
   const mediaType: MediaType = params.mediaType === 'SERIES' ? 'SERIES' : 'MOVIE';
   const detail = useTitleDetail(mediaType, Number(params.tmdbId));
   const season = Number(params.season);
@@ -32,6 +41,8 @@ export function QuickLogScreen() {
           seasonsLoading={detail.isPlaceholderData}
           undated={params.undated === '1'}
           scope={scope}
+          date={params.date}
+          fromEntry={params.fromEntry}
         />
       ) : (
         <View style={styles.state}>

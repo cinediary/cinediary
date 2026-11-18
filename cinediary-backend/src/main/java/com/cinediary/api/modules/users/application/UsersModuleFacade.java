@@ -62,7 +62,14 @@ public class UsersModuleFacade implements UsersModulePort
         return new UserProfileView(u.id(), u.username(), u.displayName(), u.avatarUrl(), u.privateProfile(),
                 u.onboardingCompleted(), diary.countWatched(userId, "MOVIE"), diary.countWatched(userId, "SERIES"),
                 catalog.summaries(diary.favoriteTitleIds(userId), viewerId), u.bio(), u.pronouns(), u.firstName(),
-                u.lastName(), u.showSpoilers(), u.defaultReplyPolicy().name());
+                u.lastName(), u.showSpoilers(), u.defaultReplyPolicy().name(), u.approveCompanions());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean approvesCompanions(UUID userId)
+    {
+        return users.findById(userId).map(UserAccount::approveCompanions).orElse(true);
     }
 
     static UserView toView(UserAccount u)
