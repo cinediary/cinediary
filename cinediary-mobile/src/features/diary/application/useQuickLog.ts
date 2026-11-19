@@ -5,9 +5,9 @@ import { useRef, useState } from 'react';
 import type { TitleSummary } from '@/features/catalog/domain/title';
 import { analytics } from '@/shared/analytics/analytics';
 import { toIsoDate } from '@/shared/i18n';
-import { initialDraft, isLoggable, quickLogCta, type EntryScope, type QuickLogCta, type QuickLogDraft } from '../domain/diary';
+import { hasLoggedScope, initialDraft, isLoggable, quickLogCta, type EntryScope, type QuickLogCta, type QuickLogDraft } from '../domain/diary';
 import { diaryApi } from '../infrastructure/diaryApi';
-import { invalidateAfterLog } from './diaryQueries';
+import { invalidateAfterLog, useTitleEntries } from './diaryQueries';
 
 /**
  * Caso de uso do registro rápido (BU-02): guarda o rascunho, conta os toques
@@ -27,11 +27,17 @@ export function useQuickLog(title: TitleSummary, { undated = false, scope = null
   // Enquanto a pessoa não escolher um status, vale o atual do título, para "Salvar" não desfazer isso.
   const [statusTouched, setStatusTouched] = useState(false);
   const seriesStatus = !isSeries ? null : statusTouched ? draft.seriesStatus : (title.state.seriesStatus ?? draft.seriesStatus);
-  const effective: QuickLogDraft = { ...draft, seriesStatus };
+  // Temporada ou episódio: o "rever" liga sozinho se você já registrou esse mesmo escopo (como nos filmes). Os
+  // registros podem chegar depois de o sheet abrir; até a pessoa mexer no switch, vale o que eles dizem.
+  const entries = useTitleEntries(scope ? title.id : 0);
+  const [rewatchTouched, setRewatchTouched] = useState(false);
+  const isRewatch = !scope || rewatchTouched ? draft.isRewatch : hasLoggedScope(entries.data ?? [], scope);
+  const effective: QuickLogDraft = { ...draft, seriesStatus, isRewatch };
 
   const update = (patch: Partial<QuickLogDraft>) => {
     touches.current += 1;
     if (patch.seriesStatus !== undefined) setStatusTouched(true);
+    if (patch.isRewatch !== undefined) setRewatchTouched(true);
     setDraft((d) => ({ ...d, ...patch }));
   };
 
@@ -46,7 +52,7 @@ export function useQuickLog(title: TitleSummary, { undated = false, scope = null
           watchedDate: draft.watchedDate,
           rating,
           liked: draft.liked,
-          isRewatch: draft.isRewatch,
+          isRewatch,
           reviewText: draft.reviewText.trim() || null,
           containsSpoilers: !!draft.reviewText.trim() && draft.containsSpoilers,
           scope,
@@ -65,7 +71,7 @@ export function useQuickLog(title: TitleSummary, { undated = false, scope = null
           watchedDate: draft.watchedDate,
           rating,
           liked: draft.liked,
-          isRewatch: draft.isRewatch,
+          isRewatch,
           reviewText: draft.reviewText.trim() || null,
           containsSpoilers: !!draft.reviewText.trim() && draft.containsSpoilers,
         });
@@ -81,7 +87,7 @@ export function useQuickLog(title: TitleSummary, { undated = false, scope = null
           media_type: title.mediaType,
           has_rating: draft.rating > 0,
           has_review: draft.reviewText.trim().length > 0,
-          is_rewatch: draft.isRewatch,
+          is_rewatch: isRewatch,
           touch_count: touches.current,
           scope: scope ? (scope.episode ? 'episode' : 'season') : 'title',
         });
