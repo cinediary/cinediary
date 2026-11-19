@@ -164,7 +164,8 @@ const styles = StyleSheet.create({
     borderRadius: touch.minTarget / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,253,249,0.95)',
+    // Opaco: com fundo translúcido o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
+    backgroundColor: palette.surface,
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 8,
