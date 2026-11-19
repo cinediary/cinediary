@@ -52,6 +52,13 @@
           "cameraPermission": "O CineDiary usa a câmera para você tirar a foto do perfil.",
           "microphonePermission": false
         }
+      ],
+      [
+        "react-native-share",
+        {
+          "ios": ["instagram-stories", "instagram"],
+          "android": ["com.instagram.android"]
+        }
       ]
     ],
     "experiments": {

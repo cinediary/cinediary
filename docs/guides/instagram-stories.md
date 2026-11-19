@@ -1,10 +1,15 @@
-# Compartilhar direto no editor do Instagram Stories (opção 2)
+# Compartilhar direto no editor do Instagram Stories
 
-Hoje (Expo Go) o botão **Compartilhar nos Stories** gera a imagem 1080×1920 da entrada e abre a
-**folha de compartilhar do sistema**; a pessoa escolhe *Instagram → Stories* e posta ela mesma.
+> **Feito (#10).** Este guia ficou como registro de como foi montado. O código está em
+> `cinediary-mobile/src/shared/sharing/storyShare.ts`, e a variável `EXPO_PUBLIC_FACEBOOK_APP_ID` está explicada no
+> README do app. Diferenças do que está abaixo: o `react-native-share` é carregado só na hora de compartilhar (no
+> Expo Go ele não existe e derrubaria o app ao ser importado), e o plugin dele precisa do `expo-build-properties`.
 
-Quando o app tiver **build de desenvolvimento** e um **app na Meta**, dá para pular a folha e abrir
-direto o editor do Stories com a imagem pronta (o app nunca publica nada: quem posta é a pessoa).
+O botão **Compartilhar nos Stories** gera a imagem 1080×1920 da entrada. Sem o Instagram (ou sem App ID, ou no
+Expo Go), abre a **folha de compartilhar do sistema**; a pessoa escolhe *Instagram → Stories* e posta ela mesma.
+
+Com **build de desenvolvimento** e um **app na Meta**, ele pula a folha e abre direto o editor do Stories com a
+imagem pronta (o app nunca publica nada: quem posta é a pessoa).
 Tudo passa por um único arquivo: `cinediary-mobile/src/shared/sharing/storyShare.ts`.
 
 ## 1. Meta (uma vez)
