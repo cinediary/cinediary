@@ -36,6 +36,8 @@ public interface UserRepositoryPort
 
     int softDeleteIfNewer(String clerkId, Instant eventTimestamp);
 
+    int softDelete(UUID id);
+
     void updateProfile(UUID id, String username, String displayName, String avatarUrl, boolean privateProfile);
 
     /** Nome e sobrenome (espelho do Clerk), bio, pronomes e a preferência de spoilers. */

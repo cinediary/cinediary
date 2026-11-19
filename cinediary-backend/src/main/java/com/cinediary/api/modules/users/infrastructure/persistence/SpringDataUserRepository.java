@@ -105,6 +105,17 @@ interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, UUID>
                           @Param("eventTimestamp") Instant eventTimestamp);
 
     @Modifying
+    @Query(value = """
+            UPDATE users
+               SET deleted_at = NOW(),
+                   username = 'excluido_' || substr(replace(id::text, '-', ''), 1, 12),
+                   updated_at = NOW()
+             WHERE id = :id
+               AND deleted_at IS NULL
+            """, nativeQuery = true)
+    int softDelete(@Param("id") UUID id);
+
+    @Modifying
     @Transactional
     @Query(value = """
             INSERT INTO users (clerk_id, username, display_name, avatar_url)

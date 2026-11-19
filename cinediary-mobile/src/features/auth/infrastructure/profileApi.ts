@@ -1,5 +1,5 @@
 import { toTitleSummary } from '@/features/catalog/infrastructure/titleMapper';
-import { api, unwrap, type Schemas } from '@/shared/api/client';
+import { api, unwrap, unwrapVoid, type Schemas } from '@/shared/api/client';
 import type { OnboardingPayload } from '../domain/onboarding';
 import type { ProfileChanges, UserProfile } from '../domain/profile';
 
@@ -29,6 +29,8 @@ export const profileApi = {
   me: async (): Promise<UserProfile> => toProfile(await unwrap(api.GET('/api/v1/me'))),
 
   update: async (changes: ProfileChanges): Promise<UserProfile> => toProfile(await unwrap(api.PATCH('/api/v1/me', { body: changes }))),
+
+  deleteAccount: (): Promise<void> => unwrapVoid(api.DELETE('/api/v1/me')),
 
   /** Cadastro (sem login): o @username está livre? */
   async usernameAvailability(username: string): Promise<{ available: boolean; reason: UsernameReason }> {

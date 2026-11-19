@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
-import { ChatCircle, DownloadSimple, Eye, FilmSlate, Info, LockSimple, Palette, SignOut, UserCircle, UsersThree } from 'phosphor-react-native';
+import { usePreventRemove } from 'expo-router';
+import { ChatCircle, DownloadSimple, Eye, FilmSlate, Info, LockSimple, Palette, SignOut, Trash, UserCircle, UsersThree } from 'phosphor-react-native';
 import { useState, type ReactNode } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,11 +8,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { analytics } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
 import { palette, radius, semantic, space } from '@/shared/theme';
-import { ActionSheet, ListRow, Text, Title, useToast } from '@/shared/ui';
+import { ActionSheet, ListRow, StarSpinner, Text, Title, useToast } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useMe, useUpdateProfile } from '../../application/profileQueries';
-import { useSignOut } from '../../application/usePasswordAuth';
+import { useDeleteAccount, useSignOut } from '../../application/usePasswordAuth';
 
 /**
  * Uma linha de configuração. Para criar uma opção nova, é só acrescentar um item numa das seções de
@@ -32,7 +33,7 @@ type SettingSection = { key: string; title: string; rows: SettingRow[] };
 
 const icon = (Icon: typeof UserCircle) => <Icon size={20} color={palette.ink700} />;
 
-function useSections(openReplyPicker: () => void): SettingSection[] {
+function useSections(openReplyPicker: () => void, openDeleteAccount: () => void, deletingAccount: boolean): SettingSection[] {
   const a = strings.account;
   const t = strings.stats;
   const toast = useToast();
@@ -55,6 +56,14 @@ function useSections(openReplyPicker: () => void): SettingSection[] {
             analytics.track('setting_changed', { key: 'private_profile', value: isPrivate });
             updateProfile.mutate({ isPrivate }, { onError: () => toast(strings.common.genericError) });
           },
+        },
+        {
+          key: 'delete',
+          icon: <Trash size={20} color={semantic.danger} />,
+          label: a.deleteAccount,
+          hint: deletingAccount ? a.deleteAccountPending : undefined,
+          onPress: deletingAccount ? undefined : openDeleteAccount,
+          danger: true,
         },
       ],
     },
@@ -123,8 +132,14 @@ export function SettingsScreen() {
   const toast = useToast();
   const me = useMe();
   const updateProfile = useUpdateProfile();
+  const deleteAccount = useDeleteAccount({ onError: () => toast(a.deleteAccountError) });
   const [pickingReplies, setPickingReplies] = useState(false);
-  const sections = useSections(() => setPickingReplies(true));
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const sections = useSections(
+    () => setPickingReplies(true),
+    () => setConfirmingDelete(true),
+    deleteAccount.isPending,
+  );
   const current = me.data?.defaultReplyPolicy ?? 'EVERYONE';
 
   const confirmSignOut = () =>
@@ -132,6 +147,8 @@ export function SettingsScreen() {
       { text: strings.common.cancel, style: 'cancel' },
       { text: strings.auth.signOut, style: 'destructive', onPress: signOut },
     ]);
+
+  usePreventRemove(deleteAccount.isPending, () => undefined);
 
   return (
     <View style={styles.root}>
@@ -188,6 +205,19 @@ export function SettingsScreen() {
           },
         }))}
       />
+      <ActionSheet
+        visible={confirmingDelete}
+        title={a.deleteAccountTitle}
+        message={a.deleteAccountText}
+        onClose={() => setConfirmingDelete(false)}
+        options={[{ key: 'delete', label: a.deleteAccountConfirm, destructive: true, onPress: () => deleteAccount.mutate() }]}
+      />
+      {deleteAccount.isPending ? (
+        <View style={styles.blocking} accessibilityViewIsModal>
+          <StarSpinner />
+          <Text variant="bodyStrong">{a.deleteAccountPending}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -198,5 +228,13 @@ const styles = StyleSheet.create({
   section: { gap: space.sm },
   card: { borderRadius: radius.lg, backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.border, overflow: 'hidden' },
   row: { paddingHorizontal: space.lg, paddingVertical: space.xs },
+  blocking: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.md,
+    backgroundColor: semantic.background,
+    opacity: 0.94,
+  },
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.border },
 });

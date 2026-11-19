@@ -81,4 +81,11 @@ export const account: Strings['account'] = {
   tmdb: 'Movie and series data',
   signOutConfirmTitle: 'Sign out of your account?',
   signOutConfirmText: 'Your diary stays saved. Just sign in again to continue.',
+  deleteAccount: 'Delete account',
+  deleteAccountTitle: 'Delete your account?',
+  deleteAccountText:
+    'Your profile, diary and reviews will no longer be visible to anyone, and you will lose access to the account. This cannot be undone.',
+  deleteAccountConfirm: 'Delete forever',
+  deleteAccountPending: 'Deleting your account…',
+  deleteAccountError: "Couldn't delete your account. Please try again.",
 };

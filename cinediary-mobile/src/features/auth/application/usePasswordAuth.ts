@@ -1,4 +1,5 @@
 import { useClerk, useSignIn, useSignUp } from '@clerk/expo';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { pendingInvite } from '@/features/match/application/matchQueries';
@@ -6,6 +7,7 @@ import { analytics, posthogLogger } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
 import { normalizeEmail, normalizeIdentifier, normalizeUsername, type SignUpInput } from '../domain/credentials';
 import { clerkErrorCode } from '../infrastructure/clerkErrors';
+import { profileApi } from '../infrastructure/profileApi';
 
 /**
  * MVP: autenticação só com usuário + e-mail + senha, sem SSO e sem
@@ -86,4 +88,16 @@ export function useSignOut() {
     posthogLogger.info('authentication completed', { auth_action: 'sign_out', auth_provider: 'password' });
     void signOut();
   };
+}
+
+export function useDeleteAccount({ onError }: { onError: () => void }) {
+  const { signOut } = useClerk();
+  return useMutation({
+    mutationFn: profileApi.deleteAccount,
+    onSuccess: () => {
+      analytics.track('account_deleted', {});
+      void signOut().catch(() => undefined);
+    },
+    onError,
+  });
 }

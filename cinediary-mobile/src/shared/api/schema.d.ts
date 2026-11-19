@@ -83,7 +83,32 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        delete?: never;
+        /** Exclui a conta (soft delete local e remoção do usuário no Clerk) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Conta excluída (excluir de novo no Clerk também devolve 204) */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description O Clerk não respondeu; nada foi excluído e dá para tentar de novo */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
         /** Atualiza nome, @username, foto, privacidade e favoritos do perfil */

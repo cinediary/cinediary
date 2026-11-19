@@ -30,6 +30,7 @@ export interface AnalyticsEvents {
   user_signed_up: { auth_provider: AuthProvider; from_invite: boolean };
   user_signed_in: { auth_provider: AuthProvider };
   user_signed_out: Record<string, never>;
+  account_deleted: Record<string, never>;
   onboarding_completed: {
     genres_count: number;
     titles_selected_count: number;

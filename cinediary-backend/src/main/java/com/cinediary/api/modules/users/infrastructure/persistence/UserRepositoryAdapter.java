@@ -93,6 +93,12 @@ class UserRepositoryAdapter implements UserRepositoryPort
     }
 
     @Override
+    public int softDelete(UUID id)
+    {
+        return repository.softDelete(id);
+    }
+
+    @Override
     public void updateDetails(UUID id, String firstName, String lastName, String bio, String pronouns, boolean showSpoilers,
                               com.cinediary.api.shared.domain.ReplyPolicy defaultReplyPolicy, boolean approveCompanions)
     {

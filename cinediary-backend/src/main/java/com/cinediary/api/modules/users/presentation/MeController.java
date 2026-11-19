@@ -2,6 +2,7 @@ package com.cinediary.api.modules.users.presentation;
 
 import com.cinediary.api.modules.users.api.UserProfileView;
 import com.cinediary.api.modules.users.application.CompleteOnboardingUseCase;
+import com.cinediary.api.modules.users.application.DeleteAccountUseCase;
 import com.cinediary.api.modules.users.application.GetCurrentUserUseCase;
 import com.cinediary.api.modules.users.application.OnboardingResult;
 import com.cinediary.api.modules.users.application.UpdateUserProfileUseCase;
@@ -13,11 +14,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -29,6 +33,7 @@ public class MeController
     private final GetCurrentUserUseCase getCurrentUser;
     private final UpdateUserProfileUseCase updateUserProfile;
     private final CompleteOnboardingUseCase completeOnboarding;
+    private final DeleteAccountUseCase deleteAccount;
 
     @GetMapping
     @Operation(summary = "Perfil do usuário autenticado")
@@ -50,5 +55,13 @@ public class MeController
     {
         OnboardingResult result = completeOnboarding.execute(user.id(), request.toCommand());
         return new OnboardingResponse(result.onboardingCompleted(), result.activatedMatchId());
+    }
+
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Exclui a conta: soft delete local e remoção do usuário no Clerk")
+    public void delete(CurrentUser user)
+    {
+        deleteAccount.execute(user.id(), user.clerkId());
     }
 }
