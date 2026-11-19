@@ -34,9 +34,14 @@ class NotificationsAdapter implements NotificationsPort
         if (recipientId.equals(actorId)) {
             return;
         }
+        String onConflict = kind == NotificationKind.FOLLOWED
+                ? """
+                  ON CONFLICT (recipient_id, actor_id, kind) WHERE kind IN ('FOLLOWED', 'FOLLOW_REQUESTED', 'FOLLOW_APPROVED')
+                  DO UPDATE SET created_at = NOW(), seen_at = NULL"""
+                : "ON CONFLICT DO NOTHING";
         jdbc.sql("""
                         INSERT INTO notifications (recipient_id, actor_id, kind, entry_id, comment_id)
-                        VALUES (:r, :a, :k, :e, :c) ON CONFLICT DO NOTHING""")
+                        VALUES (:r, :a, :k, :e, :c) """ + onConflict)
                 .param("r", recipientId).param("a", actorId).param("k", kind.name()).param("e", entryId).param("c", commentId)
                 .update();
     }

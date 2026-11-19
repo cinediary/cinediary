@@ -26,6 +26,8 @@ export const social: Strings['social'] = {
   profileError: 'No pudimos abrir este perfil ahora.',
   notFound: 'Este perfil no existe o salió de CineDiary.',
   followError: 'No se pudo seguir ahora. Inténtalo de nuevo.',
+  unfollowError: 'No se pudo dejar de seguir ahora. Inténtalo de nuevo.',
+  cancelRequestError: 'No se pudo cancelar la solicitud ahora. Inténtalo de nuevo.',
   // Solicitudes (perfil privado)
   requestsTitle: 'Solicitudes para seguir',
   requestsBanner: (n: number) => (n === 1 ? '1 solicitud para seguirte' : `${n} solicitudes para seguirte`),

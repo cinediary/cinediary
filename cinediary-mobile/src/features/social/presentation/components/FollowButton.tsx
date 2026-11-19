@@ -34,7 +34,7 @@ export function FollowButton({ person, size = 'md' }: { person: Person & { follo
       {
         onError: () => {
           setTapped(null);
-          toast(t.followError);
+          toast(to !== 'NONE' ? t.followError : r === 'REQUESTED' ? t.cancelRequestError : t.unfollowError);
         },
       },
     );

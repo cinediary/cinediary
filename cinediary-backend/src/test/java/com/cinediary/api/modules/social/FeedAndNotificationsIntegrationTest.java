@@ -1,5 +1,6 @@
 package com.cinediary.api.modules.social;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -126,6 +127,80 @@ class FeedAndNotificationsIntegrationTest extends IntegrationTest
         mvc.perform(get("/api/v1/me/notifications").with(ana.auth()))
                 .andExpect(jsonPath("$[0].kind").value("FOLLOW_APPROVED"))
                 .andExpect(jsonPath("$[0].actors[0].username").value(dora.username()));
+
+        mvc.perform(post("/api/v1/me/notifications/seen").with(ana.auth())).andExpect(status().isNoContent());
+
+        mvc.perform(delete("/api/v1/users/{u}/follow", dora.username()).with(ana.auth())).andExpect(status().is2xxSuccessful());
+        mvc.perform(get("/api/v1/me/notifications").with(dora.auth())).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get("/api/v1/me/notifications").with(ana.auth())).andExpect(jsonPath("$.length()").value(0));
+
+        mvc.perform(post("/api/v1/users/{u}/follow", dora.username()).with(ana.auth()));
+        mvc.perform(post("/api/v1/me/follow-requests/{id}/approve", ana.id()).with(dora.auth()));
+        mvc.perform(get("/api/v1/me/notifications/unread-count").with(ana.auth())).andExpect(jsonPath("$.count").value(1));
+        mvc.perform(get("/api/v1/me/notifications").with(ana.auth()))
+                .andExpect(jsonPath("$[0].kind").value("FOLLOW_APPROVED"))
+                .andExpect(jsonPath("$[0].unseen").value(true));
+    }
+
+    @Test
+    void followedNotificationGoesAwayWhenTheFollowIsUndone() throws Exception
+    {
+        Person maria = person("maria", false);
+        Person vlad = person("vlad", false);
+
+        mvc.perform(post("/api/v1/users/{u}/follow", vlad.username()).with(maria.auth())).andExpect(status().is2xxSuccessful());
+        mvc.perform(get("/api/v1/me/notifications").with(vlad.auth())).andExpect(jsonPath("$[0].kind").value("FOLLOWED"));
+        mvc.perform(post("/api/v1/me/notifications/seen").with(vlad.auth())).andExpect(status().isNoContent());
+        jdbc.sql("UPDATE notifications SET created_at = NOW() - INTERVAL '300 days' WHERE recipient_id = CAST(? AS uuid)")
+                .param(vlad.id()).update();
+
+        mvc.perform(delete("/api/v1/users/{u}/follow", vlad.username()).with(maria.auth())).andExpect(status().is2xxSuccessful());
+        mvc.perform(get("/api/v1/me/notifications").with(vlad.auth())).andExpect(jsonPath("$.length()").value(0));
+        assertThat(count("SELECT COUNT(*) FROM notifications WHERE recipient_id = CAST(? AS uuid)", vlad.id())).isZero();
+
+        mvc.perform(post("/api/v1/users/{u}/follow", vlad.username()).with(maria.auth())).andExpect(status().is2xxSuccessful());
+        mvc.perform(get("/api/v1/me/notifications/unread-count").with(vlad.auth())).andExpect(jsonPath("$.count").value(1));
+        mvc.perform(get("/api/v1/me/notifications").with(vlad.auth()))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].kind").value("FOLLOWED"))
+                .andExpect(jsonPath("$[0].unseen").value(true));
+        assertThat(count("""
+                SELECT COUNT(*) FROM notifications
+                 WHERE recipient_id = CAST(? AS uuid) AND created_at > NOW() - INTERVAL '1 minute'""", vlad.id())).isEqualTo(1);
+
+        mvc.perform(delete("/api/v1/me/followers/{id}", maria.id()).with(vlad.auth())).andExpect(status().is2xxSuccessful());
+        mvc.perform(get("/api/v1/me/notifications").with(vlad.auth())).andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void followUndoneBeforeItWasSeenComesBackUnseen() throws Exception
+    {
+        Person maria = person("maria", false);
+        Person vlad = person("vlad", false);
+
+        mvc.perform(post("/api/v1/users/{u}/follow", vlad.username()).with(maria.auth())).andExpect(status().is2xxSuccessful());
+        mvc.perform(delete("/api/v1/users/{u}/follow", vlad.username()).with(maria.auth())).andExpect(status().is2xxSuccessful());
+        mvc.perform(post("/api/v1/me/notifications/seen").with(vlad.auth())).andExpect(status().isNoContent());
+
+        mvc.perform(post("/api/v1/users/{u}/follow", vlad.username()).with(maria.auth())).andExpect(status().is2xxSuccessful());
+        mvc.perform(get("/api/v1/me/notifications/unread-count").with(vlad.auth())).andExpect(jsonPath("$.count").value(1));
+        mvc.perform(get("/api/v1/me/notifications").with(vlad.auth())).andExpect(jsonPath("$[0].unseen").value(true));
+    }
+
+    @Test
+    void removedFollowerKeepsTheApprovalNotice() throws Exception
+    {
+        Person ana = person("ana", false);
+        Person dora = person("dora", true);
+
+        mvc.perform(post("/api/v1/users/{u}/follow", dora.username()).with(ana.auth()));
+        mvc.perform(post("/api/v1/me/follow-requests/{id}/approve", ana.id()).with(dora.auth()));
+        mvc.perform(delete("/api/v1/me/followers/{id}", ana.id()).with(dora.auth())).andExpect(status().is2xxSuccessful());
+
+        mvc.perform(get("/api/v1/me/notifications").with(dora.auth())).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get("/api/v1/me/notifications").with(ana.auth()))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].kind").value("FOLLOW_APPROVED"));
     }
 
     @Test
