@@ -16,8 +16,14 @@ public interface EntryCompanionsPort
     /** Marca como PENDING (se já existia, não muda nada). */
     void add(UUID entryId, UUID companionId);
 
-    /** Marca já aceita (ex.: quem foi marcado registrou o mesmo filme e liga à pessoa que o marcou). */
+    /**
+     * Marca já aceita (ex.: quem foi marcado registrou o mesmo filme e liga à pessoa que o marcou). Uma marcação
+     * que a pessoa recusou continua recusada.
+     */
     void addAccepted(UUID entryId, UUID companionId);
+
+    /** Esconde (ou volta a mostrar) para quem marcou uma marcação recusada, sem apagar a recusa. */
+    void setRemovedByOwner(UUID entryId, UUID companionId, boolean removed);
 
     void remove(UUID entryId, UUID companionId);
 

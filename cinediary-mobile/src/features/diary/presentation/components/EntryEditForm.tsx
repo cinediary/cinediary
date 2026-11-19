@@ -41,10 +41,13 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
     choice === 'DEFAULT' ? ac.replyDefault(ac.replyPolicies[accountDefault]) : ac.replyPolicies[choice];
   const set = (patch: Partial<EntryChanges>) => setDraft((d) => ({ ...d, ...patch }));
   // "Vi com…": começa com quem já está marcado (esperando ou aceito); null = a pessoa ainda não mexeu.
+  // Só abre depois de carregar quem já está marcado: escolher a partir de uma lista vazia e salvar apagaria as
+  // marcações que já existem.
   const ct = strings.social.companions;
   const marked = useEntryCompanions(entry.id);
   const [picked, setPicked] = useState<Actor[] | null>(null);
   const companions: Actor[] = picked ?? marked.data?.companions ?? [];
+  const companionsReady = marked.isSuccess;
   const [showCompanions, setShowCompanions] = useState(false);
   const hasReview = !!draft.reviewText?.trim();
 
@@ -122,9 +125,9 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
           icon={<UsersThree size={20} color={palette.ink700} />}
           label={ct.row}
           hint={companions.length > 0 ? ct.withNames(ct.names(companions.map((c) => c.displayName || c.username))) : undefined}
-          onPress={() => setShowCompanions((open) => !open)}
+          onPress={companionsReady ? () => setShowCompanions((open) => !open) : undefined}
         />
-        {showCompanions ? <CompanionPicker selected={companions} onChange={setPicked} /> : null}
+        {showCompanions && companionsReady ? <CompanionPicker selected={companions} onChange={setPicked} /> : null}
         <TextInput
           style={styles.review}
           value={draft.reviewText ?? ''}

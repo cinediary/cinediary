@@ -43,6 +43,13 @@ public class UsersModuleFacade implements UsersModulePort
     }
 
     @Override
+    public List<UserView> findByUsernames(Collection<String> usernames)
+    {
+        return usernames.isEmpty() ? List.of()
+                : users.findActiveByUsernames(usernames).stream().map(UsersModuleFacade::toView).toList();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<UserView> search(String query, int limit)
     {
@@ -67,9 +74,11 @@ public class UsersModuleFacade implements UsersModulePort
 
     @Override
     @Transactional(readOnly = true)
-    public boolean approvesCompanions(UUID userId)
+    public java.util.Set<UUID> autoAcceptingCompanions(Collection<UUID> userIds)
     {
-        return users.findById(userId).map(UserAccount::approveCompanions).orElse(true);
+        return userIds.isEmpty() ? java.util.Set.of()
+                : users.findByIds(userIds).stream().filter(u -> !u.approveCompanions()).map(UserAccount::id)
+                        .collect(java.util.stream.Collectors.toSet());
     }
 
     static UserView toView(UserAccount u)

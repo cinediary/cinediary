@@ -25,7 +25,8 @@ class EntryCompanionsAdapter implements EntryCompanionsPort
     private static EntryCompanion map(ResultSet rs, int n) throws SQLException
     {
         return new EntryCompanion(rs.getObject("entry_id", UUID.class), rs.getObject("companion_user_id", UUID.class),
-                CompanionStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant());
+                CompanionStatus.valueOf(rs.getString("status")), rs.getTimestamp("created_at").toInstant(),
+                rs.getBoolean("removed_by_owner"));
     }
 
     @Override
@@ -55,8 +56,16 @@ class EntryCompanionsAdapter implements EntryCompanionsPort
         jdbc.sql("""
                         INSERT INTO entry_companions (entry_id, companion_user_id, status, responded_at)
                         VALUES (:e, :c, 'ACCEPTED', NOW())
-                        ON CONFLICT (entry_id, companion_user_id) DO UPDATE SET status = 'ACCEPTED', responded_at = NOW()""")
+                        ON CONFLICT (entry_id, companion_user_id) DO UPDATE SET status = 'ACCEPTED', responded_at = NOW()
+                         WHERE entry_companions.status <> 'DECLINED'""")
                 .param("e", entryId).param("c", companionId).update();
+    }
+
+    @Override
+    public void setRemovedByOwner(UUID entryId, UUID companionId, boolean removed)
+    {
+        jdbc.sql("UPDATE entry_companions SET removed_by_owner = :r WHERE entry_id = :e AND companion_user_id = :c")
+                .param("r", removed).param("e", entryId).param("c", companionId).update();
     }
 
     @Override

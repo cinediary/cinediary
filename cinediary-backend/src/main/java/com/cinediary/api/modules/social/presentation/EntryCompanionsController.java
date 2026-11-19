@@ -9,6 +9,7 @@ import com.cinediary.api.modules.social.presentation.dto.SetCompanionsRequest;
 import com.cinediary.api.shared.domain.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +59,7 @@ public class EntryCompanionsController
 
     @PostMapping("/me/companions/{entryId}/logged")
     @Operation(summary = "Você registrou o mesmo título: seu registro ganha \"vi com\" quem te marcou (já aceito)")
-    public EntryCompanionsResponse logged(CurrentUser user, @PathVariable UUID entryId, @RequestBody LinkOwnEntryRequest request)
+    public EntryCompanionsResponse logged(CurrentUser user, @PathVariable UUID entryId, @Valid @RequestBody LinkOwnEntryRequest request)
     {
         return EntryCompanionsResponse.from(companions.linkOwnEntry(entryId, user.id(), request.entryId()));
     }

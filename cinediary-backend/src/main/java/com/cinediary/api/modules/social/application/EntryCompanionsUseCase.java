@@ -51,7 +51,11 @@ public class EntryCompanionsUseCase
         return current(entryId, viewerId, ownerId);
     }
 
-    /** O dono define a lista inteira: quem entrou é marcado (e avisado); quem saiu perde a marcação. */
+    /**
+     * O dono define a lista inteira: quem entrou é marcado (e avisado); quem saiu perde a marcação. Quem já recusou
+     * neste registro nunca é marcado nem avisado de novo: sair da lista só esconde a pessoa de quem marcou, e voltar
+     * para a lista a mostra de novo como "esperando".
+     */
     @Transactional
     public EntryCompanions set(UUID entryId, UUID ownerId, List<String> usernames)
     {
@@ -69,10 +73,16 @@ public class EntryCompanionsUseCase
         }
         Map<UUID, EntryCompanion> existing = new HashMap<>();
         companions.ofEntry(entryId).forEach(c -> existing.put(c.companionId(), c));
+        Map<String, UserView> byUsername = new HashMap<>();
+        users.findByUsernames(wanted).stream().filter(UserView::onboardingCompleted)
+                .forEach(u -> byUsername.put(u.username().toLowerCase(Locale.ROOT), u));
         Set<UUID> friends = Set.copyOf(companions.mutualFriends(ownerId, FRIENDS_WINDOW));
         Set<UUID> wantedIds = new LinkedHashSet<>();
         for (String username : wanted) {
-            UserView person = access.person(username);
+            UserView person = byUsername.get(username);
+            if (person == null) {
+                throw new NotFoundException("Perfil não encontrado");
+            }
             if (person.id().equals(ownerId)) {
                 continue; // marcar a si mesmo não faz sentido
             }
@@ -83,21 +93,27 @@ public class EntryCompanionsUseCase
             wantedIds.add(person.id());
         }
 
-        for (UUID id : wantedIds) {
-            if (!existing.containsKey(id)) {
-                // "Aprovar marcações" desligado: já entra aceita (o aviso vira só informativo).
-                if (users.approvesCompanions(id)) {
-                    companions.add(entryId, id);
-                } else {
-                    companions.addAccepted(entryId, id);
-                }
-                notifications.add(id, ownerId, NotificationKind.ENTRY_COMPANION, entryId, null);
+        List<UUID> added = wantedIds.stream().filter(id -> !existing.containsKey(id)).toList();
+        // "Aprovar marcações" desligado: já entra aceita (o aviso vira só informativo).
+        Set<UUID> autoAccept = users.autoAcceptingCompanions(added);
+        for (UUID id : added) {
+            if (autoAccept.contains(id)) {
+                companions.addAccepted(entryId, id);
+            } else {
+                companions.add(entryId, id);
             }
+            notifications.add(id, ownerId, NotificationKind.ENTRY_COMPANION, entryId, null);
         }
-        for (UUID id : existing.keySet()) {
-            if (!wantedIds.contains(id)) {
-                companions.remove(entryId, id);
-                notifications.remove(id, ownerId, NotificationKind.ENTRY_COMPANION, entryId);
+        for (EntryCompanion c : existing.values()) {
+            boolean keep = wantedIds.contains(c.companionId());
+            if (c.status() == CompanionStatus.DECLINED) {
+                // A recusa fica guardada; só muda se quem marcou a vê ou não (o aviso já sumiu ao recusar).
+                if (c.removedByOwner() == keep) {
+                    companions.setRemovedByOwner(entryId, c.companionId(), !keep);
+                }
+            } else if (!keep) {
+                companions.remove(entryId, c.companionId());
+                notifications.remove(c.companionId(), ownerId, NotificationKind.ENTRY_COMPANION, entryId);
             }
         }
         return current(entryId, ownerId, ownerId);
@@ -193,7 +209,7 @@ public class EntryCompanionsUseCase
         Map<UUID, UserView> people = new HashMap<>();
         users.findByIds(all.stream().map(EntryCompanion::companionId).toList()).forEach(u -> people.put(u.id(), u));
         List<CompanionItem> visible = all.stream()
-                .filter(c -> people.containsKey(c.companionId()))
+                .filter(c -> people.containsKey(c.companionId()) && !c.removedByOwner())
                 .filter(c -> isOwner || c.status() == CompanionStatus.ACCEPTED)
                 .map(c -> new CompanionItem(people.get(c.companionId()),
                         c.status() == CompanionStatus.DECLINED ? CompanionStatus.PENDING : c.status()))
@@ -203,12 +219,15 @@ public class EntryCompanionsUseCase
         return new EntryCompanions(visible, mine);
     }
 
-    /** O dono do registro, se quem vê pode ver: o dono, a pessoa marcada ou quem pode ver o perfil do dono. */
+    /**
+     * O dono do registro, se quem vê pode ver: o dono, a pessoa marcada (esperando ou que aceitou; quem recusou perde
+     * esse acesso) ou quem pode ver o perfil do dono.
+     */
     private UUID visibleOwner(UUID entryId, UUID viewerId)
     {
         EntryAccessView entry = diary.entryAccess(entryId).orElseThrow(() -> new NotFoundException("Registro não encontrado"));
         UserView owner = users.findById(entry.ownerId()).orElseThrow(() -> new NotFoundException("Registro não encontrado"));
-        boolean marked = companions.find(entryId, viewerId).isPresent();
+        boolean marked = companions.find(entryId, viewerId).filter(c -> c.status() != CompanionStatus.DECLINED).isPresent();
         if (!owner.id().equals(viewerId) && !marked && !access.canSeeContent(viewerId, owner)) {
             throw new ForbiddenException("Este perfil é privado");
         }

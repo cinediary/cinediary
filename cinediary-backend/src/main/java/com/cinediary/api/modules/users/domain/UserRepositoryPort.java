@@ -16,6 +16,8 @@ public interface UserRepositoryPort
 
     Optional<UserAccount> findActiveByUsername(String username);
 
+    List<UserAccount> findActiveByUsernames(Collection<String> usernames);
+
     List<UserAccount> search(String query, int limit);
 
     boolean usernameTakenByAnother(String username, String clerkId);

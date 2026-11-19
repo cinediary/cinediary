@@ -201,6 +201,86 @@ class EntryCompanionsIntegrationTest extends IntegrationTest
     }
 
     @Test
+    void takingADeclinedPersonOutAndBackInDoesNotTagThemAgain() throws Exception
+    {
+        Person ana = person("ana", false);
+        Person bia = person("bia", false);
+        friends(ana, bia);
+        String entry = log(ana, TestTitles.movie(jdbc, "Recusar e remarcar", 10, "18:Drama"));
+        mark(ana, entry, bia.username());
+        mvc.perform(post("/api/v1/me/companions/{e}/decline", entry).with(bia.auth())).andExpect(status().isNoContent());
+
+        // Tirar da lista some com a Bia para a Ana, mas a recusa fica guardada
+        mark(ana, entry).andExpect(jsonPath("$.companions.length()").value(0));
+        mvc.perform(get("/api/v1/entries/{e}/companions", entry).with(bia.auth()))
+                .andExpect(jsonPath("$.myStatus").value("DECLINED"));
+        // Voltar para a lista: aparece "esperando" para a Ana, sem marcar nem avisar a Bia de novo
+        mark(ana, entry, bia.username())
+                .andExpect(jsonPath("$.companions.length()").value(1))
+                .andExpect(jsonPath("$.companions[0].status").value("PENDING"));
+        mvc.perform(get("/api/v1/me/notifications").with(bia.auth()))
+                .andExpect(jsonPath("$[?(@.kind == 'ENTRY_COMPANION')]").isEmpty());
+        mvc.perform(post("/api/v1/me/companions/{e}/accept", entry).with(bia.auth())).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void linkingYourEntryKeepsAnEarlierDecline() throws Exception
+    {
+        Person ana = person("ana", false);
+        Person bia = person("bia", false);
+        friends(ana, bia);
+        long title = TestTitles.movie(jdbc, "Recusa vale", 10, "18:Drama");
+        // A Ana marca a Bia no registro X, e a Bia recusa
+        String x = log(ana, title);
+        mark(ana, x, bia.username());
+        mvc.perform(post("/api/v1/me/companions/{e}/decline", x).with(bia.auth()));
+        // A Bia marca a Ana no registro Y (mesmo título); a Ana aceita e liga o X
+        String y = log(bia, title);
+        mark(bia, y, ana.username());
+        mvc.perform(post("/api/v1/me/companions/{e}/accept", y).with(ana.auth()));
+        mvc.perform(post("/api/v1/me/companions/{e}/logged", y).with(ana.auth())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"entryId\":\"" + x + "\"}"))
+                .andExpect(status().isOk());
+
+        // A recusa da Bia no X continua valendo
+        mvc.perform(get("/api/v1/entries/{e}/companions", x).with(bia.auth()))
+                .andExpect(jsonPath("$.myStatus").value("DECLINED"));
+        mvc.perform(get("/api/v1/users/{u}/watched-with", bia.username()).with(bia.auth()))
+                .andExpect(jsonPath("$[?(@.id == '" + x + "')]").isEmpty());
+    }
+
+    @Test
+    void linkingWithoutAnEntryIsABadRequest() throws Exception
+    {
+        Person ana = person("ana", false);
+        Person bia = person("bia", false);
+        friends(ana, bia);
+        String entry = log(ana, TestTitles.movie(jdbc, "Sem registro", 10, "18:Drama"));
+        mark(ana, entry, bia.username());
+        mvc.perform(post("/api/v1/me/companions/{e}/accept", entry).with(bia.auth()));
+        mvc.perform(post("/api/v1/me/companions/{e}/logged", entry).with(bia.auth())
+                .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void decliningTakesAwayAccessToAPrivateEntry() throws Exception
+    {
+        Person ana = person("ana", true); // perfil privado
+        Person bia = person("bia", false);
+        mvc.perform(post("/api/v1/users/{u}/follow", ana.username()).with(bia.auth()));
+        mvc.perform(post("/api/v1/me/follow-requests/{id}/approve", bia.id()).with(ana.auth()));
+        mvc.perform(post("/api/v1/users/{u}/follow", bia.username()).with(ana.auth()));
+        String entry = log(ana, TestTitles.movie(jdbc, "Privado recusado", 10, "18:Drama"));
+        mark(ana, entry, bia.username()).andExpect(status().isOk());
+        mvc.perform(post("/api/v1/me/companions/{e}/decline", entry).with(bia.auth()));
+
+        // A Bia deixa de seguir: sem a marcação valendo, o registro da Ana (privada) fica fechado para ela
+        mvc.perform(delete("/api/v1/users/{u}/follow", ana.username()).with(bia.auth()));
+        mvc.perform(get("/api/v1/entries/{e}/companions", entry).with(bia.auth())).andExpect(status().isForbidden());
+    }
+
+    @Test
     void ownerUnmarkingRemovesTheNotification() throws Exception
     {
         Person ana = person("ana", false);

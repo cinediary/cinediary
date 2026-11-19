@@ -42,6 +42,12 @@ class UserRepositoryAdapter implements UserRepositoryPort
     }
 
     @Override
+    public List<UserAccount> findActiveByUsernames(Collection<String> usernames)
+    {
+        return repository.findByUsernameInAndDeletedAtIsNull(usernames).stream().map(UserRepositoryAdapter::toModel).toList();
+    }
+
+    @Override
     public List<UserAccount> search(String query, int limit)
     {
         String escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");

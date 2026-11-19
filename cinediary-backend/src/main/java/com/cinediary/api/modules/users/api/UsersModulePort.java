@@ -14,6 +14,9 @@ public interface UsersModulePort
 
     Optional<UserView> findByUsername(String username);
 
+    /** Contas ativas com esses @ (já normalizados); os que não existem ficam de fora. */
+    List<UserView> findByUsernames(Collection<String> usernames);
+
     /**
      * Busca de pessoas por @ (começo) ou nome (qualquer parte). Só contas ativas que concluíram o onboarding
      * (sem os @ provisórios), as mais parecidas primeiro.
@@ -23,6 +26,9 @@ public interface UsersModulePort
     /** Perfil completo (totais + favoritos); estados dos títulos vistos por {@code viewerId}. */
     UserProfileView profile(UUID userId, UUID viewerId);
 
-    /** "Aprovar marcações": true (padrão) = quem é marcado aceita ou recusa; false = a marcação já entra aceita. */
-    boolean approvesCompanions(UUID userId);
+    /**
+     * "Aprovar marcações" ligado (padrão): quem é marcado aceita ou recusa. Desligado: a marcação já entra aceita.
+     * Devolve, dos {@code userIds}, quem está com ele desligado.
+     */
+    java.util.Set<UUID> autoAcceptingCompanions(Collection<UUID> userIds);
 }

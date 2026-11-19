@@ -8,6 +8,7 @@ import { Avatar, SearchField, Skeleton, Text, useToast } from '@/shared/ui';
 import { useFriends } from '../../application/companionQueries';
 import type { Actor } from '../../domain/social';
 
+/** Precisa bater com EntryCompanion.MAX_PER_ENTRY no backend (acima disso o salvar dá erro). */
 const MAX = 10;
 const VISIBLE = 6;
 
