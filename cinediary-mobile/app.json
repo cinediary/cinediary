@@ -42,7 +42,15 @@
       "expo-web-browser",
       "expo-image",
       "@clerk/expo",
-      "expo-localization",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": ["pt", "en", "es", "fr"],
+            "android": ["pt", "en", "es", "fr"]
+          }
+        }
+      ],
       "expo-sharing",
       "@react-native-community/datetimepicker",
       [

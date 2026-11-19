@@ -20,7 +20,7 @@ const authMiddleware: Middleware = {
   async onRequest({ request }) {
     const token = await getAuthToken();
     if (token) request.headers.set('Authorization', `Bearer ${token}`);
-    // Idioma do aparelho: o backend devolve títulos, sinopses e gêneros do TMDB nele (pt-BR ou en-US).
+    // Idioma do aparelho: o backend devolve títulos, sinopses e gêneros do TMDB nele (pt-BR, en-US, es-ES, es-MX ou fr-FR).
     request.headers.set('Accept-Language', nativeLocale);
     return request;
   },
