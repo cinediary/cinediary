@@ -1,5 +1,5 @@
 import * as Sharing from 'expo-sharing';
-import { Platform } from 'react-native';
+import { Platform, TurboModuleRegistry } from 'react-native';
 
 import { env } from '@/shared/config/env';
 
@@ -28,10 +28,15 @@ export interface StoryImages {
 const INSTAGRAM_ANDROID = 'com.instagram.android';
 
 /**
- * O react-native-share exige o código nativo já ao ser importado: no Expo Go (que não o tem) isso derrubaria o app.
- * Por isso ele só é carregado na hora de compartilhar; sem ele, fica a folha do sistema.
+ * O react-native-share exige o código nativo já ao ser importado: no Expo Go (que não o tem) o import dá erro, e em
+ * desenvolvimento o Metro mostra esse erro na tela mesmo com o catch. Por isso o app pergunta antes se o módulo
+ * nativo existe (`get`, que não dá erro) e só então carrega a biblioteca; sem ele, fica a folha do sistema.
+ *
+ * TEMPORÁRIO: só existe para quem ainda testa no Expo Go. Quando o time inteiro usar development build (depois do
+ * Apple Developer Program, #8), dá para voltar ao import normal no topo do arquivo e apagar esta função.
  */
 async function loadShare() {
+  if (TurboModuleRegistry.get('RNShare') == null) return null;
   try {
     return await import('react-native-share');
   } catch {
