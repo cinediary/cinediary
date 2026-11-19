@@ -1,8 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 
 /**
- * Matches cujo Story a pessoa já abriu neste aparelho: quem convidou vê a animação "Calculando"
- * só na primeira vez (as chaves do SecureStore aceitam letras, números, ".", "-" e "_": o UUID serve).
+ * Matches cujo Story a pessoa já abriu neste aparelho. A conta também guarda isso (`seenByMe`); aqui fica o cache
+ * local, que vale na hora, antes de a conta gravar (as chaves do SecureStore aceitam letras, números, ".", "-" e
+ * "_": o UUID serve).
  */
 const key = (matchId: string) => `cinediary.storySeen.${matchId}`;
 
