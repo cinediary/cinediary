@@ -7,12 +7,23 @@ import { env } from '@/shared/config/env';
  * Compartilhar uma imagem 9:16 nos Stories. Um ponto só para o app inteiro (entrada do diário e, depois, os slides
  * do Match), para trocar a estratégia sem mexer nas telas.
  *
- * Com o Instagram instalado (e o App ID da Meta configurado): abre DIRETO o editor do Stories com a imagem como
- * fundo; quem posta é a pessoa (o app nunca publica nada). Sem o Instagram, sem App ID ou se der erro: a folha de
- * compartilhar do sistema, como antes. Passo a passo da Meta: docs/guides/instagram-stories.md.
+ * Com o Instagram instalado (e o App ID da Meta configurado): abre DIRETO o editor do Stories com o fundo e, por
+ * cima, o cartão como sticker (a pessoa move, aumenta e gira); quem posta é a pessoa (o app nunca publica nada).
+ * Sem o Instagram, sem App ID ou se der erro: a imagem inteira na folha de compartilhar do sistema, como antes.
+ * Passo a passo da Meta: docs/guides/instagram-stories.md.
  */
 export type StoryShareTarget = 'system_sheet' | 'instagram_stories';
 export type StoryShareResult = { target: StoryShareTarget; status: 'shared' | 'unavailable' | 'error' };
+
+/** As imagens do Story, geradas só quando precisa (cada uma é uma captura de tela). */
+export interface StoryImages {
+  /** A imagem inteira (1080×1920), para a folha do sistema. */
+  full: () => Promise<string>;
+  /** Só o fundo (1080×1920). */
+  background: () => Promise<string>;
+  /** Só o cartão, PNG transparente: o sticker do Instagram. */
+  sticker: () => Promise<string>;
+}
 
 const INSTAGRAM_ANDROID = 'com.instagram.android';
 
@@ -51,13 +62,14 @@ async function instagramInstalled(share: ShareModule) {
   }
 }
 
-export async function shareToStories(imageUri: string): Promise<StoryShareResult> {
+export async function shareToStories(images: StoryImages): Promise<StoryShareResult> {
   const share = env.facebookAppId ? await loadShare() : null;
-  if (!share || !(await instagramInstalled(share))) return systemSheet(imageUri);
+  if (!share || !(await instagramInstalled(share))) return systemSheet(await images.full());
   try {
-    await share.default.shareSingle({ social: share.Social.InstagramStories, appId: env.facebookAppId, backgroundImage: imageUri });
+    const [backgroundImage, stickerImage] = await Promise.all([images.background(), images.sticker()]);
+    await share.default.shareSingle({ social: share.Social.InstagramStories, appId: env.facebookAppId, backgroundImage, stickerImage });
     return { target: 'instagram_stories', status: 'shared' };
   } catch {
-    return systemSheet(imageUri);
+    return systemSheet(await images.full());
   }
 }

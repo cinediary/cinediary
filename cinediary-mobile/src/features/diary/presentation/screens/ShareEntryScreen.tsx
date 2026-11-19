@@ -13,8 +13,8 @@ import { useShareEntry } from '../../application/useShareEntry';
 import { EntryStoryCard } from '../components/EntryStoryCard';
 
 /**
- * Prévia do card dos Stories: a pessoa vê a imagem exatamente como vai sair e toca em "Compartilhar
- * nos Stories". A captura é feita desta prévia visível (com o pôster já carregado), em 1080×1920.
+ * Prévia do card dos Stories: a pessoa vê como vai sair e toca em "Compartilhar nos Stories" (no Instagram, o
+ * cartão chega como sticker e dá para mover). As capturas são feitas desta prévia visível (com o pôster já carregado).
  */
 export function ShareEntryScreen() {
   const t = strings.diary;
@@ -26,13 +26,15 @@ export function ShareEntryScreen() {
   const entry = useEntry(entryId);
   const { share, sharing } = useShareEntry(entry.data);
   const cardRef = useRef<ComponentRef<typeof View>>(null);
+  const backgroundRef = useRef<ComponentRef<typeof View>>(null);
+  const stickerRef = useRef<ComponentRef<typeof View>>(null);
 
   // A maior prévia 9:16 que cabe entre o fechar e o botão.
   const available = height - insets.top - insets.bottom - touch.minTarget - touch.buttonHeight - space.xl * 3;
   const cardWidth = Math.min(width - space.screenX * 2, (available * story.exportWidth) / story.exportHeight);
 
   const onShare = async () => {
-    const status = await share(cardRef);
+    const status = await share({ full: cardRef, background: backgroundRef, sticker: stickerRef });
     if (status === 'error') toast(t.entryShareError);
     if (status === 'unavailable') toast(t.entryShareUnavailable);
   };
@@ -55,6 +57,8 @@ export function ShareEntryScreen() {
           <View style={styles.cardShadow}>
             <EntryStoryCard
               ref={cardRef}
+              backgroundRef={backgroundRef}
+              stickerRef={stickerRef}
               entry={entry.data}
               author={{ username: me.data?.username ?? '', name: me.data?.displayName ?? '', avatarUrl: me.data?.avatarUrl ?? null }}
               width={cardWidth}
