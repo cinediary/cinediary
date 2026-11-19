@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -108,6 +109,21 @@ class EntryCompanionsAdapter implements EntryCompanionsPort
                          LIMIT :size OFFSET :offset""")
                 .param("c", companionId).param("size", size).param("offset", page * size)
                 .query(UUID.class).list();
+    }
+
+    @Override
+    public Set<UUID> whoMarked(UUID companionId, UUID entryId, Collection<UUID> candidates)
+    {
+        if (candidates.isEmpty()) {
+            return Set.of();
+        }
+        return Set.copyOf(jdbc.sql("""
+                        SELECT DISTINCT src.user_id FROM entry_companions c
+                          JOIN diary_entries src ON src.id = c.entry_id
+                          JOIN diary_entries mine ON mine.id = :e AND mine.title_id = src.title_id
+                         WHERE c.companion_user_id = :c AND c.status = 'ACCEPTED' AND src.user_id IN (:ids)""")
+                .param("c", companionId).param("e", entryId).param("ids", candidates)
+                .query(UUID.class).list());
     }
 
     @Override

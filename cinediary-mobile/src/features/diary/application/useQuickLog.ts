@@ -24,7 +24,8 @@ export function useQuickLog(
     scope = null,
     date,
     fromEntry,
-  }: { undated?: boolean; scope?: EntryScope | null; date?: string; fromEntry?: string } = {},
+    markedBy,
+  }: { undated?: boolean; scope?: EntryScope | null; date?: string; fromEntry?: string; markedBy?: Actor } = {},
 ) {
   const startDate = date ?? toIsoDate(new Date());
   const isSeries = title.mediaType === 'SERIES' && !scope;
@@ -34,8 +35,9 @@ export function useQuickLog(
       : initialDraft(title.state, isSeries, startDate, undated),
   );
   const touches = useRef(1);
-  // "Vi com…": amigos marcados no registro (gravados depois da entrada, pelo social).
-  const [companions, setCompanions] = useState<Actor[]>([]);
+  // "Vi com…": amigos marcados no registro (gravados depois da entrada, pelo social). Vindo de uma marcação aceita,
+  // quem te marcou já vem na lista.
+  const [companions, setCompanions] = useState<Actor[]>(() => (markedBy ? [markedBy] : []));
   // Episódios marcados no sheet salvam na hora e o backend ajusta o status (ex.: tudo visto = COMPLETED).
   // Enquanto a pessoa não escolher um status, vale o atual do título, para "Salvar" não desfazer isso.
   const [statusTouched, setStatusTouched] = useState(false);
@@ -51,12 +53,15 @@ export function useQuickLog(
   const cta: QuickLogCta = scope ? 'log' : quickLogCta(effective, isSeries);
 
   /**
-   * Marca quem viu junto no registro recém-criado e, se veio de uma marcação aceita, liga a quem te marcou (depois,
-   * para a lista escolhida não tirar essa pessoa). false: o registro foi salvo, mas as marcações não.
+   * Marca quem viu junto no registro recém-criado. Quem te marcou (se continuou na lista) não passa pela marcação
+   * normal: é ligado depois, já aceito e sem aviso; se você o tirou, o registro fica sem ele. false: o registro foi
+   * salvo, mas as marcações não.
    */
   const markCompanions = async (entryId: string) => {
-    const marked = companions.length > 0 ? await saveEntryCompanions(entryId, companions.map((c) => c.username)) : true;
-    const linked = fromEntry ? await linkLoggedEntry(fromEntry, entryId) : true;
+    const keepsMarker = !!markedBy && companions.some((c) => c.id === markedBy.id);
+    const others = companions.filter((c) => c.id !== markedBy?.id);
+    const marked = others.length > 0 ? await saveEntryCompanions(entryId, others.map((c) => c.username)) : true;
+    const linked = fromEntry && keepsMarker ? await linkLoggedEntry(fromEntry, entryId) : true;
     return marked && linked;
   };
 

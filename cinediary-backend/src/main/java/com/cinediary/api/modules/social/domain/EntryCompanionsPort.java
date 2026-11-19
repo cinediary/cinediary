@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface EntryCompanionsPort
@@ -35,6 +36,12 @@ public interface EntryCompanionsPort
 
     /** Registros em que a pessoa aceitou ser marcada, mais recentes primeiro. */
     List<UUID> acceptedEntriesOf(UUID companionId, int page, int size);
+
+    /**
+     * Entre {@code candidates}, quem marcou {@code companionId} (e foi aceito) num registro do mesmo título que
+     * {@code entryId}.
+     */
+    Set<UUID> whoMarked(UUID companionId, UUID entryId, Collection<UUID> candidates);
 
     /** Amigos (segue e é seguido, os dois aprovados), mais recentes primeiro, até {@code limit}. */
     List<UUID> mutualFriends(UUID userId, int limit);

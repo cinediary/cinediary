@@ -54,7 +54,8 @@ public class EntryCompanionsUseCase
     /**
      * O dono define a lista inteira: quem entrou é marcado (e avisado); quem saiu perde a marcação. Quem já recusou
      * neste registro nunca é marcado nem avisado de novo: sair da lista só esconde a pessoa de quem marcou, e voltar
-     * para a lista a mostra de novo como "esperando".
+     * para a lista a mostra de novo como "esperando". Quem te marcou neste título (e você aceitou) entra já aceito,
+     * sem aviso.
      */
     @Transactional
     public EntryCompanions set(UUID entryId, UUID ownerId, List<String> usernames)
@@ -96,7 +97,13 @@ public class EntryCompanionsUseCase
         List<UUID> added = wantedIds.stream().filter(id -> !existing.containsKey(id)).toList();
         // "Aprovar marcações" desligado: já entra aceita (o aviso vira só informativo).
         Set<UUID> autoAccept = users.autoAcceptingCompanions(added);
+        // Quem te marcou neste título (e você aceitou) já viu junto com você: entra aceito e sem aviso.
+        Set<UUID> markedOwner = companions.whoMarked(ownerId, entryId, added);
         for (UUID id : added) {
+            if (markedOwner.contains(id)) {
+                companions.addAccepted(entryId, id);
+                continue;
+            }
             if (autoAccept.contains(id)) {
                 companions.addAccepted(entryId, id);
             } else {

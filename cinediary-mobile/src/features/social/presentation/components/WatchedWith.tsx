@@ -9,6 +9,7 @@ import { strings } from '@/shared/i18n';
 import { palette, radius, space } from '@/shared/theme';
 import { Avatar, Button, Text } from '@/shared/ui';
 import { useEntryCompanions, useRespondToCompanion } from '../../application/companionQueries';
+import type { Actor } from '../../domain/social';
 
 /**
  * "Com Ana e Bia" na tela do registro (só quem aceitou; o dono vê também quem ainda não respondeu, com
@@ -18,12 +19,13 @@ import { useEntryCompanions, useRespondToCompanion } from '../../application/com
 export function WatchedWith({
   entry,
   ownEntry,
-  ownerName,
+  owner,
   trailing,
 }: {
   entry: DiaryEntry;
   ownEntry: boolean;
-  ownerName: string;
+  /** Dono do registro (quem marcou). */
+  owner: Actor;
   /** No fim da linha do "Com…" (ex.: o botão dos Stories num registro sem review). Sem marcações, fica sozinho. */
   trailing?: ReactNode;
 }) {
@@ -40,6 +42,7 @@ export function WatchedWith({
       from: 'watched_with',
       date: entry.watchedDate ?? undefined,
       fromEntry: entry.id,
+      markedBy: owner,
       season: entry.scope?.season,
       episode: entry.scope?.episode,
     });
@@ -84,7 +87,7 @@ export function WatchedWith({
 
       {mine === 'PENDING' ? (
         <View style={styles.ask}>
-          <Text tone="secondary">{t.markedYou(ownerName)}</Text>
+          <Text tone="secondary">{t.markedYou(owner.displayName || owner.username)}</Text>
           {/* Os dois do mesmo tamanho, lado a lado: Aceitar cheio, Recusar com contorno. */}
           <View style={styles.buttons}>
             <View style={styles.flex}>

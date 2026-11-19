@@ -105,7 +105,7 @@ export function EntryScreenFrame({
           <WatchedWith
             entry={entry}
             ownEntry={ownEntry}
-            ownerName={author.name || author.username}
+            owner={{ id: entry.authorId, username: author.username, displayName: author.name, avatarUrl: author.avatarUrl }}
             trailing={
               !interactive && onShare ? <EntryActionBar entryId={entry.id} ownEntry={ownEntry} onShare={onShare} shareOnly /> : undefined
             }

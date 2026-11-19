@@ -6,6 +6,7 @@ import { Keyboard, ScrollView, StyleSheet, TextInput, View, type ScrollViewInsta
 import type { SeriesStatus, TitleDetail } from '@/features/catalog/domain/title';
 import { SeasonsSkeleton } from '@/features/catalog/presentation/components/Skeletons';
 import { SeriesProgressSection } from '@/features/catalog/presentation/components/SeriesProgressSection';
+import type { Actor } from '@/features/social/domain/social';
 import { CompanionPicker } from '@/features/social/presentation/components/CompanionPicker';
 import { strings } from '@/shared/i18n';
 import { palette, radius, semantic, space, type as typeScale } from '@/shared/theme';
@@ -30,12 +31,15 @@ export function QuickLogForm({
   scope = null,
   date,
   fromEntry,
+  markedBy,
 }: {
   title: TitleDetail;
   /** Data já escolhida (ex.: a do registro de quem te marcou). */
   date?: string;
   /** O registro de quem te marcou: ao registrar, o seu ganha "vi com" essa pessoa. */
   fromEntry?: string;
+  /** Quem te marcou: já vem no "Vi com…" (sem precisar aprovar) e dá para tirar. */
+  markedBy?: Actor;
   seasonsLoading?: boolean;
   scope?: EntryScope | null;
   /** Filme marcado como visto (onboarding/importação) ganhando a primeira data: o "rever" não liga sozinho. */
@@ -45,7 +49,7 @@ export function QuickLogForm({
   const c = strings.catalog;
   const toast = useToast();
   const sheet = useBottomSheet();
-  const { draft, update, cta, isSeries, companions, setCompanions, submit, isSaving } = useQuickLog(title, { undated, scope, date, fromEntry });
+  const { draft, update, cta, isSeries, companions, setCompanions, submit, isSaving } = useQuickLog(title, { undated, scope, date, fromEntry, markedBy });
   const [showReview, setShowReview] = useState(false);
   const [showCompanions, setShowCompanions] = useState(false);
   const ct = strings.social.companions;

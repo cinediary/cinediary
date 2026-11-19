@@ -158,6 +158,32 @@ class EntryCompanionsIntegrationTest extends IntegrationTest
     }
 
     @Test
+    void taggingWhoTaggedYouOnTheSameTitleNeedsNoApproval() throws Exception
+    {
+        Person ana = person("ana", false);
+        Person bia = person("bia", false);
+        friends(ana, bia);
+        long title = TestTitles.movie(jdbc, "Vimos juntas", 10, "18:Drama");
+        String source = log(ana, title);
+        mark(ana, source, bia.username());
+        mvc.perform(post("/api/v1/me/companions/{e}/accept", source).with(bia.auth()));
+
+        // A Bia registra o mesmo título e marca a Ana pelo caminho normal: entra aceita, sem aviso
+        String own = log(bia, title);
+        mark(bia, own, ana.username())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.companions[0].username").value(ana.username()))
+                .andExpect(jsonPath("$.companions[0].status").value("ACCEPTED"));
+        mvc.perform(get("/api/v1/me/notifications").with(ana.auth()))
+                .andExpect(jsonPath("$[?(@.kind == 'ENTRY_COMPANION')]").isEmpty());
+
+        // Em outro título continua precisando aprovar
+        String other = log(bia, TestTitles.movie(jdbc, "Outro filme", 10, "18:Drama"));
+        mark(bia, other, ana.username())
+                .andExpect(jsonPath("$.companions[0].status").value("PENDING"));
+    }
+
+    @Test
     void turningOffApprovalAcceptsTagsRightAway() throws Exception
     {
         Person ana = person("ana", false);

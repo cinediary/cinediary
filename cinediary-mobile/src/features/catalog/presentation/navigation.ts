@@ -34,6 +34,8 @@ export function openQuickLog(
     date?: string;
     /** O registro de quem te marcou: ao registrar, o seu ganha "vi com" essa pessoa. */
     fromEntry?: string;
+    /** Quem te marcou (dono de `fromEntry`): já vem no "Vi com…" e dá para tirar antes de salvar. */
+    markedBy?: { id: string; username: string; displayName: string; avatarUrl: string | null };
   } = {},
 ) {
   analytics.track('quick_log_opened', {
@@ -55,6 +57,7 @@ export function openQuickLog(
       ...(options.episode ? { episode: String(options.episode) } : {}),
       ...(options.date ? { date: options.date } : {}),
       ...(options.fromEntry ? { fromEntry: options.fromEntry } : {}),
+      ...(options.markedBy ? { markedBy: JSON.stringify(options.markedBy) } : {}),
     },
   });
 }
