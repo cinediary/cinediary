@@ -1,0 +1,4 @@
+# Depcheck (CI: mobile-depcheck). Packages the code never imports but that are still used:
+ignores:
+  # native module for the development build (EAS), never imported from JS
+  - expo-dev-client

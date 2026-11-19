@@ -294,6 +294,24 @@ troca automática.
 | Saber onde está cada coisa no backend | [Arquivos principais por módulo](cinediary-backend/README.md#arquivos-principais-por-módulo) e ["Quero mudar X"](cinediary-backend/README.md#quero-mudar-x-onde-mexo) |
 | Depurar a API (banco, webhook, eventos, grafo) | [Depurar](cinediary-backend/README.md#depurar) |
 
+### CI (GitHub Actions)
+
+Todo PR roda os checks abaixo, e o resultado aparece no próprio PR. Cada parte só trabalha quando os
+arquivos dela mudam: um PR só do app pula os jobs do backend (aparecem como *skipped*, que conta como ok).
+
+| Workflow | Checks | Roda quando muda | O que faz |
+| --- | --- | --- | --- |
+| [`backend.yml`](.github/workflows/backend.yml) | `backend-build`, `backend-test` | `cinediary-backend/`, `openapi-v1.yaml` | Java 25: compila e roda `./gradlew test` (Testcontainers). Se falhar, o relatório fica em **Actions → o run → Artifacts → `backend-test-report`**. |
+| [`mobile.yml`](.github/workflows/mobile.yml) | `mobile-checks`, `mobile-bundle`, `mobile-deps` | `cinediary-mobile/` | Node 22: `mobile-checks` roda `npm run lint`, `npm run typecheck` e [Depcheck](https://github.com/depcheck/depcheck) (dependência sem uso ou faltando; exceções em [`.depcheckrc`](cinediary-mobile/.depcheckrc); para rodar local, `npx depcheck` dentro de `cinediary-mobile/`, com o `npm install` feito); `mobile-bundle` gera o bundle JS do Metro (`expo export`). O `mobile-deps` só roda quando o `package.json` ou o lock mudam e só avisa (sem quebrar) se algum pacote está fora da versão que o SDK do Expo espera; não é obrigatório. |
+| [`contract.yml`](.github/workflows/contract.yml) | `api-contract` | `openapi-v1.yaml`, `schema.d.ts`, `cinediary-mobile/package.json` (onde fica a versão do gerador) | Regera os tipos com `npm run api:types` e falha se o `schema.d.ts` commitado estiver diferente. |
+| [`commits.yml`](.github/workflows/commits.yml) | `commitlint`, `pr-title` | sempre | Todos os commits do PR e o título do PR (que vira o commit na `main` no squash merge) no [Conventional Commits](https://www.conventionalcommits.org/) (`feat(app): …`, `fix(backend): …`). Regras em [`commitlint.config.mjs`](commitlint.config.mjs). |
+
+O [Dependabot](.github/dependabot.yml) abre PRs semanais para Gradle e npm (Expo, React e React Native ficam de
+fora, porque andam junto com o SDK: atualize com `npx expo install --fix`) e mensais para as actions.
+
+Para conferir antes de subir: `make test` em `cinediary-backend/`; `npm run typecheck`, `npm run lint` e
+`npm run api:types` em `cinediary-mobile/`.
+
 ---
 
 ## Build do app (EAS): ainda não
