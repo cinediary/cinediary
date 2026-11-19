@@ -19,6 +19,30 @@ export interface StoryCardRefs {
   sticker: ViewRef;
 }
 
+/** Tamanho na tela (em pontos) de uma parte do card. */
+const measure = (ref: ViewRef) =>
+  new Promise<{ width: number; height: number }>((resolve, reject) => {
+    if (!ref.current) return reject(new Error('sem a view'));
+    ref.current.measure((_x, _y, width, height) => resolve({ width, height }));
+  });
+
+/**
+ * O sticker na mesma escala do fundo: a prévia é ampliada até 1080 de largura, então o cartão é ampliado na mesma
+ * proporção (assim ele sai tão nítido quanto o fundo, e continua nítido quando a pessoa o aumenta no Instagram).
+ * O view-shot precisa da largura E da altura: só uma delas é ignorada.
+ */
+async function asSticker(refs: StoryCardRefs) {
+  const [card, sticker] = await Promise.all([measure(refs.full), measure(refs.sticker)]);
+  const scale = story.exportWidth / card.width;
+  return captureRef(refs.sticker, {
+    format: 'png',
+    quality: 1,
+    width: Math.round(sticker.width * scale),
+    height: Math.round(sticker.height * scale),
+    result: 'tmpfile',
+  });
+}
+
 const asStoryImage = (ref: ViewRef) =>
   captureRef(ref, { format: 'png', quality: 1, width: story.exportWidth, height: story.exportHeight, result: 'tmpfile' });
 
@@ -30,17 +54,18 @@ const asStoryImage = (ref: ViewRef) =>
 export function useShareEntry(entry: DiaryEntry | undefined) {
   const [sharing, setSharing] = useState(false);
 
-  async function share(refs: StoryCardRefs): Promise<StoryShareResult['status']> {
+  /** `withReview`: a review foi junto no cartão (a pessoa pode tirar na prévia). */
+  async function share(refs: StoryCardRefs, withReview = !!entry?.reviewText): Promise<StoryShareResult['status']> {
     if (!entry || sharing) return 'error';
     setSharing(true);
     try {
       const result = await shareToStories({
         full: () => asStoryImage(refs.full),
         background: () => asStoryImage(refs.background),
-        // Na resolução da tela (sem forçar tamanho): o cartão tem a altura do conteúdo, e o PNG mantém a transparência.
-        sticker: () => captureRef(refs.sticker, { format: 'png', quality: 1, result: 'tmpfile' }),
+        // PNG: mantém a transparência do cartão.
+        sticker: () => asSticker(refs),
       });
-      if (result.status === 'shared') analytics.track('entry_shared', { target: result.target, has_review: !!entry.reviewText });
+      if (result.status === 'shared') analytics.track('entry_shared', { target: result.target, has_review: withReview });
       return result.status;
     } catch {
       return 'error';

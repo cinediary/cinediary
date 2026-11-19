@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { InstagramLogo, X } from 'phosphor-react-native';
-import { useRef, type ComponentRef } from 'react';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useRef, useState, type ComponentRef } from 'react';
+import { Pressable, StyleSheet, Switch, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMe } from '@/features/auth/application/profileQueries';
@@ -28,13 +28,17 @@ export function ShareEntryScreen() {
   const cardRef = useRef<ComponentRef<typeof View>>(null);
   const backgroundRef = useRef<ComponentRef<typeof View>>(null);
   const stickerRef = useRef<ComponentRef<typeof View>>(null);
+  // "Incluir a review": só aparece quando a entrada tem review (com spoiler, o que sai é o aviso).
+  const hasReview = !!entry.data?.reviewText?.trim();
+  const [includeReview, setIncludeReview] = useState(true);
 
   // A maior prévia 9:16 que cabe entre o fechar e o botão.
-  const available = height - insets.top - insets.bottom - touch.minTarget - touch.buttonHeight - space.xl * 3;
+  const available =
+    height - insets.top - insets.bottom - touch.minTarget - touch.buttonHeight - space.xl * 3 - (hasReview ? touch.minTarget : 0);
   const cardWidth = Math.min(width - space.screenX * 2, (available * story.exportWidth) / story.exportHeight);
 
   const onShare = async () => {
-    const status = await share({ full: cardRef, background: backgroundRef, sticker: stickerRef });
+    const status = await share({ full: cardRef, background: backgroundRef, sticker: stickerRef }, hasReview && includeReview);
     if (status === 'error') toast(t.entryShareError);
     if (status === 'unavailable') toast(t.entryShareUnavailable);
   };
@@ -59,6 +63,7 @@ export function ShareEntryScreen() {
               ref={cardRef}
               backgroundRef={backgroundRef}
               stickerRef={stickerRef}
+              showReview={includeReview}
               entry={entry.data}
               author={{ username: me.data?.username ?? '', name: me.data?.displayName ?? '', avatarUrl: me.data?.avatarUrl ?? null }}
               width={cardWidth}
@@ -71,6 +76,19 @@ export function ShareEntryScreen() {
         )}
       </View>
       <View style={styles.footer}>
+        {hasReview ? (
+          <View style={styles.option}>
+            <Text variant="bodyStrong" style={styles.optionLabel}>
+              {t.shareIncludeReview}
+            </Text>
+            <Switch
+              accessibilityLabel={t.shareIncludeReview}
+              value={includeReview}
+              onValueChange={setIncludeReview}
+              trackColor={{ true: palette.terracota600 }}
+            />
+          </View>
+        ) : null}
         <Button
           label={sharing ? t.entrySharing : t.entryShareStories}
           loading={sharing}
@@ -97,5 +115,7 @@ const styles = StyleSheet.create({
   stage: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: space.md },
   // Cantos arredondados só na prévia: a imagem exportada sai inteira, retangular.
   cardShadow: { borderRadius: 18, overflow: 'hidden' },
-  footer: { paddingHorizontal: space.screenX },
+  footer: { paddingHorizontal: space.screenX, gap: space.md },
+  option: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: touch.minTarget },
+  optionLabel: { color: palette.surface },
 });

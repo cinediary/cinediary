@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowCounterClockwise, EyeSlash, Heart, Star, StarHalf } from 'phosphor-react-native';
-import type { ComponentRef, Ref } from 'react';
+import { useState, type ComponentRef, type Ref } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { formatFullDate, parseIsoDate, strings } from '@/shared/i18n';
@@ -32,6 +32,7 @@ export function EntryStoryCard({
   ref,
   backgroundRef,
   stickerRef,
+  showReview = true,
 }: {
   entry: DiaryEntry;
   /** Quem registrou: a assinatura (foto, ou a inicial, + @usuário). */
@@ -43,11 +44,18 @@ export function EntryStoryCard({
   backgroundRef?: Ref<ComponentRef<typeof View>>;
   /** Só o cartão, com fundo transparente (o sticker). */
   stickerRef?: Ref<ComponentRef<typeof View>>;
+  /** false: o cartão sai sem a review (nem o aviso de spoiler). */
+  showReview?: boolean;
 }) {
   const k = width / BASE;
   const height = (width * story.exportHeight) / story.exportWidth;
   const safeTop = (story.safeTop / story.exportHeight) * height;
   const safeBottom = (story.safeBottom / story.exportHeight) * height;
+  // Título longo + review longa: o cartão passa da área livre. Na imagem inteira (e na prévia), ele encolhe para
+  // caber; o sticker do Instagram sai no tamanho cheio (a escala é do pai, a captura do cartão não a pega).
+  const [stickerHeight, setStickerHeight] = useState(0);
+  const free = height - safeTop - safeBottom;
+  const scale = stickerHeight > free ? free / stickerHeight : 1;
 
   return (
     <View ref={ref} collapsable={false} style={[styles.root, { width, height }]}>
@@ -68,7 +76,9 @@ export function EntryStoryCard({
         />
       </View>
       <View style={[styles.stage, { paddingTop: safeTop, paddingBottom: safeBottom }]}>
-        <StorySticker ref={stickerRef} entry={entry} author={author} k={k} />
+        <View style={{ transform: [{ scale }] }} onLayout={(e) => setStickerHeight(e.nativeEvent.layout.height)}>
+          <StorySticker ref={stickerRef} entry={entry} author={author} k={k} showReview={showReview} />
+        </View>
       </View>
     </View>
   );
@@ -80,15 +90,17 @@ function StorySticker({
   author,
   k,
   ref,
+  showReview,
 }: {
   entry: DiaryEntry;
   author: { username: string; name: string; avatarUrl: string | null };
   k: number;
+  showReview: boolean;
   ref?: Ref<ComponentRef<typeof View>>;
 }) {
   const t = strings.diary;
   const px = (n: number) => Math.round(n * k * 10) / 10;
-  const review = entry.reviewText?.trim() ?? '';
+  const review = showReview ? (entry.reviewText?.trim() ?? '') : '';
   const clipped = review.length > REVIEW_MAX ? `${review.slice(0, REVIEW_MAX).trimEnd()}…` : review;
   const subtitle = [
     entry.scope ? scopeLabel(entry.scope) : entry.title.year,
@@ -101,7 +113,7 @@ function StorySticker({
 
   return (
     // Respiro em volta: a sombra do pôster precisa de espaço para não sair cortada na captura.
-    <View ref={ref} collapsable={false} style={[styles.sticker, { width: px(BASE - 24), padding: px(16), gap: px(14) }]}>
+    <View ref={ref} collapsable={false} style={[styles.sticker, { width: px(BASE - 24), padding: px(16), gap: px(18) }]}>
       {/*
         Sombra por fora e recorte por dentro: no iOS, overflow hidden corta a sombra, então são duas Views.
         Cantos "contínuos" (squircle), sem a borda clara que deixava o pôster desalinhado do contorno.
@@ -116,15 +128,20 @@ function StorySticker({
         </View>
       </View>
 
-      <Text style={[styles.title, textShadow, { fontSize: px(26), lineHeight: px(31), marginTop: px(6) }]} numberOfLines={3}>
-        {entry.title.title}
-      </Text>
-      {subtitle ? <Text style={[styles.subtitle, textShadow, { fontSize: px(12), lineHeight: px(16) }]}>{subtitle}</Text> : null}
-
-      <View style={[styles.row, { gap: px(10) }]}>
-        {entry.rating ? <Stars value={entry.rating} size={px(22)} /> : null}
-        {entry.liked ? <Heart size={px(22)} weight="fill" color={semantic.liked} /> : null}
-        {entry.isRewatch ? <ArrowCounterClockwise size={px(20)} color={party.cream} weight="bold" /> : null}
+      {/* Título, data e nota juntos, como um bloco só; a review vem depois, com um respiro maior. */}
+      <View style={[styles.meta, { gap: px(6) }]}>
+        <Text style={[styles.title, textShadow, { fontSize: px(26), lineHeight: px(31) }]} numberOfLines={3}>
+          {entry.title.title}
+        </Text>
+        {subtitle ? <Text style={[styles.subtitle, textShadow, { fontSize: px(12), lineHeight: px(16) }]}>{subtitle}</Text> : null}
+        {/* Sem nota, curtida nem rever, a linha nem entra (antes ficava vazia e somava mais um espaço). */}
+        {entry.rating || entry.liked || entry.isRewatch ? (
+          <View style={[styles.row, { gap: px(10), marginTop: px(4) }]}>
+            {entry.rating ? <Stars value={entry.rating} size={px(22)} /> : null}
+            {entry.liked ? <Heart size={px(22)} weight="fill" color={semantic.liked} /> : null}
+            {entry.isRewatch ? <ArrowCounterClockwise size={px(20)} color={party.cream} weight="bold" /> : null}
+          </View>
+        ) : null}
       </View>
 
       {review ? (
@@ -144,7 +161,7 @@ function StorySticker({
       <View
         style={[
           styles.signature,
-          { gap: px(8), paddingLeft: px(5), paddingRight: px(14), paddingVertical: px(5), borderRadius: px(999), marginTop: px(4) },
+          { gap: px(8), paddingLeft: px(5), paddingRight: px(14), paddingVertical: px(5), borderRadius: px(999) },
         ]}
       >
         <Avatar
@@ -187,6 +204,7 @@ const styles = StyleSheet.create({
   // O cartão no meio da área livre do Story (no Instagram, a pessoa o move para onde quiser).
   stage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   sticker: { alignItems: 'center', backgroundColor: 'transparent' },
+  meta: { alignItems: 'center' },
   posterShadow: { shadowColor: '#000', shadowOpacity: 0.45, elevation: 12 },
   poster: {
     overflow: 'hidden',

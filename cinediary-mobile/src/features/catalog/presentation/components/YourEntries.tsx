@@ -52,7 +52,8 @@ export function YourEntries({ titleId }: { titleId: number }) {
               <View style={styles.flex} />
               <CaretRight size={16} color={palette.ink500} />
             </View>
-            {e.reviewText ? <SpoilerReview key={`${e.id}-${e.containsSpoilers}`} entry={e} /> : null}
+            {/* Até 4 linhas, como as reviews dos outros (ReviewCard): a review inteira fica na tela do registro. */}
+            {e.reviewText ? <SpoilerReview key={`${e.id}-${e.containsSpoilers}`} entry={e} numberOfLines={4} /> : null}
           </Pressable>
         ))
       )}
