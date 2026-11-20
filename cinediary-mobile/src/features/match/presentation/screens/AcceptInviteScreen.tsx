@@ -59,7 +59,7 @@ export function AcceptInviteScreen() {
       onSuccess: async (story) => {
         // A animação é só da primeira vez: abrir de novo o mesmo link (ou colar o mesmo código) de um
         // Match cujo Story você já viu vai direto para ele.
-        const again = await hasSeenStory(story.matchId).catch(() => false);
+        const again = await hasSeenStory(story).catch(() => false);
         const theirs = introPosters(story, me.data?.id).theirs;
         if (theirs && !again) setRight({ title: theirs.title, posterUrl: theirs.posterUrl });
         const elapsed = Date.now() - startedAt;

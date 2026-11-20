@@ -37,6 +37,8 @@ export const account: Strings['account'] = {
   bioPlaceholder: 'Tell people a bit about you and what you love to watch.',
   textCount: (n: number, max: number) => `${n}/${max}`,
   sectionPreferences: 'Preferences',
+  approveCompanions: 'Approve tags',
+  approveCompanionsHint: 'When someone tags you in an entry, you decide whether it shows.',
   showSpoilers: 'Show spoilers',
   showSpoilersHint: "Other people's reviews and replies show without blur.",
   replyPolicy: 'Who can reply',

@@ -22,6 +22,7 @@ import {
   StarSpinner,
 } from '@/shared/ui';
 import { palette, semantic, space } from '@/shared/theme';
+import { OfflineBanner } from '../navigation/OfflineBanner';
 import { AnimatedSplash } from '../splash/AnimatedSplash';
 
 /** Catálogo vivo (dados de exemplo) dos componentes (UX-01, seção 9). Só existe em desenvolvimento. */
@@ -49,6 +50,7 @@ export function DesignSystemScreen() {
           <SplashSection />
           <TitleLoadingSection />
           <ErrorScreensTab />
+          <OfflineBannerSection />
         </>
       ) : (
         <>
@@ -219,6 +221,17 @@ function SplashSection() {
  * Propostas da tela de "sem conexão" (abertura sem internet ou com o servidor fora). Compare aqui e escolha:
  * a prévia embaixo é a tela de verdade; "Ver em tela cheia" mostra como fica no app.
  */
+/** A faixa "Sem internet" do topo: aparece por cima desta tela enquanto o switch estiver ligado. */
+function OfflineBannerSection() {
+  const [visible, setVisible] = useState(false);
+  return (
+    <Section title="Sem internet durante o uso (faixa no topo)">
+      <Button label={visible ? 'Esconder a faixa' : 'Mostrar a faixa'} variant="secondary" onPress={() => setVisible((v) => !v)} />
+      <OfflineBanner visible={visible} />
+    </Section>
+  );
+}
+
 function ErrorScreensTab() {
   const [variant, setVariant] = useState<ConnectionErrorVariant>(APP_CONNECTION_ERROR_VARIANT);
   const [problem, setProblem] = useState<ConnectionProblem>('offline');

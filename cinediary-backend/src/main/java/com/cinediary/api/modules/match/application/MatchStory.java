@@ -6,12 +6,15 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-/** Payload do Match Story (8 slides 9:16) com a explicação da porcentagem. */
+/**
+ * Payload do Match Story (8 slides 9:16) com a explicação da porcentagem. {@code seenByMe}: quem pede já viu o Story
+ * (em qualquer aparelho); o app só mostra o "Calculando…" na primeira vez.
+ */
 public record MatchStory(UUID matchId, String status, String statusLabel, Integer compatibilityScore,
                          boolean discoveryMode, String engineUsed, UserProfileView creator, UserProfileView partner,
                          ScoreBreakdown scoreBreakdown, List<String> commonGenres, List<TitleSummaryView> bothLoved,
                          List<Disagreement> disagreements, List<DiscoveryPick> discoveryPicks,
-                         List<TitleSummaryView> jointRecommendations, List<Slide> slides)
+                         List<TitleSummaryView> jointRecommendations, List<Slide> slides, boolean seenByMe)
 {
     public record ScoreBreakdown(double ratingsScore, double ratingsWeight, double genresScore, double genresWeight,
                                  double favoritesScore, double favoritesWeight, int commonRatedCount,

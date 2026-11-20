@@ -1,0 +1,35 @@
+import type { Strings } from '../pt';
+import { title } from '../titleParts';
+
+export const stats: Strings['stats'] = {
+  privateBadge: 'Perfil privado',
+  favorites: 'Favoritos',
+  noFavorites: 'Todavía no elegiste tus favoritos.',
+  editFavorites: 'Editar',
+  pickFavorites: 'Elegir favoritos',
+  favoritesEditorTitle: title('Tus ', 'favoritos', ''),
+  favoritesEditorHint:
+    'Hasta 4 películas o series. Aparecen en tu perfil y cuentan en tu Taste Match. Mantén presionado y arrastra para cambiar el orden.',
+  favoritesReorderHint: 'Mantén presionado y arrastra hacia el lado para cambiar el orden.',
+  favoritesSlotEmpty: 'Lugar libre',
+  favoritesRemove: (title: string) => `Quitar ${title} de favoritos`,
+  favoritesAdd: (title: string) => `Agregar ${title} a favoritos`,
+  favoritesFull: 'Ya tienes 4 favoritos. Quita uno para poner otro.',
+  favoritesSearch: 'Buscar un favorito',
+  favoritesSaveError: 'No se pudieron guardar tus favoritos. Inténtalo de nuevo.',
+  movies: 'Películas',
+  series: 'Series',
+  average: 'Calificación media',
+  topGenresTitle: title('Géneros que ', 'más ves', ''),
+  perMonthTitle: 'Películas por mes',
+  chartGrowing: 'Tu gráfico toma forma con cada película que registras.',
+  noStats: 'Registra algunos títulos para ver tus estadísticas.',
+  recent: 'Últimos registros',
+  settings: 'Configuración',
+  privateProfile: 'Perfil privado',
+  privateHint: 'Solo quienes apruebes ven tu diario y tus estadísticas. Los Matches siguen funcionando.',
+  importLetterboxd: 'Importar de Letterboxd',
+  designSystem: 'Design System (dev)',
+  loadError: 'No pudimos conectar con el servidor ahora.',
+  monthA11y: (month: string, n: number) => `${month}: ${n} ${n === 1 ? 'película' : 'películas'}`,
+};

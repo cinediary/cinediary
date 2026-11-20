@@ -6,16 +6,27 @@ import type { MediaType } from '@/features/catalog/domain/title';
 import { strings } from '@/shared/i18n';
 import { space } from '@/shared/theme';
 import { BottomSheet, ErrorState, Skeleton } from '@/shared/ui';
+import type { Actor } from '@/features/social/domain/social';
 import type { EntryScope } from '../../domain/diary';
 import { QuickLogForm } from '../components/QuickLogForm';
 
 /**
  * BU-02 · Registro rápido (rota transparentModal + BottomSheet do app).
  * Parâmetros: undated=1 (filme já visto ganhando a primeira data) e, em séries, season (temporada) e
- * episode (episódio) para registrar só aquela parte.
+ * episode (episódio) para registrar só aquela parte; date (data já escolhida) e fromEntry (o registro de quem te
+ * marcou: o seu ganha "vi com" essa pessoa); markedBy (quem te marcou, em JSON: já vem no "Vi com…").
  */
 export function QuickLogScreen() {
-  const params = useLocalSearchParams<{ mediaType: string; tmdbId: string; undated?: string; season?: string; episode?: string }>();
+  const params = useLocalSearchParams<{
+    mediaType: string;
+    tmdbId: string;
+    undated?: string;
+    season?: string;
+    episode?: string;
+    date?: string;
+    fromEntry?: string;
+    markedBy?: string;
+  }>();
   const mediaType: MediaType = params.mediaType === 'SERIES' ? 'SERIES' : 'MOVIE';
   const detail = useTitleDetail(mediaType, Number(params.tmdbId));
   const season = Number(params.season);
@@ -32,6 +43,9 @@ export function QuickLogScreen() {
           seasonsLoading={detail.isPlaceholderData}
           undated={params.undated === '1'}
           scope={scope}
+          date={params.date}
+          fromEntry={params.fromEntry}
+          markedBy={parseActor(params.markedBy)}
         />
       ) : (
         <View style={styles.state}>
@@ -40,6 +54,17 @@ export function QuickLogScreen() {
       )}
     </BottomSheet>
   );
+}
+
+/** O `markedBy` da rota (JSON); inválido ou ausente: ninguém. */
+function parseActor(raw?: string): Actor | undefined {
+  if (!raw) return undefined;
+  try {
+    const a = JSON.parse(raw) as Partial<Actor>;
+    return a.id && a.username ? { id: a.id, username: a.username, displayName: a.displayName ?? '', avatarUrl: a.avatarUrl ?? null } : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** O formato do registro rápido (pôster e título, ações, estrelas, botão) enquanto o título carrega. */
