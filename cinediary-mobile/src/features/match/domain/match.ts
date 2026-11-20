@@ -61,6 +61,8 @@ export interface MatchStory {
   disagreements: Disagreement[];
   discoveryPicks: DiscoveryPick[];
   jointRecommendations: TitleSummary[];
+  /** Você já viu este Story (na conta, em qualquer aparelho): o "Calculando…" só aparece na primeira vez. */
+  seenByMe: boolean;
 }
 
 export interface SharedWatchlistItem {

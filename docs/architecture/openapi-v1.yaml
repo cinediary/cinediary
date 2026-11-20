@@ -1243,6 +1243,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/MatchStoryResponse'
 
+  /api/v1/matches/{matchId}/story/seen:
+    put:
+      tags: [Taste Match (Neo4j + GDS)]
+      summary: Marca o Story como visto, na conta (marcar de novo não muda nada)
+      parameters:
+        - in: path
+          name: matchId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204': { description: "Marcado como visto" }
+        '403': { description: "Você não participa deste Match" }
+        '404': { description: "Match não encontrado ou encerrado" }
+
   /api/v1/matches/{matchId}/watchlist:
     get:
       tags: [Taste Match (Neo4j + GDS)]
@@ -2247,7 +2263,7 @@ components:
 
     MatchStoryResponse:
       type: object
-      required: [matchId, status, statusLabel, discoveryMode, engineUsed, creator, scoreBreakdown, commonGenres, bothLoved, disagreements, discoveryPicks, jointRecommendations]
+      required: [matchId, status, statusLabel, discoveryMode, engineUsed, creator, scoreBreakdown, commonGenres, bothLoved, disagreements, discoveryPicks, jointRecommendations, seenByMe]
       properties:
         matchId:
           type: string
@@ -2333,6 +2349,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CatalogTitleSummary'
+        seenByMe:
+          type: boolean
+          description: "Você já viu o Story (em qualquer aparelho): o app só mostra o \"Calculando…\" na primeira vez"
 
     SharedWatchlistItemResponse:
       type: object

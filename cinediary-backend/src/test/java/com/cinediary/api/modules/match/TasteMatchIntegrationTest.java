@@ -269,6 +269,29 @@ class TasteMatchIntegrationTest extends IntegrationTest
     }
 
     @Test
+    void storySeenIsSavedOnTheAccount() throws Exception
+    {
+        Person ana = person();
+        Person bia = person();
+        Person outsider = person();
+        long t = TestTitles.movie(jdbc, "Story visto", 10, "18:Drama");
+        rate(ana, t, 5.0);
+        rate(bia, t, 4.0);
+        String matchId = JsonPath.read(mvc.perform(post("/api/v1/matches/{code}/accept", invite(ana)).with(bia.auth()))
+                .andReturn().getResponse().getContentAsString(), "$.matchId");
+
+        mvc.perform(get("/api/v1/matches/{id}/story", matchId).with(ana.auth())).andExpect(jsonPath("$.seenByMe").value(false));
+        // Marcar duas vezes não dá erro
+        mvc.perform(put("/api/v1/matches/{id}/story/seen", matchId).with(ana.auth())).andExpect(status().isNoContent());
+        mvc.perform(put("/api/v1/matches/{id}/story/seen", matchId).with(ana.auth())).andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/matches/{id}/story", matchId).with(ana.auth())).andExpect(jsonPath("$.seenByMe").value(true));
+        // Vale só para quem marcou
+        mvc.perform(get("/api/v1/matches/{id}/story", matchId).with(bia.auth())).andExpect(jsonPath("$.seenByMe").value(false));
+        // Quem não participa não marca
+        mvc.perform(put("/api/v1/matches/{id}/story/seen", matchId).with(outsider.auth())).andExpect(status().isForbidden());
+    }
+
+    @Test
     void cancellingAPendingInviteHidesIt() throws Exception
     {
         Person ana = person();
