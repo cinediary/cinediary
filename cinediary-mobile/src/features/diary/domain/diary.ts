@@ -62,6 +62,33 @@ export interface DiaryMonthGroup {
   entries: DiaryEntry[];
 }
 
+/**
+ * Séries: já existe um registro deste mesmo escopo (a temporada inteira, ou aquele episódio)? Aí registrar de novo é
+ * rever. Registros dos episódios não contam para a temporada, e marcar episódios no checklist não é registro.
+ */
+export function hasLoggedScope(entries: DiaryEntry[], scope: EntryScope): boolean {
+  return entries.some((e) => e.scope?.season === scope.season && (e.scope.episode ?? null) === (scope.episode ?? null));
+}
+
+/**
+ * Séries: a sua nota mais recente de cada temporada (número da temporada → nota), a partir dos registros de escopo
+ * temporada. Registros de episódio e sem nota não contam; com dois registros da mesma temporada, vale o mais recente.
+ */
+export function latestSeasonRatings(entries: DiaryEntry[]): Map<number, number> {
+  const latest = new Map<number, DiaryEntry>();
+  for (const e of entries) {
+    const season = e.scope?.season;
+    if (!season || e.scope?.episode || e.rating == null) continue;
+    const current = latest.get(season);
+    const newer =
+      !current ||
+      (e.watchedDate ?? '').localeCompare(current.watchedDate ?? '') > 0 ||
+      ((e.watchedDate ?? '') === (current.watchedDate ?? '') && e.createdAt.localeCompare(current.createdAt) > 0);
+    if (newer) latest.set(season, e);
+  }
+  return new Map([...latest].map(([season, e]) => [season, e.rating as number]));
+}
+
 /** Linha do tempo agrupada por mês ("NOVEMBRO 2026"); sem data vai para o fim. */
 export function groupByMonth(entries: DiaryEntry[]): { groups: DiaryMonthGroup[]; undated: DiaryEntry[] } {
   const groups = new Map<string, DiaryMonthGroup>();

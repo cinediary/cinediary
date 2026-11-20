@@ -205,7 +205,8 @@ const styles = StyleSheet.create({
   stage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   sticker: { alignItems: 'center', backgroundColor: 'transparent' },
   meta: { alignItems: 'center' },
-  posterShadow: { shadowColor: '#000', shadowOpacity: 0.45, elevation: 12 },
+  // Fundo sólido (coberto pelo pôster): sem ele, o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
+  posterShadow: { backgroundColor: palette.surfaceSunken, shadowColor: '#000', shadowOpacity: 0.45, elevation: 12 },
   poster: {
     overflow: 'hidden',
     borderCurve: 'continuous',

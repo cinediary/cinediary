@@ -54,6 +54,7 @@ const toStory = (dto: Schemas['MatchStoryResponse']): MatchStory => ({
     title: toTitleSummary(p.title),
   })),
   jointRecommendations: dto.jointRecommendations.map(toTitleSummary),
+  seenByMe: dto.seenByMe,
 });
 
 const toWatchlistItem = (dto: Schemas['SharedWatchlistItemResponse']): SharedWatchlistItem => ({
@@ -72,6 +73,8 @@ export const matchApi = {
     toStory(await unwrap(api.POST('/api/v1/matches/{inviteCode}/accept', { params: { path: { inviteCode } } }))),
   story: async (matchId: string): Promise<MatchStory> =>
     toStory(await unwrap(api.GET('/api/v1/matches/{matchId}/story', { params: { path: { matchId } } }))),
+  /** Marca o Story como visto na conta (marcar de novo não muda nada). */
+  markStorySeen: (matchId: string) => unwrapVoid(api.PUT('/api/v1/matches/{matchId}/story/seen', { params: { path: { matchId } } })),
   watchlist: async (matchId: string): Promise<SharedWatchlistItem[]> =>
     (await unwrap(api.GET('/api/v1/matches/{matchId}/watchlist', { params: { path: { matchId } } }))).map(toWatchlistItem),
   addToWatchlist: async (matchId: string, titleId: number): Promise<SharedWatchlistItem> =>

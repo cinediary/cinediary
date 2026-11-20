@@ -31,7 +31,7 @@ export const common: Strings['common'] = {
   seeLess: 'less',
   loading: 'Loading…',
   genericError: 'Something went off script. Try again in a moment.',
-  offline: 'No internet. Showing what is already saved.',
+  offline: 'No connection. Showing what is already saved.',
   movie: 'Movie',
   series: 'Series',
   noDate: 'No date',

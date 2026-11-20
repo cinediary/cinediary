@@ -54,6 +54,10 @@ class UserJpaEntity
     @Column(name = "default_reply_policy", nullable = false)
     private String defaultReplyPolicy = "EVERYONE";
 
+    /** "Aprovar marcações": ligado, quem é marcado aceita ou recusa; desligado, a marcação já entra aceita. */
+    @Column(name = "approve_companions", nullable = false)
+    private boolean approveCompanions = true;
+
     @Column(name = "is_private", nullable = false)
     private boolean privateProfile;
 

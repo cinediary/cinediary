@@ -33,4 +33,10 @@ public interface MatchRepositoryPort
     void end(UUID matchId, UUID endedByUserId);
 
     boolean removeFromWatchlist(UUID matchId, long titleId);
+
+    /** Se a pessoa já viu o Story deste Match (em qualquer aparelho). */
+    boolean storySeen(UUID matchId, UUID userId);
+
+    /** Marca o Story como visto pela pessoa; marcar de novo não muda nada. */
+    void markStorySeen(UUID matchId, UUID userId);
 }

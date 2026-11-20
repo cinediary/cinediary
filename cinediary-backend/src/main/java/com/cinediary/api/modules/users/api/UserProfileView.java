@@ -12,6 +12,7 @@ import java.util.UUID;
 public record UserProfileView(UUID id, String username, String displayName, String avatarUrl, boolean isPrivate,
                               boolean onboardingCompleted, long totalMoviesWatched, long totalSeriesWatched,
                               List<TitleSummaryView> favorites, String bio, String pronouns, String firstName,
-                              String lastName, boolean showSpoilers, String defaultReplyPolicy)
+                              String lastName, boolean showSpoilers, String defaultReplyPolicy,
+                              /** "Aprovar marcações" (só no /me). */ boolean approveCompanions)
 {
 }

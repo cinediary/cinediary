@@ -16,6 +16,8 @@ interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, UUID>
 
     Optional<UserJpaEntity> findByUsernameAndDeletedAtIsNull(String username);
 
+    List<UserJpaEntity> findByUsernameInAndDeletedAtIsNull(java.util.Collection<String> usernames);
+
     boolean existsByUsernameAndClerkIdNot(String username, String clerkId);
 
     Optional<UserJpaEntity> findByUsername(String username);

@@ -29,7 +29,7 @@ export const common = {
   seeLess: 'menos',
   loading: 'Carregando…',
   genericError: 'Algo saiu do roteiro. Tente de novo em instantes.',
-  offline: 'Sem internet. Mostrando o que já está salvo.',
+  offline: 'Sem conexão. Mostrando o que já está salvo.',
   movie: 'Filme',
   series: 'Série',
   noDate: 'Sem data',
