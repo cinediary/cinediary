@@ -36,7 +36,7 @@ import org.springframework.web.util.UriBuilder;
 import tools.jackson.databind.JsonNode;
 
 /**
- * Cliente HTTP do TMDB v3. O {@code language} é o do pedido ({@link ContentLanguage#current()}: pt-BR ou en-US;
+ * Cliente HTTP do TMDB v3. O {@code language} é o do pedido ({@link ContentLanguage#current()}: pt-BR, en-US, es-ES, es-MX ou fr-FR;
  * fora de um pedido, pt-BR). O mobile nunca chama o TMDB direto (ADR-03).
  */
 @Component
