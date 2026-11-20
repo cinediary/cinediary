@@ -105,29 +105,36 @@ export function useAddToSharedWatchlist(matchId: string) {
   });
 }
 
-/** Já abriu o Story deste Match neste aparelho? (fora de componente, ex.: depois de aceitar o convite) */
-export const hasSeenStory = (matchId: string) => storySeenStorage.has(matchId);
+/**
+ * Já viu o Story deste Match? Vale o que a conta diz (`seenByMe`, em qualquer aparelho) ou a marca deste aparelho
+ * (cache: cobre o tempo até a conta gravar e Stories vistos antes de a conta guardar isso).
+ */
+export const hasSeenStory = async (story: Pick<MatchStory, 'matchId' | 'seenByMe'>) =>
+  story.seenByMe || (await storySeenStorage.has(story.matchId));
 
-/** Marca o Story como visto fora de um componente que use useStorySeen (ex.: Story dentro do aceite). */
+/** Marca o Story como visto: na hora neste aparelho e, em segundo plano, na conta (otimista; falhar não trava nada). */
 export function markStorySeen(matchId: string) {
   queryClient.setQueryData([...matchKeys.story(matchId), 'seen'], true);
   void storySeenStorage.mark(matchId);
+  matchApi.markStorySeen(matchId).catch(() => undefined);
 }
 
-/** Se este aparelho já abriu o Story deste Match (para a animação de quem convidou aparecer uma vez só). */
+/** Se você já viu o Story deste Match (para a animação de quem convidou aparecer uma vez só). */
 export function useStorySeen(matchId: string) {
-  const query = useQuery({
+  const story = useMatchStory(matchId);
+  const local = useQuery({
     queryKey: [...matchKeys.story(matchId), 'seen'],
     queryFn: () => storySeenStorage.has(matchId),
     enabled: !!matchId,
     staleTime: Infinity,
   });
+  const seen = local.data === true || story.data?.seenByMe === true;
+  const isPending = !seen && (local.isPending || story.isPending);
   const markSeen = () => {
-    if (query.data === true) return;
-    queryClient.setQueryData([...matchKeys.story(matchId), 'seen'], true);
-    void storySeenStorage.mark(matchId);
+    if (local.data === true && story.data?.seenByMe) return;
+    markStorySeen(matchId);
   };
-  return { seen: query.data, isPending: query.isPending, markSeen };
+  return { seen: isPending ? undefined : seen, isPending, markSeen };
 }
 
 /**

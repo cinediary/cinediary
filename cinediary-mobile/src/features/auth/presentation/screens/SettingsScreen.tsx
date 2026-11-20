@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { ChatCircle, DownloadSimple, Eye, FilmSlate, Info, LockSimple, Palette, SignOut, UserCircle } from 'phosphor-react-native';
+import { ChatCircle, DownloadSimple, Eye, FilmSlate, Info, LockSimple, Palette, SignOut, UserCircle, UsersThree } from 'phosphor-react-native';
 import { useState, type ReactNode } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -80,6 +80,18 @@ function useSections(openReplyPicker: () => void): SettingSection[] {
           label: a.replyPolicy,
           hint: `${a.replyPolicies[me.data?.defaultReplyPolicy ?? 'EVERYONE']} · ${a.replyPolicyHint}`,
           onPress: openReplyPicker,
+        },
+        {
+          // "Vi com…": desligado, quem te marca num registro já aparece (sem você aceitar).
+          key: 'approve-companions',
+          icon: icon(UsersThree),
+          label: a.approveCompanions,
+          hint: a.approveCompanionsHint,
+          switchValue: me.data?.approveCompanions ?? true,
+          onSwitchChange: (approveCompanions) => {
+            analytics.track('setting_changed', { key: 'approve_companions', value: approveCompanions });
+            updateProfile.mutate({ approveCompanions }, { onError: () => toast(strings.common.genericError) });
+          },
         },
       ],
     },

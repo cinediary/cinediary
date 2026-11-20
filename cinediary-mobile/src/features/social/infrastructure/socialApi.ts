@@ -7,6 +7,7 @@ import type {
   Actor,
   AppNotification,
   EntryComment,
+  EntryCompanions,
   EntryInteractions,
   FeedPage,
   ReviewSort,
@@ -91,6 +92,18 @@ const toNotification = (dto: Schemas['NotificationResponse']): AppNotification =
   createdAt: dto.createdAt,
   unseen: dto.unseen,
   relationship: dto.relationship,
+  companionStatus: dto.companionStatus ?? null,
+});
+
+const toCompanions = (dto: Schemas['EntryCompanionsResponse']): EntryCompanions => ({
+  companions: dto.companions.map((c) => ({
+    id: c.id,
+    username: c.username,
+    displayName: c.displayName ?? c.username,
+    avatarUrl: c.avatarUrl ?? null,
+    status: c.status,
+  })),
+  myStatus: dto.myStatus ?? null,
 });
 
 const entryPath = (entryId: string) => ({ params: { path: { entryId } } });
@@ -185,6 +198,31 @@ export const socialApi = {
       nextBefore: dto.nextBefore ?? null,
     };
   },
+
+  /** "Vi com…" de um registro. */
+  companions: async (entryId: string) =>
+    toCompanions(await unwrap(api.GET('/api/v1/entries/{entryId}/companions', entryPath(entryId)))),
+
+  /** Define a lista inteira de quem viu junto (por @); só o dono. */
+  setCompanions: async (entryId: string, usernames: string[]) =>
+    toCompanions(await unwrap(api.PUT('/api/v1/entries/{entryId}/companions', { ...entryPath(entryId), body: { usernames } }))),
+
+  acceptCompanion: async (entryId: string) =>
+    toCompanions(await unwrap(api.POST('/api/v1/me/companions/{entryId}/accept', entryPath(entryId)))),
+
+  /** Você registrou o mesmo título: seu registro ganha "vi com" quem te marcou. */
+  linkLoggedEntry: async (sourceEntryId: string, entryId: string) =>
+    toCompanions(
+      await unwrap(api.POST('/api/v1/me/companions/{entryId}/logged', { ...entryPath(sourceEntryId), body: { entryId } })),
+    ),
+
+  declineCompanion: (entryId: string) => unwrapVoid(api.POST('/api/v1/me/companions/{entryId}/decline', entryPath(entryId))),
+
+  removeCompanion: (entryId: string) => unwrapVoid(api.DELETE('/api/v1/me/companions/{entryId}', entryPath(entryId))),
+
+  /** Amigos (segue e é seguido) para o "Vi com…", filtrados pelo começo do @ ou do nome. */
+  friends: async (q: string): Promise<Actor[]> =>
+    (await unwrap(api.GET('/api/v1/me/friends', { params: { query: { q } } }))).map(toActor),
 
   notifications: async (): Promise<AppNotification[]> => (await unwrap(api.GET('/api/v1/me/notifications'))).map(toNotification),
 

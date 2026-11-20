@@ -107,7 +107,24 @@ export interface FeedPage {
   nextBefore: string | null;
 }
 
-export type NotificationKind = 'FOLLOWED' | 'FOLLOW_REQUESTED' | 'FOLLOW_APPROVED' | 'ENTRY_LIKED' | 'ENTRY_REPLIED';
+export type NotificationKind = 'FOLLOWED' | 'FOLLOW_REQUESTED' | 'FOLLOW_APPROVED' | 'ENTRY_LIKED' | 'ENTRY_REPLIED' | 'ENTRY_COMPANION';
+
+/** "Vi com…": esperando a pessoa marcada, aceita (aparece no registro) ou recusada (some sem avisar quem marcou). */
+export type CompanionStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
+
+/** Uma pessoa marcada num registro. */
+export interface Companion extends Actor {
+  status: CompanionStatus;
+}
+
+/**
+ * Quem viu junto, para quem vê: o dono vê todas (recusas aparecem como esperando); os outros, só as aceitas.
+ * `myStatus`: se você foi marcado neste registro.
+ */
+export interface EntryCompanions {
+  companions: Companion[];
+  myStatus: CompanionStatus | null;
+}
 
 /** Uma linha do sino (curtidas no mesmo registro já vêm agrupadas). */
 export interface AppNotification {
@@ -122,6 +139,8 @@ export interface AppNotification {
   unseen: boolean;
   /** Você em relação ao primeiro ator (para "Seguir de volta"). */
   relationship: Relationship;
+  /** Só no ENTRY_COMPANION: PENDING mostra Aceitar e Recusar; ACCEPTED, já aceito. */
+  companionStatus: CompanionStatus | null;
 }
 
 export type ActivityKind = 'LOGGED' | 'FOLLOWED' | 'LIKED_ENTRY' | 'REPLIED_ENTRY' | 'WATCHLISTED';
