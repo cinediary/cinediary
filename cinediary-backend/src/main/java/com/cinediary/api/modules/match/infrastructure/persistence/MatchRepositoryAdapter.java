@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -24,6 +25,7 @@ class MatchRepositoryAdapter implements MatchRepositoryPort
     private final SpringDataTasteMatchRepository matches;
     private final SpringDataSharedWatchlistRepository watchlist;
     private final ObjectMapper objectMapper;
+    private final JdbcClient jdbc;
 
     @Override
     public TasteMatchModel save(TasteMatchModel m)
@@ -120,6 +122,20 @@ class MatchRepositoryAdapter implements MatchRepositoryPort
     private static SharedWatchlistItem toItem(MatchSharedWatchlistJpaEntity e)
     {
         return new SharedWatchlistItem(e.getMatchId(), e.getTitleId(), e.getAddedByUserId(), e.isAddedByBoth(), e.getAddedAt());
+    }
+
+    @Override
+    public boolean storySeen(UUID matchId, UUID userId)
+    {
+        return jdbc.sql("SELECT EXISTS (SELECT 1 FROM match_story_views WHERE match_id = :m AND user_id = :u)")
+                .param("m", matchId).param("u", userId).query(Boolean.class).single();
+    }
+
+    @Override
+    public void markStorySeen(UUID matchId, UUID userId)
+    {
+        jdbc.sql("INSERT INTO match_story_views (match_id, user_id) VALUES (:m, :u) ON CONFLICT DO NOTHING")
+                .param("m", matchId).param("u", userId).update();
     }
 
     @Override

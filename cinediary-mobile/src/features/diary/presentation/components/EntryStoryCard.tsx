@@ -150,7 +150,8 @@ function Stars({ value, size }: { value: number; size: number }) {
 const styles = StyleSheet.create({
   root: { overflow: 'hidden', backgroundColor: palette.ink900 },
   content: { flex: 1, alignItems: 'center' },
-  posterShadow: { shadowColor: '#000', shadowOpacity: 0.45, elevation: 12 },
+  // Fundo sólido (coberto pelo pôster): sem ele, o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
+  posterShadow: { backgroundColor: palette.surfaceSunken, shadowColor: '#000', shadowOpacity: 0.45, elevation: 12 },
   poster: {
     overflow: 'hidden',
     borderCurve: 'continuous',

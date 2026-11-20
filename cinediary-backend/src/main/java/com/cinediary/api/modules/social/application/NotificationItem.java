@@ -10,9 +10,10 @@ import java.util.List;
 /**
  * Uma linha do sino. {@code actors}: os mais recentes primeiro (até 3; nas curtidas agrupadas), {@code actorCount}
  * o total. {@code entry}: o registro envolvido (curtida/resposta). {@code relationship}: você com o primeiro ator
- * (para "Seguir de volta").
+ * (para "Seguir de volta"). {@code companionStatus}: no "te marcou num registro", se você já aceitou (nulo nos outros).
  */
 public record NotificationItem(String key, NotificationKind kind, List<UserView> actors, int actorCount, DiaryEntryView entry,
-                               String commentText, Instant createdAt, boolean unseen, Relationship relationship)
+                               String commentText, Instant createdAt, boolean unseen, Relationship relationship,
+                               com.cinediary.api.modules.social.domain.CompanionStatus companionStatus)
 {
 }

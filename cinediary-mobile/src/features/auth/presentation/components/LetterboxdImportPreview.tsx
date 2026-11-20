@@ -66,7 +66,8 @@ export function LetterboxdImportPreview() {
 const styles = StyleSheet.create({
   root: { gap: space['2xl'], paddingTop: space.lg },
   fan: { height: Math.round(CENTER_W / poster.ratio) + 24, flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start' },
-  poster: { ...shadow.e2 },
+  // Fundo sólido (coberto pelo pôster): sem ele, o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
+  poster: { borderRadius: poster.radius, backgroundColor: palette.surfaceSunken, ...shadow.e2 },
   // O do meio por cima dos outros (no Android, quem decide a ordem é a elevação).
   front: { zIndex: 1, elevation: 8 },
   list: { gap: space.md, alignSelf: 'center' },
