@@ -203,7 +203,7 @@ Regras: segunda pessoa ("você"), frases curtas, **sem emoji** (exceto no Match 
 ## 9. Handoff para FE-01
 
 1. Copiar [`tokens.ts`](./tokens.ts) para `cinediary-mobile/src/theme/tokens.ts`.
-2. Instalar `@expo-google-fonts/fraunces`, `@expo-google-fonts/nunito`, `phosphor-react-native`, `expo-haptics` e `@gorhom/bottom-sheet` (sheet do registro rápido).
+2. Instalar `@expo-google-fonts/fraunces`, `@expo-google-fonts/nunito`, `phosphor-react-native` e `expo-haptics`. O sheet do registro rápido é o `BottomSheet` próprio de `src/shared/ui/` (gesture-handler + Reanimated), sem `@gorhom/bottom-sheet`.
    Trocar o `Tabs` de `src/app/(tabs)/_layout.tsx` por `NativeTabs` conforme a seção 7.1.
 3. Criar os componentes da seção 6 em `src/components/` com stories de referência na própria rota `/_dev/design-system` (só em desenvolvimento).
 4. Forçar o tema claro no MVP (`userInterfaceStyle: "light"` no `app.json`). O modo escuro fica fora do MVP.
