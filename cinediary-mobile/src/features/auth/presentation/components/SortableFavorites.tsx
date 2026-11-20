@@ -175,6 +175,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
+    // Fundo sólido (coberto pelo pôster): sem ele, o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
+    borderRadius: poster.radius,
+    backgroundColor: palette.surfaceSunken,
     shadowColor: '#000',
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },

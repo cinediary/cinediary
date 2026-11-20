@@ -197,7 +197,8 @@ const styles = StyleSheet.create({
   // Sem overflow hidden: o fundo precisa passar para cima ao esticar.
   hero: { justifyContent: 'flex-end' },
   heroRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.lg, paddingHorizontal: space.screenX },
-  poster: { borderRadius: radius.md, ...shadow.e3 },
+  // Fundo sólido (coberto pelo pôster): sem ele, o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
+  poster: { borderRadius: radius.md, backgroundColor: palette.surfaceSunken, ...shadow.e3 },
   heroTexts: { flex: 1, gap: 4, paddingBottom: space.xs },
   meta: { fontFamily: fonts.bodyHeavy, letterSpacing: 0.4, textTransform: 'uppercase' },
   body: { gap: space.lg },
