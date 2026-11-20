@@ -1,0 +1,34 @@
+# Dependency updates: weekly PRs. Commit messages already follow the commitlint rules.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /cinediary-backend
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: 'chore', include: scope }
+    groups:
+      gradle-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /cinediary-mobile
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: 'chore', include: scope }
+    # Expo packages move together with the SDK: update them with `npx expo install --fix`, not one by one.
+    ignore:
+      - dependency-name: 'expo'
+      - dependency-name: 'expo-*'
+      - dependency-name: '@expo/*'
+      - dependency-name: 'react'
+      - dependency-name: 'react-dom'
+      - dependency-name: 'react-native'
+      - dependency-name: 'react-native-*'
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+    commit-message: { prefix: 'ci' }

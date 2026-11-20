@@ -43,6 +43,13 @@ public class UsersModuleFacade implements UsersModulePort
     }
 
     @Override
+    public List<UserView> findByUsernames(Collection<String> usernames)
+    {
+        return usernames.isEmpty() ? List.of()
+                : users.findActiveByUsernames(usernames).stream().map(UsersModuleFacade::toView).toList();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<UserView> search(String query, int limit)
     {
@@ -62,7 +69,16 @@ public class UsersModuleFacade implements UsersModulePort
         return new UserProfileView(u.id(), u.username(), u.displayName(), u.avatarUrl(), u.privateProfile(),
                 u.onboardingCompleted(), diary.countWatched(userId, "MOVIE"), diary.countWatched(userId, "SERIES"),
                 catalog.summaries(diary.favoriteTitleIds(userId), viewerId), u.bio(), u.pronouns(), u.firstName(),
-                u.lastName(), u.showSpoilers(), u.defaultReplyPolicy().name());
+                u.lastName(), u.showSpoilers(), u.defaultReplyPolicy().name(), u.approveCompanions());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Set<UUID> autoAcceptingCompanions(Collection<UUID> userIds)
+    {
+        return userIds.isEmpty() ? java.util.Set.of()
+                : users.findByIds(userIds).stream().filter(u -> !u.approveCompanions()).map(UserAccount::id)
+                        .collect(java.util.stream.Collectors.toSet());
     }
 
     static UserView toView(UserAccount u)

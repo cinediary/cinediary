@@ -3,6 +3,7 @@ package com.cinediary.api.modules.match.application;
 import com.cinediary.api.modules.catalog.api.CatalogModulePort;
 import com.cinediary.api.modules.catalog.api.TitleSummaryView;
 import com.cinediary.api.modules.match.domain.MatchCalculationResult;
+import com.cinediary.api.modules.match.domain.MatchRepositoryPort;
 import com.cinediary.api.modules.match.domain.MatchStatus;
 import com.cinediary.api.modules.match.domain.TasteMatchModel;
 import com.cinediary.api.modules.users.api.UserProfileView;
@@ -26,6 +27,7 @@ public class MatchStoryAssembler
 {
     private final UsersModulePort users;
     private final CatalogModulePort catalog;
+    private final MatchRepositoryPort matches;
 
     @Value("${cinediary.app.invite-base-url:cinediary://match/invite/}")
     private String inviteBaseUrl;
@@ -43,11 +45,12 @@ public class MatchStoryAssembler
         UserProfileView creator = users.profile(m.creatorId(), viewerId);
         UserProfileView partner = m.partnerId() == null ? null : users.profile(m.partnerId(), viewerId);
         MatchCalculationResult r = m.breakdown();
+        boolean seen = matches.storySeen(m.id(), viewerId);
         if (r == null || m.status() == MatchStatus.PENDING) {
             return new MatchStory(m.id(), m.status().name(), m.status().label(), null, false, m.engineUsed().name(),
                     creator, partner, new MatchStory.ScoreBreakdown(0, 0.5, 0, 0.3, 0, 0.2, 0,
                     "Assim que seu amigo aceitar o convite, a gente calcula a compatibilidade de vocês."),
-                    List.of(), List.of(), List.of(), List.of(), List.of(), slides(null, m));
+                    List.of(), List.of(), List.of(), List.of(), List.of(), slides(null, m), seen);
         }
 
         Set<Long> ids = new LinkedHashSet<>(r.bothLovedIds());
@@ -78,7 +81,7 @@ public class MatchStoryAssembler
                                 names.getOrDefault(p.recommendedByUserId(), ""), titles.get(p.titleId())))
                         .toList(),
                 pick(titles, r.jointRecommendationIds()),
-                slides(r, m));
+                slides(r, m), seen);
     }
 
     static String explanation(MatchCalculationResult r)
