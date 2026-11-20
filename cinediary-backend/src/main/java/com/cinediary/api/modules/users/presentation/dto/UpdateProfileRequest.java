@@ -8,12 +8,14 @@ public record UpdateProfileRequest(String username, String displayName, String a
                                    @Size(max = 4) List<Long> favoriteTitleIds,
                                    @Size(max = 100) String firstName, @Size(max = 100) String lastName,
                                    @Size(max = 200) String bio, @Size(max = 30) String pronouns, Boolean showSpoilers,
-                                   /** ME, FOLLOWING ou EVERYONE. */ String defaultReplyPolicy)
+                                   /** ME, FOLLOWING ou EVERYONE. */ String defaultReplyPolicy,
+                                   /** "Aprovar marcações" (vi com…). */ Boolean approveCompanions)
 {
     public UpdateProfileCommand toCommand()
     {
         return new UpdateProfileCommand(username, displayName, avatarUrl, isPrivate, favoriteTitleIds, firstName,
                 lastName, bio, pronouns, showSpoilers,
-                defaultReplyPolicy == null ? null : com.cinediary.api.shared.domain.ReplyPolicy.parseOrDefault(defaultReplyPolicy));
+                defaultReplyPolicy == null ? null : com.cinediary.api.shared.domain.ReplyPolicy.parseOrDefault(defaultReplyPolicy),
+                approveCompanions);
     }
 }

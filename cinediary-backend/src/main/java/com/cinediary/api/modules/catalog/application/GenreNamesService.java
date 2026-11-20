@@ -51,7 +51,7 @@ public class GenreNamesService
         safeNames(MediaType.SERIES, language).forEach(all::putIfAbsent);
         Map<Integer, String> out = new LinkedHashMap<>();
         for (Integer id : genreIds) {
-            out.put(id, all.getOrDefault(id, (language == ContentLanguage.EN ? "Genre " : "Gênero ") + id));
+            out.put(id, all.getOrDefault(id, language.genrePrefix() + id));
         }
         return out;
     }

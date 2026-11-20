@@ -1,7 +1,25 @@
-import { language, strings } from './locale';
+import { language, nativeLocale, strings } from './locale';
 
 const { months, monthsShort } = strings.common;
-const isPt = language === 'pt';
+
+/** Separadores de número de cada locale (o espanhol muda entre a Espanha e a América Latina). */
+const separators: Record<string, { group: string; decimal: string }> = {
+  'pt-BR': { group: '.', decimal: ',' },
+  'en-US': { group: ',', decimal: '.' },
+  'es-ES': { group: '.', decimal: ',' },
+  'es-MX': { group: ',', decimal: '.' },
+  // Francês: espaço fino inseparável entre os milhares (1 000).
+  'fr-FR': { group: '\u202f', decimal: ',' },
+};
+const { group, decimal } = separators[nativeLocale] ?? { group: ',', decimal: '.' };
+
+/** "mil" e "milhão" curtos de cada idioma: 12,3 mil · 12.3K · 12,3 k. */
+const compactSuffix: Record<typeof language, { thousand: string; million: string }> = {
+  pt: { thousand: ' mil', million: ' mi' },
+  en: { thousand: 'K', million: 'M' },
+  es: { thousand: ' mil', million: ' M' },
+  fr: { thousand: ' k', million: ' M' },
+};
 
 /** "2026-11-13" → Date local (sem fuso). */
 export function parseIsoDate(iso: string): Date {
@@ -20,30 +38,39 @@ export const formatMonthYear = (date: Date) => `${months[date.getMonth()]} ${dat
 /** "2026-11" → "nov". */
 export const formatYearMonthShort = (yearMonth: string) => monthsShort[Number(yearMonth.slice(5, 7)) - 1] ?? yearMonth;
 
-/** "17 de out" · "Oct 17". */
-export const formatShortDate = (date: Date) =>
-  isPt ? `${date.getDate()} de ${monthsShort[date.getMonth()]}` : `${monthsShort[date.getMonth()]} ${date.getDate()}`;
+/** "17 de out" · "Oct 17" · "17 oct" · "17 oct.". */
+export const formatShortDate = (date: Date) => {
+  const day = date.getDate();
+  const month = monthsShort[date.getMonth()];
+  if (language === 'pt') return `${day} de ${month}`;
+  if (language === 'en') return `${month} ${day}`;
+  return `${day} ${month}`;
+};
 
-/** Data curta com o ano: "17 de out de 2024" · "Oct 17, 2024". */
-const withYear = (date: Date) =>
-  isPt ? `${formatShortDate(date)} de ${date.getFullYear()}` : `${formatShortDate(date)}, ${date.getFullYear()}`;
+/** Data curta com o ano: "17 de out de 2024" · "Oct 17, 2024" · "17 oct 2024" · "17 oct. 2024". */
+const withYear = (date: Date) => {
+  const year = date.getFullYear();
+  if (language === 'pt') return `${formatShortDate(date)} de ${year}`;
+  if (language === 'en') return `${formatShortDate(date)}, ${year}`;
+  return `${formatShortDate(date)} ${year}`;
+};
 
 /** "17 de out de 2024" · "Oct 17, 2024" (lançamento na página do título). */
 export const formatFullDate = withYear;
 
-/** PT-BR (UX-01 §8): 1.000 e 4,5. Inglês: 1,000 e 4.5. */
-/** 950 · 12,3 mil · 1,2 mi (pt) / 950 · 12.3K · 1.2M (en). */
+/** 950 · 12,3 mil · 1,2 mi (pt) / 950 · 12.3K · 1.2M (en) / 12,3 mil · 1,2 M (es) / 12,3 k · 1,2 M (fr). */
 export const formatCompact = (n: number) => {
-  if (n >= 1_000_000) return `${formatNumber(n / 1_000_000, n >= 10_000_000 ? 0 : 1)}${isPt ? ' mi' : 'M'}`;
-  if (n >= 10_000) return `${formatNumber(n / 1_000, n >= 100_000 ? 0 : 1)}${isPt ? ' mil' : 'K'}`;
+  const suffix = compactSuffix[language];
+  if (n >= 1_000_000) return `${formatNumber(n / 1_000_000, n >= 10_000_000 ? 0 : 1)}${suffix.million}`;
+  if (n >= 10_000) return `${formatNumber(n / 1_000, n >= 100_000 ? 0 : 1)}${suffix.thousand}`;
   return formatNumber(n);
 };
 
+/** PT-BR (UX-01 §8): 1.000 e 4,5. Inglês: 1,000 e 4.5. Os outros seguem a tabela `separators`. */
 export const formatNumber = (n: number, decimals = 0) => {
   const [int = '0', frac] = n.toFixed(decimals).split('.');
-  const sep = isPt ? '.' : ',';
-  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
-  return frac ? `${grouped}${isPt ? ',' : '.'}${frac}` : grouped;
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, group);
+  return frac ? `${grouped}${decimal}${frac}` : grouped;
 };
 
 export function isSameDay(a: Date, b: Date) {

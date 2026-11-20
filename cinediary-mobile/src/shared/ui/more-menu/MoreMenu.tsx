@@ -68,7 +68,8 @@ const styles = StyleSheet.create({
     width: touch.minTarget,
     height: touch.minTarget,
     borderRadius: touch.minTarget / 2,
-    backgroundColor: 'rgba(255,253,249,0.92)',
+    // Igual ao voltar (FloatingBackButton), do outro lado do topo.
+    backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },

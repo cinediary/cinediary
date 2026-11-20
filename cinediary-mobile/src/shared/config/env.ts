@@ -40,6 +40,8 @@ export const env = {
   clerkPublishableKey: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '',
   posthogApiKey: process.env.EXPO_PUBLIC_POSTHOG_API_KEY ?? '',
   posthogHost: process.env.EXPO_PUBLIC_POSTHOG_HOST ?? '',
+  /** App ID da Meta: sem ele, "Compartilhar nos Stories" abre a folha do sistema (não o editor do Instagram). */
+  facebookAppId: process.env.EXPO_PUBLIC_FACEBOOK_APP_ID ?? '',
 } as const;
 
 export const isClerkConfigured = env.clerkPublishableKey.startsWith('pk_');

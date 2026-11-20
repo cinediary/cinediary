@@ -4,11 +4,13 @@ import { CaretDown, CaretUp, Check, NotePencil, Play } from 'phosphor-react-nati
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
+import { useTitleEntries } from '@/features/diary/application/diaryQueries';
 import { useUpdateEpisodes, useUpdateTitleState } from '@/features/diary/application/titleStateMutations';
+import { latestSeasonRatings } from '@/features/diary/domain/diary';
 import { analytics, useFlagEnabled } from '@/shared/analytics/analytics';
 import { formatFullDate, parseIsoDate, strings, toIsoDate } from '@/shared/i18n';
 import { palette, radius, semantic, space, touch } from '@/shared/theme';
-import { Button, Card, ProgressBar, Skeleton, StarRating, Text, Title, useToast } from '@/shared/ui';
+import { Button, Card, formatRating, ProgressBar, Skeleton, StarRating, Text, Title, useToast } from '@/shared/ui';
 import {
   applyEpisodes,
   computeProgress,
@@ -45,6 +47,9 @@ export function SeriesProgressSection({ title, embedded = false }: { title: Titl
   const [trailer, setTrailer] = useState<string | null>(null);
   const seasons = progressSeasons(title.seasons);
   const progress = computeProgress(title.seasons);
+  // A sua nota de cada temporada (do registro mais recente daquela temporada), ao lado do nome.
+  const entries = useTitleEntries(title.id);
+  const seasonRatings = latestSeasonRatings(entries.data ?? []);
 
   if (seasons.length === 0) return null;
 
@@ -113,6 +118,8 @@ export function SeriesProgressSection({ title, embedded = false }: { title: Titl
         const watched = seasonWatchedCount(season);
         const done = watched >= season.episodeCount && season.episodeCount > 0;
         const expanded = open === season.number;
+        const rating = seasonRatings.get(season.number);
+        const header = t.seasonHeader(season.name, watched, season.episodeCount);
         return (
           <View key={season.number} style={styles.season}>
             {/*
@@ -123,12 +130,17 @@ export function SeriesProgressSection({ title, embedded = false }: { title: Titl
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ expanded }}
-              accessibilityLabel={t.seasonHeader(season.name, watched, season.episodeCount)}
+              accessibilityLabel={rating ? `${header}, ${formatRating(rating)}` : header}
               onPress={() => setOpen(expanded ? null : season.number)}
               style={styles.seasonHeader}
             >
               <View style={styles.seasonTitle}>
-                <Text variant="bodyStrong">{t.seasonHeader(season.name, watched, season.episodeCount)}</Text>
+                <View style={styles.seasonName}>
+                  <Text variant="bodyStrong" style={styles.seasonNameText}>
+                    {header}
+                  </Text>
+                  {rating ? <StarRating value={rating} size="mini" /> : null}
+                </View>
                 <View style={styles.miniTrack}>
                   <View
                     style={[
@@ -315,6 +327,8 @@ const styles = StyleSheet.create({
   },
   seasonHeader: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: touch.buttonHeight },
   seasonTitle: { flex: 1, gap: space.xs, paddingVertical: space.md },
+  seasonName: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
+  seasonNameText: { flexShrink: 1 },
   miniTrack: { height: 4, borderRadius: 2, backgroundColor: palette.surfaceSunken, overflow: 'hidden' },
   miniFill: { height: '100%', backgroundColor: palette.salvia500 },
   checkHit: { width: touch.minTarget, height: touch.minTarget, alignItems: 'center', justifyContent: 'center' },

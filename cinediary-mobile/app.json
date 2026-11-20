@@ -42,7 +42,15 @@
       "expo-web-browser",
       "expo-image",
       "@clerk/expo",
-      "expo-localization",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": ["pt", "en", "es", "fr"],
+            "android": ["pt", "en", "es", "fr"]
+          }
+        }
+      ],
       "expo-sharing",
       "@react-native-community/datetimepicker",
       [
@@ -51,6 +59,13 @@
           "photosPermission": "O CineDiary usa suas fotos para você escolher a foto do perfil.",
           "cameraPermission": "O CineDiary usa a câmera para você tirar a foto do perfil.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "react-native-share",
+        {
+          "ios": ["instagram-stories", "instagram"],
+          "android": ["com.instagram.android"]
         }
       ]
     ],

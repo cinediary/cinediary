@@ -9,10 +9,11 @@ import { useHidesSpoiler } from '@/features/diary/application/useHidesSpoiler';
 import type { DiaryEntry } from '@/features/diary/domain/diary';
 import { EntryBody, EntryHero, type EntryAuthor } from '@/features/diary/presentation/components/EntryDetail';
 import { strings } from '@/shared/i18n';
-import { semantic, space, touch } from '@/shared/theme';
+import { palette, semantic, space, touch } from '@/shared/theme';
 import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
 import { conversationKeys, useEntryInteractions } from '../../application/entryConversation';
 import { EntryActionBar, ReplyComposer, ReplyList } from './EntryConversation';
+import { WatchedWith } from './WatchedWith';
 
 /**
  * Moldura comum da tela de uma entrada (sua ou de outra pessoa): topo com o pôster, corpo com a review,
@@ -95,13 +96,21 @@ export function EntryScreenFrame({
             revealed={revealed}
             onReveal={() => setRevealed(true)}
           />
+          {/* "Com Ana e Bia" e, se você foi marcado, Aceitar/Recusar ou tirar a marcação. */}
+          {/* Sem review, o botão dos Stories fica na mesma linha do "Com…" (antes ficava solto numa linha só dele). */}
+          <WatchedWith
+            entry={entry}
+            ownEntry={ownEntry}
+            owner={{ id: entry.authorId, username: author.username, displayName: author.name, avatarUrl: author.avatarUrl }}
+            trailing={
+              !interactive && onShare ? <EntryActionBar entryId={entry.id} ownEntry={ownEntry} onShare={onShare} shareOnly /> : undefined
+            }
+          />
           {interactive ? (
             <>
               <EntryActionBar entryId={entry.id} ownEntry={ownEntry} onShare={onShare} />
               <ReplyList entryId={entry.id} meId={me.data?.id} hidden={hides && !revealed} onReveal={() => setRevealed(true)} />
             </>
-          ) : onShare ? (
-            <EntryActionBar entryId={entry.id} ownEntry={ownEntry} onShare={onShare} shareOnly />
           ) : null}
         </View>
       </Animated.ScrollView>
@@ -139,7 +148,8 @@ const styles = StyleSheet.create({
     borderRadius: touch.minTarget / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,253,249,0.95)',
+    // Opaco: com fundo translúcido o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
+    backgroundColor: palette.surface,
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 8,

@@ -1,0 +1,116 @@
+# App (Expo + TypeScript): lint, typecheck, dependency checks and the Metro JS bundle.
+# Path filtering lives in the "changes" job, not in `on.pull_request.paths`: these checks are required on
+# main, and a workflow that never triggers leaves a required check pending forever (a skipped job passes).
+# Same on push to main: no `paths`, so the filter below is the only list.
+name: Mobile
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      mobile: ${{ steps.filter.outputs.mobile }}
+      deps: ${{ steps.filter.outputs.deps }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            mobile:
+              - 'cinediary-mobile/**'
+              - '.github/workflows/mobile.yml'
+            deps:
+              - 'cinediary-mobile/package.json'
+              - 'cinediary-mobile/package-lock.json'
+              - '.github/workflows/mobile.yml'
+
+  # Lint, typecheck and depcheck share one `npm ci`. Each step runs even if an earlier one failed,
+  # so a single run shows every problem.
+  checks:
+    name: mobile-checks
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults: { run: { working-directory: cinediary-mobile } }
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cinediary-mobile/package-lock.json
+      - id: install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run typecheck
+      # Dependencies in package.json that nothing imports (or imports with no declared dependency).
+      # Needs node_modules: depcheck reads installed packages to see that e.g. react-native-screens is a peer of
+      # expo-router. Without it, every peer-only package is reported as unused.
+      # False positive (e.g. a native module that is never imported)? Add it to cinediary-mobile/.depcheckrc.
+      - name: Depcheck
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npx --yes depcheck@1.4.7
+
+  # Packages outside the versions the Expo SDK expects. Warning only, so it never fails (not a required check).
+  expo-deps:
+    name: mobile-deps
+    needs: changes
+    if: needs.changes.outputs.deps == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults: { run: { working-directory: cinediary-mobile } }
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cinediary-mobile/package-lock.json
+      - run: npm ci
+      - name: expo install --check
+        run: |
+          if ! npx expo install --check; then
+            echo "::warning::Some packages don't match the versions expected by the Expo SDK. Run 'npx expo install --fix' in cinediary-mobile/."
+          fi
+        env:
+          CI: '1'
+          EXPO_NO_TELEMETRY: '1'
+
+  # The app "build": Metro bundles the JS like EAS does. Catches what tsc misses (missing files or
+  # assets, Babel/Reanimated errors). No .env needed: the keys are only read at runtime.
+  bundle:
+    name: mobile-bundle
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults: { run: { working-directory: cinediary-mobile } }
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cinediary-mobile/package-lock.json
+      - run: npm ci
+      - run: npx expo export --platform android --output-dir "$RUNNER_TEMP/expo-export"
+        env:
+          CI: '1'
+          EXPO_NO_TELEMETRY: '1'
