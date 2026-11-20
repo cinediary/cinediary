@@ -39,6 +39,8 @@ export const account: Strings['account'] = {
   bioPlaceholder: 'Cuenta un poco sobre ti y lo que te encanta ver.',
   textCount: (n: number, max: number) => `${n}/${max}`,
   sectionPreferences: 'Preferencias',
+  approveCompanions: 'Aprobar etiquetas',
+  approveCompanionsHint: 'Cuando alguien te etiquete en un registro, tú decides si aparece.',
   showSpoilers: 'Mostrar spoilers',
   showSpoilersHint: 'Las reseñas y respuestas de otras personas aparecen sin difuminar.',
   replyPolicy: 'Quién puede responder',

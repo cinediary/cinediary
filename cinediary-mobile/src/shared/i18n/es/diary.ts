@@ -67,6 +67,7 @@ export const diary: Strings['diary'] = {
   entrySave: 'Guardar cambios',
   entrySaved: 'Registro actualizado',
   entryShareStories: 'Compartir en Stories',
+  shareIncludeReview: 'Incluir la reseña',
   entrySharing: 'Preparando la imagen…',
   entryShareError: 'No se pudo generar la imagen ahora.',
   entryShareUnavailable: 'Compartir no está disponible en este dispositivo.',

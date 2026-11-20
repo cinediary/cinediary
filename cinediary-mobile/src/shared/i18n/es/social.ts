@@ -80,6 +80,7 @@ export const social: Strings['social'] = {
     FOLLOW_APPROVED: 'aceptó tu solicitud para seguir',
     ENTRY_LIKED: (title: string, many: boolean) => `${many ? 'dieron' : 'dio'} me gusta a tu registro de ${title}`,
     ENTRY_REPLIED: (title: string) => `respondió a tu registro de ${title}`,
+    ENTRY_COMPANION: (title: string) => `te etiquetó en su registro de ${title}`,
   },
   seeRequests: 'Ver',
   tabFriends: 'Amigos',
@@ -125,4 +126,25 @@ export const social: Strings['social'] = {
   viewProfileOf: (user: string) => `Ver el perfil de @${user}`,
   followersSubtitle: (n: number) => (n === 1 ? '1 persona' : `${n} personas`),
   requestsSubtitle: 'Solo quienes apruebes ven tu diario y tus estadísticas.',
+  // "Vi com…": etiquetar amigos en un registro.
+  companions: {
+    row: 'Lo vi con…',
+    /** "Ana", "Ana y Bia", "Ana, Bia y Caio". */
+    names: (list: string[]) => (list.length <= 1 ? (list[0] ?? '') : `${list.slice(0, -1).join(', ')} y ${list[list.length - 1]}`),
+    // "Con tú y Ana" no existe: con "tú" al frente (la lista siempre lo pone primero), es "Contigo y Ana".
+    withNames: (names: string) => (names === 'tú' || /^tú[ ,]/.test(names) ? `Contigo${names.slice(2)}` : `Con ${names}`),
+    search: 'Buscar amigos',
+    onlyFriends: 'Solo puedes etiquetar amigos: personas que sigues y que te siguen.',
+    noResults: 'Ningún amigo con ese nombre.',
+    pending: 'Pendiente',
+    you: 'tú',
+    max: 'Puedes etiquetar hasta 10 personas.',
+    markedYou: (name: string) => `${name} te etiquetó en este registro.`,
+    accept: 'Aceptar',
+    decline: 'Rechazar',
+    accepted: 'Aceptaste',
+    remove: 'Quitar mi etiqueta',
+    logToMyDiary: 'Registrar en mi diario',
+    saveError: 'Se guardó, pero no pudimos etiquetar a quienes lo vieron contigo.',
+  },
 };

@@ -39,6 +39,8 @@ export const account: Strings['account'] = {
   bioPlaceholder: 'Raconte un peu qui tu es et ce que tu adores regarder.',
   textCount: (n: number, max: number) => `${n}/${max}`,
   sectionPreferences: 'Préférences',
+  approveCompanions: 'Approuver les identifications',
+  approveCompanionsHint: 'Quand quelqu’un t’identifie dans une entrée, tu décides si elle s’affiche.',
   showSpoilers: 'Afficher les spoilers',
   showSpoilersHint: 'Les critiques et réponses des autres apparaissent sans flou.',
   replyPolicy: 'Qui peut répondre',

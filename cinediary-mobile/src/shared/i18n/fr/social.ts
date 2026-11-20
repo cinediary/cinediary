@@ -80,6 +80,7 @@ export const social: Strings['social'] = {
     FOLLOW_APPROVED: 'a accepté ta demande d’abonnement',
     ENTRY_LIKED: (title: string, many: boolean) => `${many ? 'ont aimé' : 'a aimé'} ton entrée de ${title}`,
     ENTRY_REPLIED: (title: string) => `a répondu à ton entrée de ${title}`,
+    ENTRY_COMPANION: (title: string) => `indique que vous avez vu ${title} ensemble`,
   },
   seeRequests: 'Voir',
   tabFriends: 'Amis',
@@ -125,4 +126,24 @@ export const social: Strings['social'] = {
   viewProfileOf: (user: string) => `Voir le profil de @${user}`,
   followersSubtitle: (n: number) => (n === 1 ? '1 personne' : `${n} personnes`),
   requestsSubtitle: 'Seules les personnes que tu acceptes voient ton journal et tes statistiques.',
+  // "Vi com…" : identifier des amis dans une entrée.
+  companions: {
+    row: 'Vu avec…',
+    /** "Ana", "Ana et Bia", "Ana, Bia et Caio". */
+    names: (list: string[]) => (list.length <= 1 ? (list[0] ?? '') : `${list.slice(0, -1).join(', ')} et ${list[list.length - 1]}`),
+    withNames: (names: string) => `Avec ${names}`,
+    search: 'Chercher des amis',
+    onlyFriends: 'Tu ne peux identifier que des amis : les personnes que tu suis et qui te suivent.',
+    noResults: 'Aucun ami avec ce nom.',
+    pending: 'En attente',
+    you: 'toi',
+    max: 'Tu peux identifier jusqu’à 10 personnes.',
+    markedYou: (name: string) => `${name} indique que vous l’avez vu ensemble.`,
+    accept: 'Accepter',
+    decline: 'Refuser',
+    accepted: 'Tu as accepté',
+    remove: 'Retirer mon identification',
+    logToMyDiary: 'L’ajouter à mon journal',
+    saveError: 'Enregistré, mais impossible d’identifier les personnes avec qui tu l’as vu.',
+  },
 };
