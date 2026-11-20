@@ -10,7 +10,16 @@ export type StorySlideType =
   'OPENING' | 'SCORE' | 'BREAKDOWN' | 'GENRES' | 'BOTH_LOVED' | 'DISAGREEMENTS' | 'DISCOVERY' | 'RECOMMENDATIONS' | 'CLOSING';
 
 /** De onde o registro rápido foi aberto. */
-export type QuickLogEntryPoint = 'title_page' | 'search' | 'log_tab' | 'home' | 'series_season' | 'series_episode' | 'other';
+export type QuickLogEntryPoint =
+  | 'title_page'
+  | 'search'
+  | 'log_tab'
+  | 'home'
+  | 'series_season'
+  | 'series_episode'
+  /** "Registrar no meu diário" depois de aceitar uma marcação ("vi com…"). */
+  | 'watched_with'
+  | 'other';
 /** Título inteiro, uma temporada ou um episódio (séries). */
 export type LogScope = 'title' | 'season' | 'episode';
 export type RecommendationSection = 'for_you' | 'trending_week' | 'because_you_liked' | 'collection' | 'similar';
@@ -41,6 +50,8 @@ export interface AnalyticsEvents {
     is_rewatch: boolean;
     touch_count: number;
     scope: LogScope;
+    /** Quantas pessoas foram marcadas no "Vi com…". */
+    companions_count: number;
   };
   /** Abriu o registro rápido; junto com title_logged mostra quantos desistem no meio. */
   quick_log_opened: { entry_point: QuickLogEntryPoint; media_type: MediaType; scope: LogScope };
@@ -103,7 +114,7 @@ export interface AnalyticsEvents {
   people_searched: { query_length: number; results_count: number };
   /** Mudou uma preferência nas Configurações. */
   /** `default_reply_policy`: `value` true = ficou mais fechado que "qualquer pessoa". */
-  setting_changed: { key: 'show_spoilers' | 'private_profile' | 'default_reply_policy'; value: boolean };
+  setting_changed: { key: 'show_spoilers' | 'private_profile' | 'default_reply_policy' | 'approve_companions'; value: boolean };
   entry_liked: { own_entry: boolean; liked: boolean };
   entry_replied: { own_entry: boolean; length: number };
   entry_reply_deleted: { own_reply: boolean };
@@ -111,7 +122,11 @@ export interface AnalyticsEvents {
   feed_item_opened: { from: 'rail' | 'feed'; position: number; has_review: boolean };
   friends_feed_opened: Record<string, never>;
   notifications_opened: { unseen: number };
-  notification_opened: { kind: 'FOLLOWED' | 'FOLLOW_REQUESTED' | 'FOLLOW_APPROVED' | 'ENTRY_LIKED' | 'ENTRY_REPLIED' };
+  notification_opened: {
+    kind: 'FOLLOWED' | 'FOLLOW_REQUESTED' | 'FOLLOW_APPROVED' | 'ENTRY_LIKED' | 'ENTRY_REPLIED' | 'ENTRY_COMPANION';
+  };
+  /** "Vi com…": a pessoa marcada aceitou, recusou ou tirou a marcação. */
+  entry_companion_responded: { response: 'accept' | 'decline' | 'remove' };
   /** Conversão do teste A/B "trailer-button-placement": `placement` é a variante que a pessoa viu. */
   trailer_opened: { tmdb_id: number; media_type: MediaType; placement: 'meta' | 'actions' };
 }

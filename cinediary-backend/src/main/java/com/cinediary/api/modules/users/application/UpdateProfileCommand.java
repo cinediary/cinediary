@@ -7,6 +7,6 @@ import java.util.List;
 public record UpdateProfileCommand(String username, String displayName, String avatarUrl, Boolean isPrivate,
                                    List<Long> favoriteTitleIds, String firstName, String lastName, String bio,
                                    String pronouns, Boolean showSpoilers,
-                                   com.cinediary.api.shared.domain.ReplyPolicy defaultReplyPolicy)
+                                   com.cinediary.api.shared.domain.ReplyPolicy defaultReplyPolicy, Boolean approveCompanions)
 {
 }

@@ -277,6 +277,127 @@ paths:
               schema: { $ref: '#/components/schemas/EntryInteractionsResponse' }
         '403': { description: "Perfil privado" }
 
+  /api/v1/entries/{entryId}/companions:
+    get:
+      tags: [Social]
+      summary: "Quem viu junto (\"vi com…\"). O dono vê também quem ainda não aceitou; os outros, só quem aceitou"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: "Marcações"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntryCompanionsResponse' }
+        '403': { description: "Perfil privado" }
+    put:
+      tags: [Social]
+      summary: "Define quem viu junto (só o dono; só amigos: segue e é seguido). Quem entra é avisado; quem sai perde a marcação"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [usernames]
+              properties:
+                usernames: { type: array, maxItems: 10, items: { type: string }, description: "A lista inteira, por @. Vazia tira todas" }
+      responses:
+        '200':
+          description: "Marcações depois de salvar"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntryCompanionsResponse' }
+        '403': { description: "Não é o dono, ou alguém não é amigo" }
+
+  /api/v1/me/companions/{entryId}/accept:
+    post:
+      tags: [Social]
+      summary: "Aceitar a marcação: aparece no registro"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: "Marcações do registro"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntryCompanionsResponse' }
+        '404': { description: "Sem marcação (ou já recusada)" }
+
+  /api/v1/me/companions/{entryId}/logged:
+    post:
+      tags: [Social]
+      summary: "Você (marcado e aceito) registrou o mesmo título: seu registro ganha \"vi com\" quem te marcou, já aceito e sem aviso"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid }, description: "O registro de quem te marcou" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entryId]
+              properties:
+                entryId: { type: string, format: uuid, description: "O seu registro do mesmo título" }
+      responses:
+        '200':
+          description: "Marcações do seu registro (só quem te marcou)"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntryCompanionsResponse' }
+        '404': { description: "Você não aceitou a marcação" }
+
+  /api/v1/me/companions/{entryId}/decline:
+    post:
+      tags: [Social]
+      summary: "Recusar a marcação (quem marcou não é avisado)"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: "Recusada" }
+        '404': { description: "Sem marcação" }
+
+  /api/v1/me/companions/{entryId}:
+    delete:
+      tags: [Social]
+      summary: "Tirar uma marcação já aceita"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: "Tirada" }
+        '404': { description: "Sem marcação" }
+
+  /api/v1/me/friends:
+    get:
+      tags: [Social]
+      summary: "Seus amigos (segue e é seguido), para o \"Vi com…\""
+      parameters:
+        - { in: query, name: q, required: false, schema: { type: string }, description: "Começo do @ ou do nome" }
+      responses:
+        '200':
+          description: "Até 20 amigos"
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/FeedAuthor' } }
+
+  /api/v1/users/{username}/watched-with:
+    get:
+      tags: [Social]
+      summary: "Registros em que a pessoa foi marcada e aceitou (403 se privado e você não segue)"
+      parameters:
+        - { in: path, name: username, required: true, schema: { type: string } }
+        - { in: query, name: page, required: false, schema: { type: integer, default: 0 } }
+        - { in: query, name: size, required: false, schema: { type: integer, default: 20, maximum: 50 } }
+      responses:
+        '200':
+          description: "Entradas (mesmo formato do diário); só as que você pode ver"
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/DiaryEntryResponse' } }
+        '403': { description: "Perfil privado" }
+
   /api/v1/entries/{entryId}/like:
     put:
       tags: [Social]
@@ -1301,7 +1422,7 @@ components:
       required: [id, kind, actors, actorCount, createdAt, unseen, relationship]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [FOLLOWED, FOLLOW_REQUESTED, FOLLOW_APPROVED, ENTRY_LIKED, ENTRY_REPLIED] }
+        kind: { type: string, enum: [FOLLOWED, FOLLOW_REQUESTED, FOLLOW_APPROVED, ENTRY_LIKED, ENTRY_REPLIED, ENTRY_COMPANION] }
         actors: { type: array, items: { $ref: '#/components/schemas/FeedAuthor' }, description: "Mais recentes primeiro (até 3)" }
         actorCount: { type: integer }
         entry:
@@ -1315,6 +1436,34 @@ components:
         createdAt: { type: string, format: date-time }
         unseen: { type: boolean }
         relationship: { $ref: '#/components/schemas/Relationship' }
+        companionStatus:
+          type: string
+          nullable: true
+          enum: [PENDING, ACCEPTED]
+          description: "Só no ENTRY_COMPANION: PENDING mostra Aceitar e Recusar; ACCEPTED, já aceito"
+    CompanionStatus:
+      type: string
+      enum: [PENDING, ACCEPTED, DECLINED]
+    EntryCompanionsResponse:
+      type: object
+      required: [companions]
+      properties:
+        companions:
+          type: array
+          description: "O dono vê PENDING e ACCEPTED (recusas aparecem como PENDING); os outros, só ACCEPTED"
+          items:
+            type: object
+            required: [id, username, status]
+            properties:
+              id: { type: string, format: uuid }
+              username: { type: string }
+              displayName: { type: string, nullable: true }
+              avatarUrl: { type: string, nullable: true }
+              status: { $ref: '#/components/schemas/CompanionStatus' }
+        myStatus:
+          allOf: [{ $ref: '#/components/schemas/CompanionStatus' }]
+          nullable: true
+          description: "Se você foi marcado neste registro"
     ReplyPolicy:
       type: string
       enum: [ME, FOLLOWING, EVERYONE]
@@ -1454,6 +1603,7 @@ components:
         firstName: { type: string, nullable: true, description: "Só no /me (espelho do Clerk)" }
         lastName: { type: string, nullable: true, description: "Só no /me (espelho do Clerk)" }
         showSpoilers: { type: boolean, description: "Só no /me. Preferência: reviews dos outros sem desfoque" }
+        approveCompanions: { type: boolean, description: "Só no /me. \"Aprovar marcações\": true = você aceita ou recusa quando te marcam; false = já entra aceita" }
 
     UpdateProfileRequest:
       type: object
@@ -1465,6 +1615,7 @@ components:
         bio: { type: string, maxLength: 200 }
         pronouns: { type: string, enum: ['', he, she, they, he_they, she_they, any], description: "Código da lista (vazio = não mostrar); o app mostra no idioma de quem vê" }
         showSpoilers: { type: boolean }
+        approveCompanions: { type: boolean }
         username:
           type: string
         displayName:

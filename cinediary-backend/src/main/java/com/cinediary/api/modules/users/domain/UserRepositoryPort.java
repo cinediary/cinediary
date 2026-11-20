@@ -16,6 +16,8 @@ public interface UserRepositoryPort
 
     Optional<UserAccount> findActiveByUsername(String username);
 
+    List<UserAccount> findActiveByUsernames(Collection<String> usernames);
+
     List<UserAccount> search(String query, int limit);
 
     boolean usernameTakenByAnother(String username, String clerkId);
@@ -38,7 +40,7 @@ public interface UserRepositoryPort
 
     /** Nome e sobrenome (espelho do Clerk), bio, pronomes e a preferência de spoilers. */
     void updateDetails(UUID id, String firstName, String lastName, String bio, String pronouns, boolean showSpoilers,
-                       com.cinediary.api.shared.domain.ReplyPolicy defaultReplyPolicy);
+                       com.cinediary.api.shared.domain.ReplyPolicy defaultReplyPolicy, boolean approveCompanions);
 
     void markOnboardingCompleted(UUID id);
 }
