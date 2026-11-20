@@ -21,6 +21,7 @@ const toProfile = (dto: Schemas['UserProfileResponse']): UserProfile => ({
   lastName: dto.lastName ?? null,
   showSpoilers: dto.showSpoilers ?? false,
   defaultReplyPolicy: dto.defaultReplyPolicy ?? 'EVERYONE',
+  approveCompanions: dto.approveCompanions ?? true,
 });
 
 /** Gateway HTTP do módulo users (perfil e onboarding). */

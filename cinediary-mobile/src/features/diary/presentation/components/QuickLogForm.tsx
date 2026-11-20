@@ -1,11 +1,13 @@
 import { router } from 'expo-router';
-import { ArrowCounterClockwise, BookmarkSimple, Check, EyeSlash, Heart, PencilSimple } from 'phosphor-react-native';
+import { ArrowCounterClockwise, BookmarkSimple, Check, EyeSlash, Heart, PencilSimple, UsersThree } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, ScrollView, StyleSheet, TextInput, View, type ScrollViewInstance } from 'react-native';
 
 import type { SeriesStatus, TitleDetail } from '@/features/catalog/domain/title';
 import { SeasonsSkeleton } from '@/features/catalog/presentation/components/Skeletons';
 import { SeriesProgressSection } from '@/features/catalog/presentation/components/SeriesProgressSection';
+import type { Actor } from '@/features/social/domain/social';
+import { CompanionPicker } from '@/features/social/presentation/components/CompanionPicker';
 import { strings } from '@/shared/i18n';
 import { palette, radius, semantic, space, type as typeScale } from '@/shared/theme';
 import { Button, Chip, IconButton, ListRow, PosterArt, StarRating, Text, useBottomSheet, useToast } from '@/shared/ui';
@@ -27,8 +29,17 @@ export function QuickLogForm({
   seasonsLoading = false,
   undated = false,
   scope = null,
+  date,
+  fromEntry,
+  markedBy,
 }: {
   title: TitleDetail;
+  /** Data já escolhida (ex.: a do registro de quem te marcou). */
+  date?: string;
+  /** O registro de quem te marcou: ao registrar, o seu ganha "vi com" essa pessoa. */
+  fromEntry?: string;
+  /** Quem te marcou: já vem no "Vi com…" (sem precisar aprovar) e dá para tirar. */
+  markedBy?: Actor;
   seasonsLoading?: boolean;
   scope?: EntryScope | null;
   /** Filme marcado como visto (onboarding/importação) ganhando a primeira data: o "rever" não liga sozinho. */
@@ -38,8 +49,10 @@ export function QuickLogForm({
   const c = strings.catalog;
   const toast = useToast();
   const sheet = useBottomSheet();
-  const { draft, update, cta, isSeries, submit, isSaving } = useQuickLog(title, { undated, scope });
+  const { draft, update, cta, isSeries, companions, setCompanions, submit, isSaving } = useQuickLog(title, { undated, scope, date, fromEntry, markedBy });
   const [showReview, setShowReview] = useState(false);
+  const [showCompanions, setShowCompanions] = useState(false);
+  const ct = strings.social.companions;
   const scrollRef = useRef<ScrollViewInstance>(null);
   const writing = useRef(false);
   // Teclado abriu para a review: rola até o fim, onde estão o campo e o texto digitado.
@@ -64,11 +77,12 @@ export function QuickLogForm({
 
   const onSubmit = async () => {
     try {
-      const kind = await submit();
+      const { cta: kind, companionsSaved } = await submit();
       // Fecha com a animação de descida do sheet (fora dele, volta normal).
       if (sheet) sheet.close();
       else router.back();
-      toast(kind === 'log' ? t.loggedToast : kind === 'watchlist' ? t.watchlistToast : t.savedToast);
+      if (!companionsSaved) toast(ct.saveError);
+      else toast(kind === 'log' ? t.loggedToast : kind === 'watchlist' ? t.watchlistToast : t.savedToast);
     } catch {
       toast(t.saveError, { actionLabel: strings.common.retry, onAction: () => void onSubmit() });
     }
@@ -173,6 +187,14 @@ export function QuickLogForm({
               switchValue={draft.isRewatch}
               onSwitchChange={(isRewatch) => update({ isRewatch })}
             />
+            {/* "Vi com…": opcional, fechado até tocar (não atrapalha os 3 toques do registro). */}
+            <ListRow
+              icon={<UsersThree size={20} color={palette.ink700} />}
+              label={ct.row}
+              hint={companions.length > 0 ? ct.withNames(ct.names(companions.map((c) => c.displayName || c.username))) : undefined}
+              onPress={() => setShowCompanions((open) => !open)}
+            />
+            {showCompanions ? <CompanionPicker selected={companions} onChange={setCompanions} /> : null}
             {showReview ? (
               <TextInput
                 style={styles.review}

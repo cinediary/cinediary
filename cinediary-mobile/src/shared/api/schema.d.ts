@@ -689,6 +689,361 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/entries/{entryId}/companions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quem viu junto ("vi com…"). O dono vê também quem ainda não aceitou; os outros, só quem aceitou */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Marcações */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntryCompanionsResponse"];
+                    };
+                };
+                /** @description Perfil privado */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        /** Define quem viu junto (só o dono; só amigos: segue e é seguido). Quem entra é avisado; quem sai perde a marcação */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description A lista inteira, por @. Vazia tira todas */
+                        usernames: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Marcações depois de salvar */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntryCompanionsResponse"];
+                    };
+                };
+                /** @description Não é o dono, ou alguém não é amigo */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/companions/{entryId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aceitar a marcação: aparece no registro */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Marcações do registro */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntryCompanionsResponse"];
+                    };
+                };
+                /** @description Sem marcação (ou já recusada) */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/companions/{entryId}/logged": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Você (marcado e aceito) registrou o mesmo título: seu registro ganha "vi com" quem te marcou, já aceito e sem aviso */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description O registro de quem te marcou */
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description O seu registro do mesmo título
+                         */
+                        entryId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Marcações do seu registro (só quem te marcou) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntryCompanionsResponse"];
+                    };
+                };
+                /** @description Você não aceitou a marcação */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/companions/{entryId}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recusar a marcação (quem marcou não é avisado) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Recusada */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Sem marcação */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/companions/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Tirar uma marcação já aceita */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Tirada */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Sem marcação */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/friends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Seus amigos (segue e é seguido), para o "Vi com…" */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Começo do @ ou do nome */
+                    q?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Até 20 amigos */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FeedAuthor"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{username}/watched-with": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Registros em que a pessoa foi marcada e aceitou (403 se privado e você não segue) */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    size?: number;
+                };
+                header?: never;
+                path: {
+                    username: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Entradas (mesmo formato do diário); só as que você pode ver */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DiaryEntryResponse"][];
+                    };
+                };
+                /** @description Perfil privado */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/entries/{entryId}/like": {
         parameters: {
             query?: never;
@@ -2543,7 +2898,7 @@ export interface components {
         NotificationResponse: {
             id: string;
             /** @enum {string} */
-            kind: "FOLLOWED" | "FOLLOW_REQUESTED" | "FOLLOW_APPROVED" | "ENTRY_LIKED" | "ENTRY_REPLIED";
+            kind: "FOLLOWED" | "FOLLOW_REQUESTED" | "FOLLOW_APPROVED" | "ENTRY_LIKED" | "ENTRY_REPLIED" | "ENTRY_COMPANION";
             /** @description Mais recentes primeiro (até 3) */
             actors: components["schemas"]["FeedAuthor"][];
             actorCount: number;
@@ -2557,6 +2912,26 @@ export interface components {
             createdAt: string;
             unseen: boolean;
             relationship: components["schemas"]["Relationship"];
+            /**
+             * @description Só no ENTRY_COMPANION: PENDING mostra Aceitar e Recusar; ACCEPTED, já aceito
+             * @enum {string|null}
+             */
+            companionStatus?: "PENDING" | "ACCEPTED" | null;
+        };
+        /** @enum {string} */
+        CompanionStatus: "PENDING" | "ACCEPTED" | "DECLINED";
+        EntryCompanionsResponse: {
+            /** @description O dono vê PENDING e ACCEPTED (recusas aparecem como PENDING); os outros, só ACCEPTED */
+            companions: {
+                /** Format: uuid */
+                id: string;
+                username: string;
+                displayName?: string | null;
+                avatarUrl?: string | null;
+                status: components["schemas"]["CompanionStatus"];
+            }[];
+            /** @description Se você foi marcado neste registro */
+            myStatus?: components["schemas"]["CompanionStatus"] | null;
         };
         /**
          * @description Quem pode responder: só o dono, quem o dono segue ou qualquer pessoa que veja a entrada.
@@ -2674,6 +3049,8 @@ export interface components {
             lastName?: string | null;
             /** @description Só no /me. Preferência: reviews dos outros sem desfoque */
             showSpoilers?: boolean;
+            /** @description Só no /me. "Aprovar marcações": true = você aceita ou recusa quando te marcam; false = já entra aceita */
+            approveCompanions?: boolean;
         };
         /** @description Campos ausentes não mudam. Texto vazio em firstName, lastName, bio e pronouns apaga. */
         UpdateProfileRequest: {
@@ -2687,6 +3064,7 @@ export interface components {
              */
             pronouns?: "" | "he" | "she" | "they" | "he_they" | "she_they" | "any";
             showSpoilers?: boolean;
+            approveCompanions?: boolean;
             username?: string;
             displayName?: string;
             avatarUrl?: string;

@@ -59,12 +59,18 @@ export function PosterArt({ title, posterUrl, width, height, radius = poster.rad
           </Text>
         </LinearGradient>
       )}
+      {/*
+        O contorno fino vai POR CIMA da imagem, na mesma curva do recorte. Antes era a borda do próprio quadro:
+        a imagem ficava por dentro dela e, nos cantos, a borda parecia menor que o pôster (pôsteres grandes).
+      */}
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.outline, { borderRadius: radius }]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  frame: { overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(42,33,28,0.08)', backgroundColor: palette.surfaceSunken },
+  frame: { overflow: 'hidden', backgroundColor: palette.surfaceSunken },
+  outline: { borderWidth: 1, borderColor: 'rgba(42,33,28,0.08)' },
   fallback: { flex: 1, padding: 7, justifyContent: 'flex-end' },
   fallbackText: {
     fontFamily: 'Fraunces_600SemiBold',

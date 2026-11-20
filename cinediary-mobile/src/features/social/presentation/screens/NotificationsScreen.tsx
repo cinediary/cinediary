@@ -11,9 +11,10 @@ import type { DiaryEntry } from '@/features/diary/domain/diary';
 import { analytics } from '@/shared/analytics/analytics';
 import { formatShortDate, parseIsoDate, strings, timeAgo } from '@/shared/i18n';
 import { fonts, palette, radius, semantic, space } from '@/shared/theme';
-import { ErrorState, SegmentedControl, SkeletonRows, StarRating, Text } from '@/shared/ui';
+import { Button, ErrorState, SegmentedControl, SkeletonRows, StarRating, Text } from '@/shared/ui';
 import { TopBar } from '@/shared/ui/navigation/TopBar';
 import { usePullToRefresh } from '@/shared/ui/usePullToRefresh';
+import { useRespondToCompanion } from '../../application/companionQueries';
 import { useFriendsActivity, useMarkNotificationsSeen, useNotifications } from '../../application/feedQueries';
 import { dayBucket, type ActivityItem, type Actor, type AppNotification, type DayBucket } from '../../domain/social';
 import { ActivityRow, Bold } from '../components/ActivityRow';
@@ -255,11 +256,15 @@ function NotificationItemRow({ n }: { n: AppNotification }) {
       ? s.notif.ENTRY_LIKED(title, others > 0)
       : n.kind === 'ENTRY_REPLIED'
         ? s.notif.ENTRY_REPLIED(title)
-        : s.notif[n.kind];
+        : n.kind === 'ENTRY_COMPANION'
+          ? s.notif.ENTRY_COMPANION(title)
+          : s.notif[n.kind];
 
   const open = () => {
     analytics.track('notification_opened', { kind: n.kind });
-    if (n.entry) router.push({ pathname: '/entry/[entryId]', params: { entryId: n.entry.id } });
+    // Marcado num registro: o registro é de quem marcou (abre como entrada de outra pessoa).
+    if (n.kind === 'ENTRY_COMPANION' && n.entry) openPersonEntry(first.username, n.entry as unknown as DiaryEntry);
+    else if (n.entry) router.push({ pathname: '/entry/[entryId]', params: { entryId: n.entry.id } });
     else if (n.kind === 'FOLLOW_REQUESTED') openFollowRequests();
     else openProfile(first.username, 'link');
   };
@@ -276,7 +281,9 @@ function NotificationItemRow({ n }: { n: AppNotification }) {
       time={timeAgo(n.createdAt)}
       unseen={n.unseen}
       detail={
-        n.commentText ? (
+        n.kind === 'ENTRY_COMPANION' && n.entry ? (
+          <CompanionAnswer entryId={n.entry.id} status={n.companionStatus} />
+        ) : n.commentText ? (
           <Text variant="caption" tone="secondary" numberOfLines={2} style={styles.snippet}>
             “{n.commentText}”
           </Text>
@@ -300,8 +307,45 @@ function NotificationItemRow({ n }: { n: AppNotification }) {
   );
 }
 
+/** "Vi com…" no sino: Aceitar (cheio) e Recusar (contorno), do mesmo tamanho; ao aceitar, "Você aceitou". */
+function CompanionAnswer({ entryId, status }: { entryId: string; status: AppNotification['companionStatus'] }) {
+  const t = strings.social.companions;
+  const respond = useRespondToCompanion(entryId);
+  const accepting = respond.variables === 'accept';
+  // Já aceita ("Aprovar marcações" desligado, ou aceita antes): o aviso é só informativo.
+  if (status === 'ACCEPTED' && !respond.isSuccess) return null;
+  if (accepting && respond.isSuccess) {
+    return (
+      <Text variant="caption" tone="secondary">
+        {t.accepted}
+      </Text>
+    );
+  }
+  return (
+    <View style={styles.answer}>
+      <Button
+        label={t.accept}
+        size="sm"
+        fullWidth={false}
+        loading={respond.isPending && accepting}
+        disabled={respond.isPending}
+        onPress={() => respond.mutate('accept')}
+      />
+      <Button
+        label={t.decline}
+        size="sm"
+        variant="secondary"
+        fullWidth={false}
+        disabled={respond.isPending}
+        onPress={() => respond.mutate('decline')}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: semantic.background },
+  answer: { flexDirection: 'row', gap: space.sm, marginTop: space.xs },
   content: { paddingHorizontal: space.screenX },
   section: { paddingTop: space.lg, paddingBottom: space.xs },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: palette.border, marginLeft: 46 + space.md },
