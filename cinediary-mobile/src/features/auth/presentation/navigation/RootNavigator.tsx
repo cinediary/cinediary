@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ConnectionErrorScreen } from '@/shared/ui';
+import { useIsOffline } from '@/shared/api/network';
+import { OfflineBanner } from '@/shared/ui/navigation/OfflineBanner';
 import { AnimatedSplash } from '@/shared/ui/splash/AnimatedSplash';
 import { semantic } from '@/shared/theme';
 import { useMe } from '../../application/profileQueries';
@@ -49,6 +51,7 @@ export function RootNavigator() {
     meFetching: me.isFetching,
   });
   const signOut = useSignOut();
+  const offline = useIsOffline();
 
   // Depois do commit, com o guard de (tabs) já liberado: abre o Story do Match ativado no onboarding.
   useEffect(() => {
@@ -132,6 +135,9 @@ export function RootNavigator() {
           {me.isError ? <SessionErrorScreen onRetry={() => void me.refetch()} retrying={me.isFetching} /> : <SessionLoadingScreen />}
         </View>
       ) : null}
+
+      {/* Internet caiu durante o uso (a tela de conexão da abertura já cobre o "sem internet" dela). */}
+      <OfflineBanner visible={offline && splashDone && !connection.problem} />
 
       {/* Splash animada na abertura: por cima de tudo, sai sozinha quando o app está pronto. */}
       {!splashDone ? <AnimatedSplash ready={ready || connection.problem !== null} onFinish={() => setSplashDone(true)} /> : null}
