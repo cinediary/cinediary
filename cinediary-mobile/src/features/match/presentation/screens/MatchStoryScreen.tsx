@@ -31,7 +31,7 @@ export function MatchStoryScreen() {
 
   const ready = !!story.data && !seen.isPending && !me.isPending;
   const isInviter = !!story.data && story.data.creator.id === me.data?.id;
-  // Só na primeira vez de cada um, neste aparelho; depois é o Story direto.
+  // Só na primeira vez de cada um (na conta, em qualquer aparelho); depois é o Story direto.
   const firstTime = seen.seen === false;
   const introMs = !firstTime ? 0 : intro === 'accepted' ? CALCULATING_ACCEPTED_MS : isInviter ? CALCULATING_INVITER_MS : 0;
 

@@ -35,7 +35,8 @@ const styles = StyleSheet.create({
     width: touch.minTarget,
     height: touch.minTarget,
     borderRadius: touch.minTarget / 2,
-    backgroundColor: 'rgba(255,253,249,0.92)',
+    // Opaco: com fundo translúcido o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
+    backgroundColor: palette.surface,
     alignItems: 'center',
     justifyContent: 'center',
     // Sombra leve para o botão continuar visível por cima de pôsteres e textos.

@@ -2,3 +2,5 @@
 ignores:
   # native module for the development build (EAS), never imported from JS
   - expo-dev-client
+  # required by the react-native-share config plugin at prebuild, never imported from JS
+  - expo-build-properties

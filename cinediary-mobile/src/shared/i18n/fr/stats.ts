@@ -1,0 +1,35 @@
+import type { Strings } from '../pt';
+import { title } from '../titleParts';
+
+export const stats: Strings['stats'] = {
+  privateBadge: 'Profil privé',
+  favorites: 'Favoris',
+  noFavorites: 'Tu n’as pas encore choisi tes favoris.',
+  editFavorites: 'Modifier',
+  pickFavorites: 'Choisir des favoris',
+  favoritesEditorTitle: title('Tes ', 'favoris', ''),
+  favoritesEditorHint:
+    'Jusqu’à 4 films ou séries. Ils apparaissent sur ton profil et comptent dans ton Taste Match. Maintiens et fais glisser pour changer l’ordre.',
+  favoritesReorderHint: 'Maintiens et fais glisser sur le côté pour changer l’ordre.',
+  favoritesSlotEmpty: 'Place libre',
+  favoritesRemove: (title: string) => `Retirer ${title} des favoris`,
+  favoritesAdd: (title: string) => `Ajouter ${title} aux favoris`,
+  favoritesFull: 'Tu as déjà 4 favoris. Retires-en un pour en mettre un autre.',
+  favoritesSearch: 'Chercher un favori',
+  favoritesSaveError: 'Impossible d’enregistrer tes favoris. Réessaie.',
+  movies: 'Films',
+  series: 'Séries',
+  average: 'Note moyenne',
+  topGenresTitle: title('Les genres que tu ', 'regardes le plus', ''),
+  perMonthTitle: 'Films par mois',
+  chartGrowing: 'Ton graphique prend forme à chaque film que tu ajoutes.',
+  noStats: 'Ajoute quelques titres pour voir tes statistiques.',
+  recent: 'Dernières entrées',
+  settings: 'Réglages',
+  privateProfile: 'Profil privé',
+  privateHint: 'Seules les personnes que tu acceptes voient ton journal et tes statistiques. Les Matches continuent de fonctionner.',
+  importLetterboxd: 'Importer depuis Letterboxd',
+  designSystem: 'Design System (dev)',
+  loadError: 'Impossible de joindre le serveur pour le moment.',
+  monthA11y: (month: string, n: number) => `${month} : ${n} ${n === 1 ? 'film' : 'films'}`,
+};

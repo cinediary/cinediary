@@ -431,6 +431,7 @@ key do Clerk ou o token do TMDB, que ficam no backend).
 | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | ✅ | Clerk → API keys → Publishable key |
 | `EXPO_PUBLIC_POSTHOG_API_KEY` | Não (sem ela: analytics e flags desligados) | PostHog → Settings → Project token & ID → Project token |
 | `EXPO_PUBLIC_POSTHOG_HOST` | Junto com a chave | PostHog → a região do projeto (US ou EU) |
+| `EXPO_PUBLIC_FACEBOOK_APP_ID` | Não (sem ele: "Compartilhar nos Stories" abre a folha do sistema) | Meta for Developers → o app do CineDiary → Configurações → Básico → App ID |
 
 > [!TIP]
 > O Clerk e o PostHog já estão configurados e são os mesmos para todo mundo em desenvolvimento: você só copia
@@ -513,6 +514,20 @@ usam o valor padrão de `featureFlags.ts`.
 
 As flags que existem hoje e como criar e testar uma estão em
 [Analytics e feature flags](#analytics-e-feature-flags-posthog).
+
+### 4. `EXPO_PUBLIC_FACEBOOK_APP_ID`
+
+Com ele, **"Compartilhar nos Stories"** abre direto o editor do Stories do Instagram com a arte pronta (quem posta
+é a pessoa; o app nunca publica nada). Sem ele, ou sem o Instagram instalado, abre a folha de compartilhar do
+sistema. Só funciona num **development build** (o Expo Go não tem o `react-native-share`).
+
+1. Entre em [developers.facebook.com/apps](https://developers.facebook.com/apps) e abra o app do CineDiary. Para
+   criar um: **Criar app** → "Outro" → **Consumidor**. Não precisa de revisão da Meta.
+2. Em **Configurações → Básico**, copie o **App ID**. Ele é público (vai dentro do app).
+3. Cole no `.env.local`:
+   ```env
+   EXPO_PUBLIC_FACEBOOK_APP_ID=1234567890
+   ```
 
 ### Depois de mudar o `.env.local`
 

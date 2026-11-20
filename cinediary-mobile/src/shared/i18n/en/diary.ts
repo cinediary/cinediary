@@ -66,6 +66,7 @@ export const diary: Strings['diary'] = {
   entrySave: 'Save changes',
   entrySaved: 'Entry updated',
   entryShareStories: 'Share to Stories',
+  shareIncludeReview: 'Include the review',
   entrySharing: 'Preparing the image…',
   entryShareError: "Couldn't create the image right now.",
   entryShareUnavailable: 'Sharing is not available on this device.',

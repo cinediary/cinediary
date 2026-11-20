@@ -2726,6 +2726,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/matches/{matchId}/story/seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Marca o Story como visto, na conta (marcar de novo não muda nada) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    matchId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Marcado como visto */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Você não participa deste Match */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Match não encontrado ou encerrado */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/matches/{matchId}/watchlist": {
         parameters: {
             query?: never;
@@ -3401,6 +3451,8 @@ export interface components {
                 title: components["schemas"]["CatalogTitleSummary"];
             }[];
             jointRecommendations: components["schemas"]["CatalogTitleSummary"][];
+            /** @description Você já viu o Story (em qualquer aparelho): o app só mostra o "Calculando…" na primeira vez */
+            seenByMe: boolean;
         };
         SharedWatchlistItemResponse: {
             title: components["schemas"]["CatalogTitleSummary"];
