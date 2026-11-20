@@ -1,0 +1,67 @@
+# On push to main, no `paths`: the "changes" job is the only path filter, so the two can't drift apart.
+name: Backend
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'cinediary-backend/**'
+              - 'docs/architecture/openapi-v1.yaml'
+              - '.github/workflows/backend.yml'
+
+  build:
+    name: backend-build
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults: { run: { working-directory: cinediary-backend } }
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '25' }
+      - uses: gradle/actions/setup-gradle@v5
+      - run: ./gradlew assemble testClasses
+
+  test:
+    name: backend-test
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults: { run: { working-directory: cinediary-backend } }
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '25' }
+      - uses: gradle/actions/setup-gradle@v5
+      - run: ./gradlew test
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: backend-test-report
+          path: |
+            cinediary-backend/build/reports/tests/test
+            cinediary-backend/build/test-results/test
+          retention-days: 14

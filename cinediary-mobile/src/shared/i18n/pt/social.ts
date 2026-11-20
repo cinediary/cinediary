@@ -78,6 +78,7 @@ export const social = {
     FOLLOW_APPROVED: 'aceitou seu pedido para seguir',
     ENTRY_LIKED: (title: string, many: boolean) => `${many ? 'curtiram' : 'curtiu'} seu registro de ${title}`,
     ENTRY_REPLIED: (title: string) => `respondeu seu registro de ${title}`,
+    ENTRY_COMPANION: (title: string) => `marcou você no registro de ${title}`,
   },
   seeRequests: 'Ver',
   tabFriends: 'Amigos',
@@ -123,4 +124,24 @@ export const social = {
   viewProfileOf: (user: string) => `Ver perfil de @${user}`,
   followersSubtitle: (n: number) => (n === 1 ? '1 pessoa' : `${n} pessoas`),
   requestsSubtitle: 'Só quem você aprovar vê seu diário e suas estatísticas.',
+  // "Vi com…": marcar amigos num registro.
+  companions: {
+    row: 'Vi com…',
+    /** "Ana", "Ana e Bia", "Ana, Bia e Caio". */
+    names: (list: string[]) => (list.length <= 1 ? (list[0] ?? '') : `${list.slice(0, -1).join(', ')} e ${list[list.length - 1]}`),
+    withNames: (names: string) => `Com ${names}`,
+    search: 'Buscar amigos',
+    onlyFriends: 'Só dá para marcar amigos: quem você segue e te segue.',
+    noResults: 'Nenhum amigo com esse nome.',
+    pending: 'Esperando',
+    you: 'você',
+    max: 'Dá para marcar até 10 pessoas.',
+    markedYou: (name: string) => `${name} marcou você neste registro.`,
+    accept: 'Aceitar',
+    decline: 'Recusar',
+    accepted: 'Você aceitou',
+    remove: 'Tirar minha marcação',
+    logToMyDiary: 'Registrar no meu diário',
+    saveError: 'Salvo, mas não deu para marcar quem viu com você.',
+  },
 };

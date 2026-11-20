@@ -39,6 +39,8 @@ export const account = {
   bioPlaceholder: 'Conte um pouco sobre você e o que você ama assistir.',
   textCount: (n: number, max: number) => `${n}/${max}`,
   sectionPreferences: 'Preferências',
+  approveCompanions: 'Aprovar marcações',
+  approveCompanionsHint: 'Quando alguém marcar você em um registro, você decide se aparece.',
   showSpoilers: 'Mostrar spoilers',
   showSpoilersHint: 'Reviews e respostas de outras pessoas aparecem sem desfoque.',
   replyPolicy: 'Quem pode responder',
