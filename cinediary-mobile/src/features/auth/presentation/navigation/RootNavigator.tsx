@@ -1,5 +1,5 @@
 import { useAuth } from '@clerk/expo';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -8,6 +8,7 @@ import { useIsOffline } from '@/shared/api/network';
 import { OfflineBanner } from '@/shared/ui/navigation/OfflineBanner';
 import { AnimatedSplash } from '@/shared/ui/splash/AnimatedSplash';
 import { semantic } from '@/shared/theme';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useMe } from '../../application/profileQueries';
 import { useConnectionGate } from '../../application/useConnectionGate';
 import { useSignOut } from '../../application/usePasswordAuth';
@@ -59,7 +60,7 @@ export function RootNavigator() {
     const matchId = takeStoryAfterOnboarding();
     // intro=accepted: o Story abre com a animação "Calculando" de quem acabou de aceitar (MA-04).
     // then=room: ao terminar este primeiro Story, vai direto para a lista de vocês.
-    if (matchId) router.push({ pathname: '/match/[matchId]/story', params: { matchId, intro: 'accepted', then: 'room' } });
+    if (matchId) nav.push({ pathname: '/match/[matchId]/story', params: { matchId, intro: 'accepted', then: 'room' } });
   }, [inApp]);
 
   return (

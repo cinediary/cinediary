@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Play, Plus } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
@@ -23,6 +23,7 @@ import {
   useToast,
 } from '@/shared/ui';
 import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useLeaveMatch, useMatch, useMatchStory } from '../../application/matchQueries';
 import { otherPerson, type MatchStory } from '../../domain/match';
 import { recommendations, starsText, strongestPart } from '../../domain/story';
@@ -99,7 +100,7 @@ export function MatchDetailScreen() {
           leave.mutate(undefined, {
             onSuccess: () => {
               toast(pending ? t.inviteCancelled : t.left);
-              router.back();
+              nav.back();
             },
             onError: () => toast(strings.common.genericError),
           }),
@@ -134,7 +135,7 @@ export function MatchDetailScreen() {
           <View style={styles.block}>
             <Title parts={t.building} variant="h2" />
             <Text tone="secondary">{t.buildingText}</Text>
-            <Button label={t.buildingCta} onPress={() => router.navigate('/(tabs)/log')} />
+            <Button label={t.buildingCta} onPress={() => nav.navigate('/(tabs)/log')} />
           </View>
         ) : active ? (
           <Button

@@ -1,8 +1,8 @@
-import { router } from 'expo-router';
 import { Keyboard } from 'react-native';
 
 import { analytics } from '@/shared/analytics/analytics';
 import type { QuickLogEntryPoint } from '@/shared/analytics/events';
+import { nav } from '@/shared/ui/navigation/nav';
 
 import { primeTitle } from '../application/catalogQueries';
 import { prefetchTitlePage } from '../application/titlePage';
@@ -12,7 +12,7 @@ import type { TitleSummary } from '../domain/title';
 export function openTitle(title: TitleSummary) {
   primeTitle(title);
   prefetchTitlePage(title);
-  router.push({
+  nav.push({
     pathname: '/title/[mediaType]/[tmdbId]',
     params: { mediaType: title.mediaType, tmdbId: String(title.tmdbId) },
   });
@@ -46,7 +46,7 @@ export function openQuickLog(
   // Vindo da busca, o teclado ainda está aberto: fecha antes de o sheet subir.
   Keyboard.dismiss();
   primeTitle(title);
-  router.push({
+  nav.push({
     pathname: '/quick-log/[mediaType]/[tmdbId]',
     params: {
       mediaType: title.mediaType,
@@ -64,10 +64,10 @@ export function openQuickLog(
 
 /** Abre a filmografia de alguém do elenco ou da direção. */
 export function openPerson(personId: number) {
-  router.push({ pathname: '/person/[personId]', params: { personId: String(personId) } });
+  nav.push({ pathname: '/person/[personId]', params: { personId: String(personId) } });
 }
 
 /** "Ver todos" do elenco/equipe: a lista inteira em abas. */
 export function openTitleCredits(mediaType: TitleSummary['mediaType'], tmdbId: number, name: string, tab: 'cast' | 'crew' = 'cast') {
-  router.push({ pathname: '/title-credits/[mediaType]/[tmdbId]', params: { mediaType, tmdbId: String(tmdbId), name, tab } });
+  nav.push({ pathname: '/title-credits/[mediaType]/[tmdbId]', params: { mediaType, tmdbId: String(tmdbId), name, tab } });
 }

@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { CaretRight, UserPlus } from 'phosphor-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -10,6 +9,7 @@ import { ProfileHeader } from '@/features/social/presentation/components/Profile
 import { openFollowRequests } from '@/features/social/presentation/navigation';
 import { formatYearMonthShort, strings } from '@/shared/i18n';
 import { palette, radius, space } from '@/shared/theme';
+import { nav } from '@/shared/ui/navigation/nav';
 import {
   Button,
   ErrorState,
@@ -88,11 +88,11 @@ export function ProfileScreen() {
         </Pressable>
       ) : null}
 
-      <SectionHeader title={t.favorites} actionLabel={t.editFavorites} onAction={() => router.push('/profile/favorites')} />
+      <SectionHeader title={t.favorites} actionLabel={t.editFavorites} onAction={() => nav.push('/profile/favorites')} />
       {profile.favorites.length === 0 ? (
         <View style={styles.block}>
           <Text tone="muted">{t.noFavorites}</Text>
-          <Button label={t.pickFavorites} variant="secondary" size="sm" onPress={() => router.push('/profile/favorites')} />
+          <Button label={t.pickFavorites} variant="secondary" size="sm" onPress={() => nav.push('/profile/favorites')} />
         </View>
       ) : (
         <View style={styles.favorites}>

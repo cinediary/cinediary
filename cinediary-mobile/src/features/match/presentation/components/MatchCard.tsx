@@ -1,9 +1,9 @@
-import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
 import { palette, space } from '@/shared/theme';
 import { AvatarPair, Button, Card, Text, Title } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useInviteSharing } from '../../application/matchQueries';
 import { otherPerson, type Match } from '../../domain/match';
 import { openMatch } from '../navigation';
@@ -51,7 +51,7 @@ export function MatchCard({ match, meId }: { match: Match; meId: string | undefi
         </View>
         <Title parts={t.building} variant="h2" />
         <Text tone="secondary">{t.buildingText}</Text>
-        <Button label={t.buildingCta} size="sm" onPress={() => router.navigate('/(tabs)/log')} />
+        <Button label={t.buildingCta} size="sm" onPress={() => nav.navigate('/(tabs)/log')} />
       </Card>
     );
   }

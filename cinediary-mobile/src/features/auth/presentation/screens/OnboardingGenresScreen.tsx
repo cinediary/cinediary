@@ -1,10 +1,10 @@
-import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { useGenres } from '@/features/catalog/application/catalogQueries';
 import { strings } from '@/shared/i18n';
 import { space } from '@/shared/theme';
 import { Button, Chip, ErrorState, Skeleton, Text } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useOnboardingDraft } from '../../application/useOnboarding';
 import { ctaKind } from '../../domain/onboarding';
 import { OnboardingFrame } from '../components/OnboardingFrame';
@@ -21,7 +21,7 @@ export function OnboardingGenresScreen() {
       <Button
         label={ctaKind(count) === 'skip' ? t.skipForNow : t.continue}
         variant={count === 0 ? 'secondary' : 'primary'}
-        onPress={() => router.push('/(onboarding)/seen')}
+        onPress={() => nav.push('/(onboarding)/seen')}
       />
       <Text variant="caption" tone="muted" style={styles.center}>
         {t.genresCaption}

@@ -1,5 +1,4 @@
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -8,6 +7,7 @@ import { uniqueById, type TitleSummary } from '@/features/catalog/domain/title';
 import { strings } from '@/shared/i18n';
 import { space } from '@/shared/theme';
 import { Button, Checkbox, ErrorState, PosterCard, SearchField, SkeletonRows, Text, useGridItemWidth } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useOnboardingDraft } from '../../application/useOnboarding';
 import { ctaKind, shouldShowFavorites } from '../../domain/onboarding';
 import { OnboardingFrame } from '../components/OnboardingFrame';
@@ -45,7 +45,7 @@ export function OnboardingSeenScreen() {
   const count = draft.seen.length;
   const isSelected = (id: number) => draft.seen.some((s) => s.id === id);
 
-  const next = () => (shouldShowFavorites(draft) ? router.push('/(onboarding)/favorites') : finish());
+  const next = () => (shouldShowFavorites(draft) ? nav.push('/(onboarding)/favorites') : finish());
 
   const footer = (
     <>

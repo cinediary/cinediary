@@ -4,7 +4,7 @@ import { fonts, palette, radius, semantic, space, touch, type as typeScale } fro
 import { Camera, CaretDown, EnvelopeSimple, ImageSquare, Trash } from 'phosphor-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { strings } from '@/shared/i18n';
-import { router } from 'expo-router';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useState } from 'react';
 
 import { isValidEmail, isValidUsername, normalizeUsername } from '../../domain/credentials';
@@ -75,7 +75,7 @@ function EditProfileForm({ profile }: { profile: UserProfile }) {
     const ok = await edit.saveProfile(profile, { displayName, username, firstName, lastName, pronouns, bio });
     if (ok) {
       toast(a.saved);
-      router.back();
+      nav.back();
     }
   };
 

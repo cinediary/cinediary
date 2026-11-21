@@ -1,10 +1,10 @@
-import { router } from 'expo-router';
 import { CaretRight } from 'phosphor-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { formatFullDate, parseIsoDate, strings } from '@/shared/i18n';
 import { palette, radius, space } from '@/shared/theme';
 import { Avatar, Rail, SectionHeader, Text, useRailItemWidth } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import type { TitleExtras } from '../../domain/extras';
 import type { MediaType } from '../../domain/title';
 import { openPerson, openTitleCredits } from '../navigation';
@@ -89,7 +89,7 @@ export function AboutSection({ extras, mediaType }: { extras: TitleExtras; media
                   key={c.id}
                   accessibilityRole="button"
                   accessibilityHint={t.openCompany(c.name)}
-                  onPress={() => router.push({ pathname: '/company/[companyId]', params: { companyId: String(c.id) } })}
+                  onPress={() => nav.push({ pathname: '/company/[companyId]', params: { companyId: String(c.id) } })}
                   style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
                 >
                   <Text variant="caption" style={styles.chipText}>

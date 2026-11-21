@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { ArrowCounterClockwise, BookmarkSimple, Check, EyeSlash, Heart, PencilSimple, UsersThree } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, ScrollView, StyleSheet, TextInput, View, type ScrollViewInstance } from 'react-native';
@@ -11,6 +10,7 @@ import { CompanionPicker } from '@/features/social/presentation/components/Compa
 import { strings } from '@/shared/i18n';
 import { palette, radius, semantic, space, type as typeScale } from '@/shared/theme';
 import { Button, Chip, IconButton, ListRow, PosterArt, StarRating, Text, useBottomSheet, useToast } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useQuickLog } from '../../application/useQuickLog';
 import type { EntryScope } from '../../domain/diary';
 import { WatchedDateField } from './WatchedDateField';
@@ -80,7 +80,7 @@ export function QuickLogForm({
       const { cta: kind, companionsSaved } = await submit();
       // Fecha com a animação de descida do sheet (fora dele, volta normal).
       if (sheet) sheet.close();
-      else router.back();
+      else nav.back();
       if (!companionsSaved) toast(ct.saveError);
       else toast(kind === 'log' ? t.loggedToast : kind === 'watchlist' ? t.watchlistToast : t.savedToast);
     } catch {
@@ -229,7 +229,7 @@ export function QuickLogForm({
         )}
 
         {/*
-        Episódios aqui mesmo, no sheet. Antes era um atalho que fazia router.back() e logo em seguida
+        Episódios aqui mesmo, no sheet. Antes era um atalho que fazia nav.back() e logo em seguida
         push da página do título: o push caía durante a animação de fechar o formSheet e era descartado.
         Cada episódio salva na hora (como na página do título); o botão abaixo salva nota, curtida e status.
       */}

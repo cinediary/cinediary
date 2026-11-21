@@ -1,12 +1,13 @@
 import { router, useNavigation } from 'expo-router';
 import { CommonActions } from 'expo-router/react-navigation';
 import { useCallback } from 'react';
+import { nav } from '@/shared/ui/navigation/nav';
 
-export const openMatch = (matchId: string) => router.push({ pathname: '/match/[matchId]', params: { matchId } });
-export const openStory = (matchId: string) => router.push({ pathname: '/match/[matchId]/story', params: { matchId } });
-export const openAddToShared = (matchId: string) => router.push({ pathname: '/match/[matchId]/add', params: { matchId } });
+export const openMatch = (matchId: string) => nav.push({ pathname: '/match/[matchId]', params: { matchId } });
+export const openStory = (matchId: string) => nav.push({ pathname: '/match/[matchId]/story', params: { matchId } });
+export const openAddToShared = (matchId: string) => nav.push({ pathname: '/match/[matchId]/add', params: { matchId } });
 /** MA-04 · Entrar num Match pelo código: a mesma tela do link (aceita, "Calculando" e abre o Story). */
-export const openInvite = (code: string) => router.push({ pathname: '/match/invite/[code]', params: { code } });
+export const openInvite = (code: string) => nav.push({ pathname: '/match/invite/[code]', params: { code } });
 
 /** Nome da rota da sala no Stack raiz (o mesmo do Stack.Screen no RootNavigator). */
 const ROOM_ROUTE = 'match/[matchId]/index';

@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { CaretLeft } from 'phosphor-react-native';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -6,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { strings } from '@/shared/i18n';
 import { palette, radius, semantic, space, touch } from '@/shared/theme';
 import { Screen, Text, Title, type TitleParts } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 
 export interface OnboardingFrameProps extends PropsWithChildren {
   /** Passo na barra de progresso. Sem passo: tela fora da contagem (ex.: a pergunta do Letterboxd), sem a barra. */
@@ -31,7 +31,7 @@ export function OnboardingFrame({ step, title, caption, footer, topAction, canGo
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={strings.common.back}
-              onPress={() => router.back()}
+              onPress={() => nav.back()}
               hitSlop={10}
               style={styles.back}
             >
