@@ -23,15 +23,27 @@ class StatsSqlQueryAdapter implements StatsQueryPort
     @Override
     public UserStatsModel statsOf(UUID userId, YearMonth fromMonth, YearMonth toMonth, int topGenres)
     {
-        Map<String, Long> totals = new HashMap<>();
-        jdbc.sql("""
-                        SELECT t.media_type, COUNT(*) AS total
+        long movies = jdbc.sql("""
+                        SELECT COUNT(*)
                           FROM user_title_states s JOIN catalog_titles t ON t.id = s.title_id
-                         WHERE s.user_id = :u AND s.watched
-                         GROUP BY t.media_type""")
+                         WHERE s.user_id = :u AND s.watched AND t.media_type = 'MOVIE'""")
                 .param("u", userId)
-                .query((rs, n) -> totals.put(rs.getString(1), rs.getLong(2)))
-                .list();
+                .query(Long.class)
+                .single();
+
+        // Série conta a partir do primeiro registro (episódio, temporada ou a série inteira): antes só contava com
+        // a série inteira marcada como vista, e registrar episódios não somava nada. O UNION deixa cada série uma
+        // vez só, e mantém as marcadas como vistas sem registro (onboarding, importação do Letterboxd).
+        long series = jdbc.sql("""
+                        SELECT COUNT(*)
+                          FROM (SELECT title_id FROM diary_entries WHERE user_id = :u
+                                UNION
+                                SELECT title_id FROM user_title_states WHERE user_id = :u AND watched) x
+                          JOIN catalog_titles t ON t.id = x.title_id
+                         WHERE t.media_type = 'SERIES'""")
+                .param("u", userId)
+                .query(Long.class)
+                .single();
 
         BigDecimal average = jdbc.sql("""
                         SELECT ROUND(AVG(rating), 2) FROM user_title_states
@@ -71,7 +83,6 @@ class StatsSqlQueryAdapter implements StatsQueryPort
             months.add(new UserStatsModel.MonthCount(m.toString(), perMonth.getOrDefault(m.toString(), 0L)));
         }
 
-        return new UserStatsModel(totals.getOrDefault("MOVIE", 0L), totals.getOrDefault("SERIES", 0L),
-                average, genres, months);
+        return new UserStatsModel(movies, series, average, genres, months);
     }
 }
