@@ -1,5 +1,4 @@
 import Constants from 'expo-constants';
-import { router } from 'expo-router';
 import { ChatCircle, DownloadSimple, Eye, FilmSlate, Info, LockSimple, Palette, SignOut, UserCircle, UsersThree } from 'phosphor-react-native';
 import { useState, type ReactNode } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
@@ -10,6 +9,7 @@ import { strings } from '@/shared/i18n';
 import { palette, radius, semantic, space } from '@/shared/theme';
 import { ActionSheet, ListRow, Text, Title, useToast } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useMe, useUpdateProfile } from '../../application/profileQueries';
 import { useSignOut } from '../../application/usePasswordAuth';
 
@@ -44,7 +44,7 @@ function useSections(openReplyPicker: () => void): SettingSection[] {
       key: 'account',
       title: a.sectionAccount,
       rows: [
-        { key: 'edit', icon: icon(UserCircle), label: a.editProfile, onPress: () => router.push('/profile/edit') },
+        { key: 'edit', icon: icon(UserCircle), label: a.editProfile, onPress: () => nav.push('/profile/edit') },
         {
           key: 'private',
           icon: icon(LockSimple),
@@ -98,7 +98,7 @@ function useSections(openReplyPicker: () => void): SettingSection[] {
     {
       key: 'data',
       title: a.sectionData,
-      rows: [{ key: 'import', icon: icon(DownloadSimple), label: t.importLetterboxd, onPress: () => router.push('/import') }],
+      rows: [{ key: 'import', icon: icon(DownloadSimple), label: t.importLetterboxd, onPress: () => nav.push('/import') }],
     },
     {
       key: 'about',
@@ -107,7 +107,7 @@ function useSections(openReplyPicker: () => void): SettingSection[] {
         { key: 'version', icon: icon(Info), label: a.version, hint: Constants.expoConfig?.version ?? '–' },
         { key: 'tmdb', icon: icon(FilmSlate), label: a.tmdb, hint: strings.common.tmdbCredit },
         ...(__DEV__
-          ? [{ key: 'design', icon: icon(Palette), label: t.designSystem, onPress: () => router.push('/_dev/design-system') }]
+          ? [{ key: 'design', icon: icon(Palette), label: t.designSystem, onPress: () => nav.push('/_dev/design-system') }]
           : []),
       ],
     },

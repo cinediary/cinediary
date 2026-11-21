@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { CaretLeft } from 'phosphor-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -6,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
 import { palette, semantic, space, touch } from '@/shared/theme';
+import { nav } from './nav';
 import { Text } from '../Text';
 
 /**
@@ -22,7 +22,7 @@ export function TopBar({ title, children, scrolled = false }: { title: string; c
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={strings.common.back}
-          onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+          onPress={() => nav.back()}
           hitSlop={8}
           style={({ pressed }) => [styles.back, pressed && styles.pressed]}
         >

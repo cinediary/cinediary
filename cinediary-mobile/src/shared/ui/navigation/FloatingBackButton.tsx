@@ -1,10 +1,10 @@
-import { router } from 'expo-router';
 import { CaretLeft } from 'phosphor-react-native';
 import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
 import { palette, space, touch } from '@/shared/theme';
+import { nav } from './nav';
 
 /** Distância do voltar até o topo da área segura. */
 const BACK_TOP = space.sm;
@@ -33,8 +33,7 @@ export function FloatingBackButton() {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={strings.common.back}
-      // Sem tela para voltar (ex.: abriu pelo link com o app fechado), vai para o Início.
-      onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+      onPress={() => nav.back()}
       hitSlop={8}
       style={({ pressed }) => [styles.back, { top: insets.top + BACK_TOP }, pressed && styles.pressed]}
     >

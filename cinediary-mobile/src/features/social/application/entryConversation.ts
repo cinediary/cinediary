@@ -19,10 +19,17 @@ export function useEntryComments(entryId: string) {
   return useQuery({ queryKey: conversationKeys.comments(entryId), queryFn: () => socialApi.comments(entryId), enabled: !!entryId });
 }
 
-/** Curtir/descurtir: o coração muda na hora e volta se o servidor recusar. */
+/**
+ * Curtir/descurtir: o coração muda na hora e volta se o servidor recusar.
+ * Toques rápidos (curtir, descurtir, curtir…) vão em fila (`scope`): em paralelo, a resposta de um podia chegar
+ * depois da do outro e o servidor terminava no estado errado. O coração continua mudando na hora a cada toque.
+ */
 export function useToggleEntryLike(entryId: string, ownEntry: boolean) {
   const key = conversationKeys.interactions(entryId);
+  const mutationKey = ['entry-like', entryId];
   return useMutation({
+    mutationKey,
+    scope: { id: `entry-like:${entryId}` },
     mutationFn: (like: boolean) => (like ? socialApi.like(entryId) : socialApi.unlike(entryId)),
     onMutate: async (like) => {
       await queryClient.cancelQueries({ queryKey: key });
@@ -37,10 +44,13 @@ export function useToggleEntryLike(entryId: string, ownEntry: boolean) {
       return { previous };
     },
     onError: (_e, _v, ctx) => {
-      if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+      // Com outro toque na fila, o "antes" deste já está velho: busca de novo em vez de voltar para ele.
+      if (queryClient.isMutating({ mutationKey }) > 1) void queryClient.invalidateQueries({ queryKey: key });
+      else if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
     },
     onSuccess: (data, like) => {
-      queryClient.setQueryData(key, data);
+      // Só o último da fila escreve a resposta: a de um toque anterior desfaria o coração que a pessoa já trocou.
+      if (queryClient.isMutating({ mutationKey }) === 1) queryClient.setQueryData(key, data);
       analytics.track('entry_liked', { own_entry: ownEntry, liked: like });
     },
   });

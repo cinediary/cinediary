@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { createContext, useCallback, useContext, useEffect, useRef, type PropsWithChildren } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
@@ -17,6 +16,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { strings } from '@/shared/i18n';
 import { palette, semantic, space } from '@/shared/theme';
+import { nav } from './navigation/nav';
 
 const RADIUS = 28;
 const CLOSE_DISTANCE = 120;
@@ -39,7 +39,7 @@ export const useBottomSheet = () => useContext(SheetContext);
  *
  * Fecha arrastando pela alça para baixo, tocando no fundo escurecido ou com useBottomSheet().close().
  */
-export function BottomSheet({ children, onClosed = () => router.back() }: PropsWithChildren<{ onClosed?: () => void }>) {
+export function BottomSheet({ children, onClosed = () => nav.back() }: PropsWithChildren<{ onClosed?: () => void }>) {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const reduce = useReducedMotion();

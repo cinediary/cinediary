@@ -1,10 +1,10 @@
-import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
 import { space } from '@/shared/theme';
 import { Button, Text } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { LetterboxdImportPreview } from '../components/LetterboxdImportPreview';
 import { OnboardingFrame } from '../components/OnboardingFrame';
 
@@ -19,7 +19,7 @@ export function OnboardingLetterboxdScreen() {
 
   const choose = (choice: 'import' | 'later') => {
     analytics.track('onboarding_import_choice', { choice });
-    router.push(choice === 'import' ? '/(onboarding)/letterboxd-import' : '/(onboarding)/genres');
+    nav.push(choice === 'import' ? '/(onboarding)/letterboxd-import' : '/(onboarding)/genres');
   };
 
   // Um pouco acima do rodapé padrão: sem nada no meio da tela, os botões colados embaixo ficavam longe demais.

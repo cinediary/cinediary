@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -7,6 +7,7 @@ import { useMe } from '@/features/auth/application/profileQueries';
 import { strings } from '@/shared/i18n';
 import { party, space } from '@/shared/theme';
 import { Button, ErrorState, Text } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useMatchStory, useStorySeen } from '../../application/matchQueries';
 import { CALCULATING_ACCEPTED_MS, CALCULATING_INVITER_MS, introPosters } from '../../domain/story';
 import { CalculatingView } from '../components/CalculatingView';
@@ -61,7 +62,7 @@ export function MatchStoryScreen() {
     return (
       <View style={[styles.fallback, { backgroundColor: party.plum }]}>
         <ErrorState message={strings.match.storyError} onRetry={() => story.refetch()} />
-        <Button label={strings.common.close} variant="secondary" onPress={() => router.back()} />
+        <Button label={strings.common.close} variant="secondary" onPress={() => nav.back()} />
       </View>
     );
   }
@@ -70,7 +71,7 @@ export function MatchStoryScreen() {
       <View style={[styles.fallback, { backgroundColor: party.plum }]}>
         <StoryTitle parts={strings.match.story.notReady} size={44} color={party.cream} />
         <Text style={{ color: party.cream }}>{strings.match.buildingText}</Text>
-        <Button label={strings.common.close} variant="secondary" onPress={() => router.back()} />
+        <Button label={strings.common.close} variant="secondary" onPress={() => nav.back()} />
       </View>
     );
   }

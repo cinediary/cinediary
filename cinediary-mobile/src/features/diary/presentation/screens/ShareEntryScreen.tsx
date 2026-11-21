@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { InstagramLogo, X } from 'phosphor-react-native';
 import { useRef, useState, type ComponentRef } from 'react';
 import { Pressable, StyleSheet, Switch, View, useWindowDimensions } from 'react-native';
@@ -8,6 +8,7 @@ import { useMe } from '@/features/auth/application/profileQueries';
 import { strings } from '@/shared/i18n';
 import { palette, space, story, touch } from '@/shared/theme';
 import { Button, ErrorState, Text, useToast } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useEntry } from '../../application/diaryQueries';
 import { useShareEntry } from '../../application/useShareEntry';
 import { EntryStoryCard } from '../components/EntryStoryCard';
@@ -49,7 +50,7 @@ export function ShareEntryScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={strings.common.close}
-          onPress={() => router.back()}
+          onPress={() => nav.back()}
           hitSlop={8}
           style={styles.close}
         >

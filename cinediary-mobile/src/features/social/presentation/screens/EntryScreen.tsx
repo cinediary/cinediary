@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { PencilSimple, Trash } from 'phosphor-react-native';
 import { Alert, StyleSheet, View } from 'react-native';
 
@@ -9,6 +9,7 @@ import { strings } from '@/shared/i18n';
 import { palette, semantic } from '@/shared/theme';
 import { ErrorState, MoreMenu, menuIcons, useToast } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
+import { nav } from '@/shared/ui/navigation/nav';
 import { EntryScreenFrame } from '../components/EntryScreenFrame';
 
 /**
@@ -25,7 +26,7 @@ export function EntryScreen() {
   const remove = useDeleteEntry(entryId);
   const e = entry.data;
 
-  const edit = () => router.push({ pathname: '/entry/[entryId]/edit', params: { entryId } });
+  const edit = () => nav.push({ pathname: '/entry/[entryId]/edit', params: { entryId } });
   const confirmDelete = () =>
     Alert.alert(t.entryDeleteConfirmTitle, t.entryDeleteConfirmText, [
       { text: strings.common.cancel, style: 'cancel' },
@@ -35,7 +36,7 @@ export function EntryScreen() {
         onPress: async () => {
           try {
             await remove.mutateAsync();
-            router.back();
+            nav.back();
             toast(t.entryDeleted);
           } catch {
             toast(strings.common.genericError);
@@ -64,7 +65,7 @@ export function EntryScreen() {
       ownEntry
       author={{ username: me.data?.username ?? '', name: me.data?.displayName ?? '', avatarUrl: me.data?.avatarUrl ?? null }}
       onAddReview={edit}
-      onShare={() => router.push({ pathname: '/entry/[entryId]/share', params: { entryId } })}
+      onShare={() => nav.push({ pathname: '/entry/[entryId]/share', params: { entryId } })}
       more={
         <MoreMenu
           options={[

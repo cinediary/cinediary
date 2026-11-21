@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { ArrowCounterClockwise, Bell, Heart, UsersThree } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { SectionList, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
@@ -14,6 +13,7 @@ import { fonts, palette, radius, semantic, space } from '@/shared/theme';
 import { Button, ErrorState, SegmentedControl, SkeletonRows, StarRating, Text } from '@/shared/ui';
 import { TopBar } from '@/shared/ui/navigation/TopBar';
 import { usePullToRefresh } from '@/shared/ui/usePullToRefresh';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useRespondToCompanion } from '../../application/companionQueries';
 import { useFriendsActivity, useMarkNotificationsSeen, useNotifications } from '../../application/feedQueries';
 import { dayBucket, type ActivityItem, type Actor, type AppNotification, type DayBucket } from '../../domain/social';
@@ -153,7 +153,7 @@ const Separator = () => <View style={styles.separator} />;
 
 /** Abre uma entrada: a sua (com editar) ou a de outra pessoa (só leitura). */
 function openEntryOf(owner: Actor, entry: Pick<DiaryEntry, 'id'>, meId: string | undefined) {
-  if (owner.id === meId) router.push({ pathname: '/entry/[entryId]', params: { entryId: entry.id } });
+  if (owner.id === meId) nav.push({ pathname: '/entry/[entryId]', params: { entryId: entry.id } });
   else openPersonEntry(owner.username, entry as DiaryEntry);
 }
 
@@ -264,7 +264,7 @@ function NotificationItemRow({ n }: { n: AppNotification }) {
     analytics.track('notification_opened', { kind: n.kind });
     // Marcado num registro: o registro é de quem marcou (abre como entrada de outra pessoa).
     if (n.kind === 'ENTRY_COMPANION' && n.entry) openPersonEntry(first.username, n.entry as unknown as DiaryEntry);
-    else if (n.entry) router.push({ pathname: '/entry/[entryId]', params: { entryId: n.entry.id } });
+    else if (n.entry) nav.push({ pathname: '/entry/[entryId]', params: { entryId: n.entry.id } });
     else if (n.kind === 'FOLLOW_REQUESTED') openFollowRequests();
     else openProfile(first.username, 'link');
   };
