@@ -12,6 +12,7 @@ export * from './Card';
 export * from './Checkbox';
 export * from './Chip';
 export * from './EmptyState';
+export * from './ExpandableText';
 export * from './IconButton';
 export * from './LikeButton';
 export * from './ListRow';
