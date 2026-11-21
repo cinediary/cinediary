@@ -4,9 +4,9 @@ import { StyleSheet, View } from 'react-native';
 import type { TitleSummary } from '@/features/catalog/domain/title';
 import { CatalogSearchPanel } from '@/features/catalog/presentation/components/CatalogSearchPanel';
 import { strings } from '@/shared/i18n';
-import { semantic, space, touch } from '@/shared/theme';
+import { semantic, space } from '@/shared/theme';
 import { Screen, Text, Title, useGridItemWidth, useToast } from '@/shared/ui';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, FLOATING_BACK_SPACE } from '@/shared/ui/navigation/FloatingBackButton';
 import { MAX_FAVORITES, useFavorites } from '../../application/favoritesMutations';
 import { SortableFavorites } from '../components/SortableFavorites';
 
@@ -65,6 +65,6 @@ export function FavoritesEditorScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { paddingTop: touch.minTarget + space.lg, gap: space.xl },
+  content: { paddingTop: FLOATING_BACK_SPACE, gap: space.xl },
   header: { gap: space.sm },
 });

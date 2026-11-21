@@ -1,12 +1,11 @@
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { palette, radius, semantic, space, touch } from '@/shared/theme';
+import { palette, radius, semantic, space } from '@/shared/theme';
 import { ErrorState, PosterCard, SectionHeader, Text, useGridItemWidth } from '@/shared/ui';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { useCompany } from '../../application/catalogQueries';
 import { CompanySkeleton } from '../components/Skeletons';
 import { openTitle } from '../navigation';
@@ -14,7 +13,7 @@ import { openTitle } from '../navigation';
 /** Produtora (ex.: A24): logo, nome, país e a grade dos filmes dela, os mais populares primeiro. */
 export function CompanyScreen() {
   const t = strings.catalog;
-  const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   const { companyId } = useLocalSearchParams<{ companyId: string }>();
   const company = useCompany(Number(companyId));
   const width = useGridItemWidth(3);
@@ -33,7 +32,7 @@ export function CompanyScreen() {
     <View style={styles.root}>
       <ScrollView
         style={styles.root}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + space.sm + touch.minTarget }]}
+        contentContainerStyle={[styles.content, { paddingTop: backInset }]}
         contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       >

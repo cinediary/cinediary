@@ -5,10 +5,10 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space, touch } from '@/shared/theme';
+import { palette, semantic, space } from '@/shared/theme';
 import { ErrorState, SegmentedControl, SkeletonRows, Text } from '@/shared/ui';
 import { usePullToRefresh } from '@/shared/ui/usePullToRefresh';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { useFollowList, usePublicProfile } from '../../application/socialQueries';
 import type { FollowList } from '../../domain/social';
 import { PeopleCard, PeopleEmpty } from '../components/PeopleCard';
@@ -22,6 +22,7 @@ export function FollowListScreen({ kind: initial }: { kind: FollowList }) {
   const s = strings.social;
   const { username = '' } = useLocalSearchParams<{ username: string }>();
   const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   const [kind, setKind] = useState<FollowList>(initial);
   const profile = usePublicProfile(username);
   const list = useFollowList(username, kind);
@@ -39,7 +40,7 @@ export function FollowListScreen({ kind: initial }: { kind: FollowList }) {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + space.sm + touch.minTarget, paddingBottom: insets.bottom + space.xl },
+          { paddingTop: backInset, paddingBottom: insets.bottom + space.xl },
         ]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={semantic.primary} />}
         showsVerticalScrollIndicator={false}

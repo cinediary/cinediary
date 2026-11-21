@@ -1,8 +1,8 @@
 import { StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { radius, semantic, space, touch } from '@/shared/theme';
+import { radius, semantic, space } from '@/shared/theme';
 import { Skeleton, SkeletonGrid, SkeletonLines, SkeletonRail, useRailItemWidth } from '@/shared/ui';
+import { useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 
 /**
  * Esqueletos das telas do catálogo, no formato do conteúdo que vai chegar (o layout não pula quando
@@ -53,9 +53,9 @@ export function ExtrasSkeleton() {
 
 /** Pessoa (filmografia): foto, nome e a grade. */
 export function PersonSkeleton() {
-  const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   return (
-    <View style={[styles.page, { paddingTop: insets.top + space.sm + touch.minTarget }]}>
+    <View style={[styles.page, { paddingTop: backInset }]}>
       <View style={styles.hero}>
         <Skeleton width={112} height={112} round />
         <Skeleton width={180} height={24} />
@@ -68,9 +68,9 @@ export function PersonSkeleton() {
 
 /** Produtora: logo, nome, país e a grade. */
 export function CompanySkeleton() {
-  const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   return (
-    <View style={[styles.page, { paddingTop: insets.top + space.sm + touch.minTarget }]}>
+    <View style={[styles.page, { paddingTop: backInset }]}>
       <View style={styles.hero}>
         <Skeleton width={192} height={96} radius={radius.lg} />
         <Skeleton width={200} height={24} />

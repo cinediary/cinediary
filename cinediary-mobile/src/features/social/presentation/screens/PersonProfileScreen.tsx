@@ -11,10 +11,10 @@ import { hasAnyStats } from '@/features/stats/domain/stats';
 import { StatCards } from '@/features/stats/presentation/components/StatCards';
 import { analytics } from '@/shared/analytics/analytics';
 import { parseIsoDate, strings } from '@/shared/i18n';
-import { palette, radius, semantic, space, touch } from '@/shared/theme';
+import { palette, radius, semantic, space } from '@/shared/theme';
 import { Button, ErrorState, PosterCard, SectionHeader, Skeleton, SkeletonRows, Text, useGridItemWidth } from '@/shared/ui';
 import { usePullToRefresh } from '@/shared/ui/usePullToRefresh';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { usePersonDiary, usePublicProfile } from '../../application/socialQueries';
 import { FollowButton } from '../components/FollowButton';
 import { OwnProfileActions } from '../components/ProfileActions';
@@ -52,7 +52,7 @@ export function PersonProfileScreen() {
   const { refreshing, onRefresh: refresh } = usePullToRefresh(() =>
     Promise.all([profile.refetch(), canSee ? diary.refetch() : null, canSee ? stats.refetch() : null]),
   );
-  const top = insets.top + space.sm + touch.minTarget;
+  const top = useFloatingBackInset();
 
   if (!p) {
     return (

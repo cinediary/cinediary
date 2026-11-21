@@ -3,12 +3,12 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { semantic, space, touch } from '@/shared/theme';
+import { semantic, space } from '@/shared/theme';
 import { Avatar, ErrorState, PosterCard, SectionHeader, Text, useGridItemWidth } from '@/shared/ui';
 import { usePerson } from '../../application/catalogQueries';
 import { directsFirst } from '../../domain/person';
 import type { TitleSummary } from '../../domain/title';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { PersonSkeleton } from '../components/Skeletons';
 import { openTitle } from '../navigation';
 
@@ -16,6 +16,7 @@ import { openTitle } from '../navigation';
 export function PersonScreen() {
   const t = strings.catalog;
   const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   const params = useLocalSearchParams<{ personId: string }>();
   const person = usePerson(Number(params.personId));
 
@@ -46,7 +47,7 @@ export function PersonScreen() {
       <ScrollView
         style={styles.root}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + space.sm + touch.minTarget }]}
+        contentContainerStyle={[styles.content, { paddingTop: backInset }]}
         contentInsetAdjustmentBehavior="never"
       >
         <View style={styles.hero}>
