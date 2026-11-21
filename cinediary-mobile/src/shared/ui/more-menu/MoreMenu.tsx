@@ -1,4 +1,3 @@
-import { requireOptionalNativeModule } from 'expo';
 import { DotsThree } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
@@ -6,18 +5,13 @@ import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle }
 import { strings } from '@/shared/i18n';
 import { palette, touch } from '@/shared/theme';
 import { ActionSheet } from '../ActionSheet';
+import { hasNativeUI } from './nativeUI';
 import type { MoreMenuOption } from './types';
 
-/**
- * O `@expo/ui` só existe no binário que o inclui (development build ou loja). O import dele já busca as views
- * nativas, então num binário sem ele (um Expo Go sem o módulo, por exemplo) quebraria a tela. Por isso o
- * arquivo nativo só é carregado se o módulo existir; senão, fica o menu do próprio app.
- */
-const NativeMoreMenu =
-  Platform.OS !== 'web' && requireOptionalNativeModule('ExpoUI') != null
-    ? // eslint-disable-next-line @typescript-eslint/no-require-imports -- carregar só se o módulo nativo existir
-      (require('./NativeMoreMenu') as typeof import('./NativeMoreMenu')).NativeMoreMenu
-    : null;
+const NativeMoreMenu = hasNativeUI
+  ? // eslint-disable-next-line @typescript-eslint/no-require-imports -- carregar só se o módulo nativo existir (nativeUI.ts)
+    (require('./NativeMoreMenu') as typeof import('./NativeMoreMenu')).NativeMoreMenu
+  : null;
 
 /**
  * O "⋯" redondo com o menu de ações: o menu nativo de cada sistema (iOS: `Menu` do SwiftUI; Android:
@@ -37,7 +31,8 @@ export function MoreMenu({
 
   if (NativeMoreMenu) {
     return (
-      <View style={[styles.circle, style]}>
+      // No iOS o círculo é desenhado pelo SwiftUI (faz parte do botão que vira o menu).
+      <View style={[Platform.OS === 'ios' ? styles.slot : styles.circle, style]}>
         <NativeMoreMenu options={options} accessibilityLabel={accessibilityLabel} />
       </View>
     );
@@ -73,5 +68,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  slot: { width: touch.minTarget, height: touch.minTarget },
   pressed: { opacity: 0.7 },
 });
