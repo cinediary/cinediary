@@ -89,7 +89,7 @@ class DiaryRepositoryAdapter implements DiaryRepositoryPort
     @Override
     public long countWatched(UUID userId, String mediaType)
     {
-        return states.countWatched(userId, mediaType);
+        return "SERIES".equals(mediaType) ? states.countSeries(userId) : states.countWatched(userId, mediaType);
     }
 
     @Override
