@@ -1,5 +1,6 @@
 package com.cinediary.api.modules.stats;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -9,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.cinediary.api.IntegrationTest;
 import com.cinediary.api.TestTitles;
+import com.jayway.jsonpath.JsonPath;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.UUID;
@@ -55,5 +57,52 @@ class StatsIntegrationTest extends IntegrationTest
         mvc.perform(get("/api/v1/users/{u}/stats", username).with(other)).andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/users/{u}/stats", username).with(me)).andExpect(status().isOk());
         mvc.perform(get("/api/v1/users/{u}/stats", "ninguem_aqui").with(me)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void seriesCountsFromItsFirstEntryAndOnlyOnce() throws Exception
+    {
+        RequestPostProcessor me = user("user_" + UUID.randomUUID());
+        String username = "series_" + Math.abs(UUID.randomUUID().hashCode() % 100000);
+        mvc.perform(patch("/api/v1/me").with(me).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\":\"%s\"}".formatted(username))).andExpect(status().isOk());
+        // O perfil público só aparece depois do onboarding.
+        jdbc.sql("UPDATE users SET onboarding_completed = TRUE WHERE username = :u").param("u", username).update();
+        String detail = mvc.perform(get("/api/v1/catalog/SERIES/1396").with(me)).andReturn().getResponse().getContentAsString();
+        long series = ((Number) JsonPath.read(detail, "$.id")).longValue();
+
+        // Um episódio de uma série nova já conta
+        String episode = entry(me, "{\"titleId\":%d,\"watchedDate\":\"2026-01-10\",\"seasonNumber\":1,\"episodeNumber\":1}"
+                .formatted(series));
+        seriesCount(username, me, 1);
+
+        // Outro episódio e uma temporada da mesma série não contam de novo
+        String another = entry(me, "{\"titleId\":%d,\"watchedDate\":\"2026-01-11\",\"seasonNumber\":1,\"episodeNumber\":2}"
+                .formatted(series));
+        String season = entry(me, "{\"titleId\":%d,\"watchedDate\":\"2026-01-12\",\"seasonNumber\":2}".formatted(series));
+        seriesCount(username, me, 1);
+
+        // Sem nenhum registro, a série sai da contagem
+        for (String id : new String[]{episode, another, season}) {
+            mvc.perform(delete("/api/v1/diary/entries/{id}", id).with(me)).andExpect(status().isNoContent());
+        }
+        seriesCount(username, me, 0);
+    }
+
+    private String entry(RequestPostProcessor me, String body) throws Exception
+    {
+        String created = mvc.perform(post("/api/v1/diary/entries").with(me).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        return JsonPath.read(created, "$.id");
+    }
+
+    /** O número das estatísticas e o do perfil (cabeçalho do perfil de outra pessoa) seguem a mesma regra. */
+    private void seriesCount(String username, RequestPostProcessor me, int expected) throws Exception
+    {
+        for (String path : new String[]{"/api/v1/users/{u}/stats", "/api/v1/users/{u}"}) {
+            mvc.perform(get(path, username).with(me))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalSeriesWatched").value(expected));
+        }
     }
 }

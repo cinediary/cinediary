@@ -56,4 +56,18 @@ interface SpringDataUserTitleStateRepository extends JpaRepository<UserTitleStat
              WHERE s.user_id = :userId AND s.watched AND t.media_type = :mediaType
             """, nativeQuery = true)
     long countWatched(@Param("userId") UUID userId, @Param("mediaType") String mediaType);
+
+    /**
+     * Séries contam a partir do primeiro registro no diário (episódio, temporada ou a série inteira), uma vez cada,
+     * ou se estão marcadas como vistas sem registro. A mesma regra das estatísticas (StatsSqlQueryAdapter).
+     */
+    @Query(value = """
+            SELECT COUNT(*)
+              FROM (SELECT title_id FROM diary_entries WHERE user_id = :userId
+                    UNION
+                    SELECT title_id FROM user_title_states WHERE user_id = :userId AND watched) x
+              JOIN catalog_titles t ON t.id = x.title_id
+             WHERE t.media_type = 'SERIES'
+            """, nativeQuery = true)
+    long countSeries(@Param("userId") UUID userId);
 }
