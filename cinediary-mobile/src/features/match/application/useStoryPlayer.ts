@@ -42,18 +42,25 @@ export function useStoryPlayer(slides: SlideKind[], matchId: string, score: numb
     [matchId, score],
   );
 
-  // Como no Instagram: avançar no último fecha; voltar no primeiro recomeça o slide.
-  // Antes os dois ficavam parados (o índice só era limitado entre 0 e o último).
+  // Fecha uma vez só: se a barra do último slide acabar junto com um toque, o router.back() rodaria duas vezes
+  // e tiraria também a tela de baixo.
+  const closed = useRef(false);
+  const close = useCallback(() => {
+    if (closed.current) return;
+    closed.current = true;
+    onClose();
+  }, [onClose]);
+
+  // Como no Instagram: avançar no último fecha (tocando ou quando a barra dele enche); voltar no primeiro
+  // recomeça o slide. Antes os dois ficavam parados (o índice só era limitado entre 0 e o último).
   const next = useCallback(() => {
-    if (index >= total - 1) onClose();
+    if (index >= total - 1) close();
     else setIndex(index + 1);
-  }, [index, total, onClose]);
+  }, [index, total, close]);
   const prev = useCallback(() => {
     if (index === 0) setRound((r) => r + 1);
     else setIndex(index - 1);
   }, [index]);
-  // Fim da barra: avança, mas no último slide só para (ele tem o botão "Ir para a sala").
-  const advance = useCallback(() => setIndex((i) => Math.min(i + 1, total - 1)), [total]);
   const pause = useCallback(() => setPaused(true), []);
   const resume = useCallback(() => setPaused(false), []);
 
@@ -68,7 +75,6 @@ export function useStoryPlayer(slides: SlideKind[], matchId: string, score: numb
     running: !paused && !reduceMotion && total > 0,
     next,
     prev,
-    advance,
     pause,
     resume,
   };

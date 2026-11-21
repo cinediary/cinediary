@@ -3396,6 +3396,14 @@ export interface components {
                 count: number;
             }[];
         };
+        /** @description Uma pessoa do Match (quem criou ou o parceiro), só com os dados públicos. */
+        MatchPerson: {
+            /** Format: uuid */
+            id: string;
+            username: string;
+            displayName: string;
+            avatarUrl?: string | null;
+        };
         TasteMatchSummaryResponse: {
             /** Format: uuid */
             id: string;
@@ -3404,8 +3412,8 @@ export interface components {
             status: components["schemas"]["MatchStatus"];
             /** @example Aguardando seu amigo */
             statusLabel: string;
-            creator: components["schemas"]["UserProfileResponse"];
-            partner?: components["schemas"]["UserProfileResponse"];
+            creator: components["schemas"]["MatchPerson"];
+            partner?: components["schemas"]["MatchPerson"];
             compatibilityScore?: number | null;
             discoveryMode?: boolean;
             sharedWatchlistCount?: number;
@@ -3421,8 +3429,8 @@ export interface components {
             discoveryMode: boolean;
             /** @enum {string} */
             engineUsed: "NEO4J_GDS" | "SQL_FALLBACK";
-            creator: components["schemas"]["UserProfileResponse"];
-            partner?: components["schemas"]["UserProfileResponse"];
+            creator: components["schemas"]["MatchPerson"];
+            partner?: components["schemas"]["MatchPerson"];
             scoreBreakdown: {
                 ratingsScore: number;
                 /** @example 0.5 */

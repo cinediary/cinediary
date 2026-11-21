@@ -149,7 +149,7 @@ export function StoryPlayer({
           running={player.running}
           reduceMotion={player.reduceMotion}
           color={colors.fg}
-          onComplete={player.advance}
+          onComplete={player.next}
         />
       </View>
 
