@@ -1,7 +1,7 @@
-import { BlurView } from 'expo-blur';
+import { BlurTargetView, BlurView } from 'expo-blur';
 import { EyeSlash } from 'phosphor-react-native';
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useRef, useState, type ComponentRef } from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeOut } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
@@ -9,6 +9,14 @@ import { palette, radius, space } from '@/shared/theme';
 import { ExpandableText, Text } from '@/shared/ui';
 import { useHidesSpoiler } from '../../application/useHidesSpoiler';
 import type { DiaryEntry } from '../../domain/diary';
+
+/**
+ * Android: o `BlurView` só desfoca com um `blurMethod` e o `blurTarget` (a view que ele desfoca). Sem isso desenhava
+ * só uma camada transparente e o spoiler ficava legível. O método usado é o do Android 12+ (rápido, na GPU); antes
+ * dele não há desfoque, e o texto fica atrás de um cartão sólido.
+ */
+const androidBlur = Platform.OS === 'android' && Platform.Version >= 31;
+const solidCover = Platform.OS === 'android' && !androidBlur;
 
 /**
  * Texto da review. Com spoiler (e quem vê não é o autor: veja `hidesSpoiler`), ele fica desfocado por baixo de um aviso "Contém spoiler · Toque para
@@ -39,17 +47,20 @@ export function SpoilerReview({
   const revealed = controlled ?? own;
   const setRevealed = (v: boolean) => (onReveal ? onReveal() : setOwn(v));
   const hidden = spoiler && !revealed;
+  const target = useRef<ComponentRef<typeof View>>(null);
   return (
     <View style={[styles.root, hidden && styles.hidden]}>
-      {expandLines ? (
-        <ExpandableText tone="secondary" style={styles.text} lines={expandLines} expandable={!hidden}>
-          {text}
-        </ExpandableText>
-      ) : (
-        <Text tone="secondary" style={styles.text} numberOfLines={numberOfLines}>
-          {text}
-        </Text>
-      )}
+      <BlurTargetView ref={target}>
+        {expandLines ? (
+          <ExpandableText tone="secondary" style={styles.text} lines={expandLines} expandable={!hidden}>
+            {text}
+          </ExpandableText>
+        ) : (
+          <Text tone="secondary" style={styles.text} numberOfLines={numberOfLines}>
+            {text}
+          </Text>
+        )}
+      </BlurTargetView>
       {hidden ? (
         <Animated.View exiting={FadeOut.duration(220)} style={StyleSheet.absoluteFill}>
           <Pressable
@@ -58,7 +69,19 @@ export function SpoilerReview({
             onPress={() => setRevealed(true)}
             style={StyleSheet.absoluteFill}
           >
-            <BlurView intensity={22} tint="light" style={[StyleSheet.absoluteFill, styles.blur]} />
+            {solidCover ? (
+              <View style={[StyleSheet.absoluteFill, styles.blur, styles.solid]} />
+            ) : (
+              <BlurView
+                intensity={22}
+                tint="light"
+                blurTarget={target}
+                blurMethod={androidBlur ? 'dimezisBlurViewSdk31Plus' : 'none'}
+                // No Android o raio é a intensidade dividida por isto (padrão 4, fraco para esconder texto); ajuste fino aqui.
+                blurReductionFactor={1.5}
+                style={[StyleSheet.absoluteFill, styles.blur]}
+              />
+            )}
             <View style={styles.badgeWrap}>
               <View style={styles.badge}>
                 <EyeSlash size={16} color={palette.ink900} />
@@ -80,6 +103,7 @@ const styles = StyleSheet.create({
   hidden: { minHeight: 64 },
   text: { lineHeight: 24 },
   blur: { borderRadius: radius.md },
+  solid: { backgroundColor: palette.surfaceSunken },
   badgeWrap: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   badge: {
     flexDirection: 'row',

@@ -1,7 +1,7 @@
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { useEffect } from 'react';
-import { Modal, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, interpolate, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -101,7 +101,13 @@ export function PosterLightbox({
       {origin ? (
         <Pressable accessibilityRole="button" accessibilityLabel={strings.common.close} onPress={close} style={StyleSheet.absoluteFill}>
           <Animated.View style={[StyleSheet.absoluteFill, backdropStyle]}>
-            <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
+            {/* Android: o Modal é outra janela, e o desfoque não alcança a página por baixo (desenhava só um véu
+                transparente). Lá o fundo é escurecido. */}
+            {Platform.OS === 'android' ? (
+              <View style={[StyleSheet.absoluteFill, styles.dim]} />
+            ) : (
+              <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
+            )}
           </Animated.View>
           <Animated.View style={[styles.poster, posterStyle]}>
             {posterUrl ? (
@@ -125,6 +131,7 @@ export function PosterLightbox({
 }
 
 const styles = StyleSheet.create({
+  dim: { backgroundColor: 'rgba(20,16,14,0.82)' },
   poster: {
     position: 'absolute',
     overflow: 'hidden',
