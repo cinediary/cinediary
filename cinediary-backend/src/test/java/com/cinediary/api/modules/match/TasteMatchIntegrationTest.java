@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 /** Taste Match de ponta a ponta: PostgreSQL + eventos do Spring Modulith + Neo4j 5 com Graph Data Science. */
@@ -299,6 +301,44 @@ class TasteMatchIntegrationTest extends IntegrationTest
         String matchId = JsonPath.read(created, "$.id");
         mvc.perform(delete("/api/v1/matches/{id}", matchId).with(ana.auth())).andExpect(status().isNoContent());
         mvc.perform(get("/api/v1/matches").with(ana.auth())).andExpect(jsonPath("$[*].id", not(hasItem(matchId))));
+    }
+
+    @Test
+    void matchShowsOnlyPublicDataOfEachPerson() throws Exception
+    {
+        Person ana = person();
+        Person bia = person();
+        // Os dois preenchem os dados que só eles devem ver no /me.
+        for (Person p : List.of(ana, bia)) {
+            mvc.perform(patch("/api/v1/me").with(p.auth()).contentType(MediaType.APPLICATION_JSON).content("""
+                    {"displayName":"Nome Público","firstName":"Primeiro","lastName":"Sobrenome","showSpoilers":true,
+                     "defaultReplyPolicy":"ME","approveCompanions":true}"""))
+                    .andExpect(status().isOk());
+        }
+
+        String created = onlyPublic(mvc.perform(post("/api/v1/matches").with(ana.auth())).andExpect(status().isCreated()),
+                "$.creator").andReturn().getResponse().getContentAsString();
+        String code = JsonPath.read(created, "$.inviteCode");
+        String matchId = JsonPath.read(created, "$.id");
+
+        onlyPublic(onlyPublic(mvc.perform(post("/api/v1/matches/{code}/accept", code).with(bia.auth()))
+                .andExpect(status().isOk()), "$.creator"), "$.partner");
+        onlyPublic(onlyPublic(mvc.perform(get("/api/v1/matches").with(ana.auth())), "$[0].creator"), "$[0].partner");
+        onlyPublic(onlyPublic(mvc.perform(get("/api/v1/matches/{id}/story", matchId).with(ana.auth()))
+                .andExpect(status().isOk()), "$.creator"), "$.partner");
+    }
+
+    /** A pessoa em {@code path} tem só id, @, nome de exibição e avatar: nada do que é exclusivo do /me. */
+    private ResultActions onlyPublic(ResultActions result, String path) throws Exception
+    {
+        result.andExpect(jsonPath(path + ".id").isString())
+                .andExpect(jsonPath(path + ".username").isString())
+                .andExpect(jsonPath(path + ".displayName").value("Nome Público"));
+        for (String field : List.of("firstName", "lastName", "showSpoilers", "defaultReplyPolicy", "approveCompanions",
+                "onboardingCompleted", "isPrivate", "favorites", "bio", "pronouns", "totalMoviesWatched")) {
+            result.andExpect(jsonPath(path + "." + field).doesNotExist());
+        }
+        return result;
     }
 
     private TasteMatchEnginePort engine(EngineType type)

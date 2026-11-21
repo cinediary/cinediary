@@ -2231,6 +2231,15 @@ components:
               count:
                 type: integer
 
+    MatchPerson:
+      type: object
+      description: "Uma pessoa do Match (quem criou ou o parceiro), só com os dados públicos."
+      required: [id, username, displayName]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: string, nullable: true }
     TasteMatchSummaryResponse:
       type: object
       required: [id, inviteCode, inviteUrl, status, statusLabel, creator]
@@ -2248,9 +2257,9 @@ components:
           type: string
           example: "Aguardando seu amigo"
         creator:
-          $ref: '#/components/schemas/UserProfileResponse'
+          $ref: '#/components/schemas/MatchPerson'
         partner:
-          $ref: '#/components/schemas/UserProfileResponse'
+          $ref: '#/components/schemas/MatchPerson'
         compatibilityScore:
           type: integer
           minimum: 0
@@ -2285,9 +2294,9 @@ components:
           type: string
           enum: [NEO4J_GDS, SQL_FALLBACK]
         creator:
-          $ref: '#/components/schemas/UserProfileResponse'
+          $ref: '#/components/schemas/MatchPerson'
         partner:
-          $ref: '#/components/schemas/UserProfileResponse'
+          $ref: '#/components/schemas/MatchPerson'
         scoreBreakdown:
           type: object
           required: [ratingsScore, ratingsWeight, genresScore, genresWeight, favoritesScore, favoritesWeight, commonRatedCount, explanationText]

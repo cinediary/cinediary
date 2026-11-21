@@ -2,7 +2,7 @@ import { toTitleSummary } from '@/features/catalog/infrastructure/titleMapper';
 import { api, unwrap, unwrapVoid, type Schemas } from '@/shared/api/client';
 import type { Match, MatchStory, Person, SharedWatchlistItem } from '../domain/match';
 
-const toPerson = (dto: Schemas['UserProfileResponse']): Person => ({
+const toPerson = (dto: Schemas['MatchPerson']): Person => ({
   id: dto.id,
   username: dto.username,
   name: dto.displayName?.trim() || dto.username,
