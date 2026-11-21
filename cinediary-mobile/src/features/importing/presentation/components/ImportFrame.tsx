@@ -1,9 +1,9 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { space, touch } from '@/shared/theme';
+import { space } from '@/shared/theme';
 import { Screen } from '@/shared/ui';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, FLOATING_BACK_SPACE } from '@/shared/ui/navigation/FloatingBackButton';
 
 /**
  * Moldura de todos os passos da importação (tela inteira, não mais modal):
@@ -25,6 +25,6 @@ export function ImportFrame({ children, footer, centered = false }: PropsWithChi
 const styles = StyleSheet.create({
   root: { flex: 1 },
   // Espaço do voltar flutuante, para o título não começar escondido atrás dele.
-  content: { paddingTop: touch.minTarget + space.lg, gap: space.xl },
+  content: { paddingTop: FLOATING_BACK_SPACE, gap: space.xl },
   centered: { justifyContent: 'center', alignItems: 'center', gap: space.lg },
 });

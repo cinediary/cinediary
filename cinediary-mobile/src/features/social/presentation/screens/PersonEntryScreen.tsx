@@ -1,12 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EntrySkeleton } from '@/features/diary/presentation/components/EntryDetail';
 import { strings } from '@/shared/i18n';
-import { semantic, space, touch } from '@/shared/theme';
+import { semantic } from '@/shared/theme';
 import { ErrorState } from '@/shared/ui';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { usePersonEntry, usePublicProfile } from '../../application/socialQueries';
 import { EntryScreenFrame } from '../components/EntryScreenFrame';
 import { openProfile } from '../navigation';
@@ -17,7 +16,7 @@ import { openProfile } from '../navigation';
  */
 export function PersonEntryScreen() {
   const { username = '', entryId = '' } = useLocalSearchParams<{ username: string; entryId: string }>();
-  const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   const entry = usePersonEntry(username, entryId);
   const author = usePublicProfile(username);
   const e = entry.data;
@@ -28,7 +27,7 @@ export function PersonEntryScreen() {
         {entry.isError ? (
           <ErrorState message={strings.diary.entryError} onRetry={() => entry.refetch()} />
         ) : (
-          <EntrySkeleton style={{ paddingTop: insets.top + space.sm + touch.minTarget + space.lg }} />
+          <EntrySkeleton style={{ paddingTop: backInset }} />
         )}
         <FloatingBackButton />
       </View>

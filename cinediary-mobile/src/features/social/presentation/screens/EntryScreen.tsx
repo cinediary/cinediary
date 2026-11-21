@@ -1,15 +1,14 @@
 import { useLocalSearchParams } from 'expo-router';
 import { PencilSimple, Trash } from 'phosphor-react-native';
 import { Alert, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { useDeleteEntry, useEntry } from '@/features/diary/application/diaryQueries';
 import { EntrySkeleton } from '@/features/diary/presentation/components/EntryDetail';
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space, touch } from '@/shared/theme';
+import { palette, semantic } from '@/shared/theme';
 import { ErrorState, MoreMenu, menuIcons, useToast } from '@/shared/ui';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { nav } from '@/shared/ui/navigation/nav';
 import { EntryScreenFrame } from '../components/EntryScreenFrame';
 
@@ -20,7 +19,7 @@ import { EntryScreenFrame } from '../components/EntryScreenFrame';
 export function EntryScreen() {
   const t = strings.diary;
   const { entryId = '' } = useLocalSearchParams<{ entryId: string }>();
-  const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   const toast = useToast();
   const me = useMe();
   const entry = useEntry(entryId);
@@ -52,7 +51,7 @@ export function EntryScreen() {
         {entry.isError ? (
           <ErrorState message={t.entryError} onRetry={() => entry.refetch()} />
         ) : (
-          <EntrySkeleton style={{ paddingTop: insets.top + space.sm + touch.minTarget + space.lg }} />
+          <EntrySkeleton style={{ paddingTop: backInset }} />
         )}
         <FloatingBackButton />
       </View>
