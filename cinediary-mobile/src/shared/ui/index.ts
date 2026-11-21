@@ -1,4 +1,7 @@
 export * from './ActionSheet';
+export * from './more-menu/MoreMenu';
+export * from './more-menu/icons';
+export type { MoreMenuOption } from './more-menu/types';
 export * from './Avatar';
 export * from './Banner';
 export * from './BottomSheet';

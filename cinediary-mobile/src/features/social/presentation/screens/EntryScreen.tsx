@@ -1,6 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { PencilSimple, Trash } from 'phosphor-react-native';
-import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,13 +8,13 @@ import { useDeleteEntry, useEntry } from '@/features/diary/application/diaryQuer
 import { EntrySkeleton } from '@/features/diary/presentation/components/EntryDetail';
 import { strings } from '@/shared/i18n';
 import { palette, semantic, space, touch } from '@/shared/theme';
-import { ActionSheet, ErrorState, useToast } from '@/shared/ui';
+import { ErrorState, MoreMenu, menuIcons, useToast } from '@/shared/ui';
 import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
 import { EntryScreenFrame } from '../components/EntryScreenFrame';
 
 /**
  * A SUA entrada: o mesmo visual da entrada de outra pessoa (curtir e responder também), mais o Stories na
- * barra de ações e o "⋯" do canto, que abre o menu de ações do app (editar ou excluir).
+ * barra de ações e o "⋯" do canto, que abre o menu nativo do sistema (editar ou excluir).
  */
 export function EntryScreen() {
   const t = strings.diary;
@@ -45,7 +44,6 @@ export function EntryScreen() {
         },
       },
     ]);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   if (!e) {
     return (
@@ -68,17 +66,23 @@ export function EntryScreen() {
       author={{ username: me.data?.username ?? '', name: me.data?.displayName ?? '', avatarUrl: me.data?.avatarUrl ?? null }}
       onAddReview={edit}
       onShare={() => router.push({ pathname: '/entry/[entryId]/share', params: { entryId } })}
-      onMore={() => setMenuOpen(true)}
-      menu={
-        <ActionSheet
-          visible={menuOpen}
-          onClose={() => setMenuOpen(false)}
+      more={
+        <MoreMenu
           options={[
-            { key: 'edit', label: t.entryEdit, icon: <PencilSimple size={20} color={palette.ink900} />, onPress: edit },
+            {
+              key: 'edit',
+              label: t.entryEdit,
+              systemImage: 'pencil',
+              androidIcon: menuIcons.edit,
+              icon: <PencilSimple size={20} color={palette.ink900} />,
+              onPress: edit,
+            },
             {
               key: 'delete',
               label: t.entryDelete,
               destructive: true,
+              systemImage: 'trash',
+              androidIcon: menuIcons.delete,
               icon: <Trash size={20} color={semantic.danger} />,
               onPress: confirmDelete,
             },

@@ -1,6 +1,5 @@
-import { DotsThree } from 'phosphor-react-native';
 import { useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { ActivityIndicator, RefreshControl, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import Animated, { FadeIn, FadeOut, useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -28,8 +27,7 @@ export function EntryScreenFrame({
   onAuthorPress,
   onAddReview,
   onShare,
-  onMore,
-  menu,
+  more,
   onRefresh,
 }: {
   entry: DiaryEntry;
@@ -38,10 +36,8 @@ export function EntryScreenFrame({
   onAuthorPress?: () => void;
   onAddReview?: () => void;
   onShare?: () => void;
-  /** Só na sua entrada: o "⋯" do canto (editar, excluir). */
-  onMore?: () => void;
-  /** O menu do "⋯" (fica por cima de tudo). */
-  menu?: ReactNode;
+  /** Só na sua entrada: o "⋯" do canto (um `MoreMenu`, com editar e excluir). Fica fixo no topo à direita. */
+  more?: ReactNode;
   /** Puxar para atualizar: recarrega a entrada (curtidas e respostas recarregam junto). */
   onRefresh?: () => Promise<unknown>;
 }) {
@@ -134,18 +130,7 @@ export function EntryScreenFrame({
           <ActivityIndicator size="small" color={semantic.primary} />
         </Animated.View>
       ) : null}
-      {onMore ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={strings.social.moreOptions}
-          onPress={onMore}
-          hitSlop={8}
-          style={({ pressed }) => [styles.more, { top: insets.top + space.sm }, pressed && styles.pressed]}
-        >
-          <DotsThree size={24} weight="bold" color={palette.ink900} />
-        </Pressable>
-      ) : null}
-      {menu}
+      {more ? <View style={[styles.more, { top: insets.top + space.sm }]}>{more}</View> : null}
     </View>
   );
 }
@@ -154,17 +139,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: semantic.background },
   flex: { flex: 1 },
   content: { paddingHorizontal: space.screenX, paddingTop: space.lg, gap: space.xl },
-  more: {
-    position: 'absolute',
-    right: space.screenX,
-    width: touch.minTarget,
-    height: touch.minTarget,
-    borderRadius: touch.minTarget / 2,
-    backgroundColor: 'rgba(255,253,249,0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pressed: { opacity: 0.7 },
+  more: { position: 'absolute', right: space.screenX },
   refreshing: {
     position: 'absolute',
     alignSelf: 'center',
