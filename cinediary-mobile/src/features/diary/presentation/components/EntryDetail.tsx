@@ -17,6 +17,9 @@ export type EntryAuthor = { username: string; name: string; avatarUrl: string | 
 
 const HERO_HEIGHT = 250;
 
+/** Review longa na tela da entrada: corta aqui, com "mais" para ler inteira (antes ocupava a tela toda). */
+const REVIEW_LINES = 8;
+
 /**
  * Topo da entrada, de ponta a ponta: o pôster desfocado de fundo dissolvendo no creme (como na página do
  * título) e, por cima, o pôster, o nome, o ano (ou temporada/episódio) e a data em que assistiu. Pôster e nome
@@ -152,7 +155,13 @@ export function EntryBody({
         <View style={styles.review}>
           <View style={styles.quote} />
           <View style={styles.flex}>
-            <SpoilerReview key={`${entry.id}-${entry.containsSpoilers}`} entry={entry} revealed={revealed} onReveal={onReveal} />
+            <SpoilerReview
+              key={`${entry.id}-${entry.containsSpoilers}`}
+              entry={entry}
+              revealed={revealed}
+              onReveal={onReveal}
+              expandLines={REVIEW_LINES}
+            />
           </View>
         </View>
       ) : onAddReview ? (

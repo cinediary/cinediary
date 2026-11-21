@@ -6,7 +6,7 @@ import Animated, { FadeOut } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
 import { palette, radius, space } from '@/shared/theme';
-import { Text } from '@/shared/ui';
+import { ExpandableText, Text } from '@/shared/ui';
 import { useHidesSpoiler } from '../../application/useHidesSpoiler';
 import type { DiaryEntry } from '../../domain/diary';
 
@@ -28,6 +28,7 @@ export function SpoilerReview({
   revealed: controlled,
   onReveal,
   numberOfLines,
+  expandLines,
 }: {
   entry: Pick<DiaryEntry, 'authorId' | 'containsSpoilers' | 'reviewText'>;
   /** Opcional: a tela controla o "revelado" (ex.: revelar a review libera também as respostas). */
@@ -35,6 +36,8 @@ export function SpoilerReview({
   onReveal?: () => void;
   /** Cartões (página do título): corta o texto; a review inteira fica na tela da entrada. */
   numberOfLines?: number;
+  /** Tela da entrada: corta nessas linhas com "mais" para abrir no lugar. Com spoiler, primeiro revela, depois abre. */
+  expandLines?: number;
 }) {
   const t = strings.diary;
   const spoiler = useHidesSpoiler(entry);
@@ -48,9 +51,15 @@ export function SpoilerReview({
   return (
     <View style={[styles.root, hidden && styles.hidden]}>
       <BlurTargetView ref={target}>
-        <Text tone="secondary" style={styles.text} numberOfLines={numberOfLines}>
-          {text}
-        </Text>
+        {expandLines ? (
+          <ExpandableText tone="secondary" style={styles.text} lines={expandLines} expandable={!hidden}>
+            {text}
+          </ExpandableText>
+        ) : (
+          <Text tone="secondary" style={styles.text} numberOfLines={numberOfLines}>
+            {text}
+          </Text>
+        )}
       </BlurTargetView>
       {hidden ? (
         <Animated.View exiting={FadeOut.duration(220)} style={StyleSheet.absoluteFill}>
