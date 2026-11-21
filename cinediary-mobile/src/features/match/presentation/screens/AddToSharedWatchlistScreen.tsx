@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { BookmarkSimple, X } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -7,6 +7,7 @@ import { CatalogSearchPanel } from '@/features/catalog/presentation/components/C
 import { strings } from '@/shared/i18n';
 import { palette, semantic, space, touch } from '@/shared/theme';
 import { Screen, Title, useToast } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useAddToSharedWatchlist, useRemoveFromSharedWatchlist, useSharedWatchlist } from '../../application/matchQueries';
 
 /**
@@ -49,7 +50,7 @@ export function AddToSharedWatchlistScreen() {
         <View style={styles.flex}>
           <Title parts={t.addTitle} />
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel={strings.common.close} onPress={() => router.back()} style={styles.close}>
+        <Pressable accessibilityRole="button" accessibilityLabel={strings.common.close} onPress={() => nav.back()} style={styles.close}>
           <X size={22} color={palette.ink900} />
         </Pressable>
       </View>

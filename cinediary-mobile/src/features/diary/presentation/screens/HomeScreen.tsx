@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { Ticket } from 'phosphor-react-native';
 import { StyleSheet, View } from 'react-native';
 
@@ -18,6 +17,7 @@ import type { RecommendationSection } from '@/shared/analytics/events';
 import { strings } from '@/shared/i18n';
 import { palette, space } from '@/shared/theme';
 import { Banner, Button, EmptyState, ErrorState, Screen, SectionHeader, SkeletonRows, Text } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { refreshHome, useContinueWatching, useDiaryEntries, useUndatedWatched } from '../../application/diaryQueries';
 import { dayPeriod } from '../../domain/diary';
 import { ContinueWatching } from '../components/ContinueWatching';
@@ -70,7 +70,7 @@ export function HomeScreen() {
     <Banner
       tone={activeImport.job.status === 'AWAITING_CONFIRMATION' ? 'success' : 'info'}
       message={activeImport.job.status === 'AWAITING_CONFIRMATION' ? strings.importing.bannerReady : strings.importing.bannerRunning}
-      onPress={() => router.push('/import')}
+      onPress={() => nav.push('/import')}
     />
   ) : null;
 
@@ -114,7 +114,7 @@ export function HomeScreen() {
         onPick={(title) => openQuickLog(title, { undated: true, from: 'home' })}
       />
 
-      <SectionHeader title={t.yourDiary} actionLabel={hasMore ? t.seeAll : undefined} onAction={() => router.push('/diary')} />
+      <SectionHeader title={t.yourDiary} actionLabel={hasMore ? t.seeAll : undefined} onAction={() => nav.push('/diary')} />
       {diary.isPending ? (
         <SkeletonRows />
       ) : diary.isError ? (
@@ -125,14 +125,14 @@ export function HomeScreen() {
           title={t.emptyTitle}
           description={t.emptyDescription}
           actionLabel={t.emptyLog}
-          onAction={() => router.navigate('/(tabs)/log')}
+          onAction={() => nav.navigate('/(tabs)/log')}
           secondaryLabel={t.emptyImport}
-          onSecondary={() => router.push('/import')}
+          onSecondary={() => nav.push('/import')}
         />
       ) : (
         <View style={styles.timeline}>
           <DiaryTimeline entries={entries.slice(0, HOME_DIARY_LIMIT)} />
-          {hasMore ? <Button label={t.seeAllEntries} variant="secondary" onPress={() => router.push('/diary')} /> : null}
+          {hasMore ? <Button label={t.seeAllEntries} variant="secondary" onPress={() => nav.push('/diary')} /> : null}
         </View>
       )}
     </Screen>

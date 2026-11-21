@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { strings } from '@/shared/i18n';
 import { party, story as storyTokens } from '@/shared/theme';
 import { useToast } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useShareSlide, type SlideRef } from '../../../application/useShareSlide';
 import { useStoryPlayer } from '../../../application/useStoryPlayer';
 import type { MatchStory } from '../../../domain/match';
@@ -55,7 +56,7 @@ export function StoryPlayer({
   const matchId = story.matchId;
   const revealRoom = useRevealRoom();
   const closeStory = useCallback(
-    () => (toRoomOnClose || !router.canGoBack() ? revealRoom(matchId) : router.back()),
+    () => (toRoomOnClose || !router.canGoBack() ? revealRoom(matchId) : nav.back()),
     [toRoomOnClose, matchId, revealRoom],
   );
   const player = useStoryPlayer(slides, story.matchId, story.score, closeStory);

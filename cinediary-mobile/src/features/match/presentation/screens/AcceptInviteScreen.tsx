@@ -8,6 +8,7 @@ import { useMe } from '@/features/auth/application/profileQueries';
 import { strings } from '@/shared/i18n';
 import { party, space } from '@/shared/theme';
 import { Button, Text } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { hasSeenStory, inviteErrorMessage, markStorySeen, useAcceptInvite, usePendingInvite } from '../../application/matchQueries';
 import { parseInviteCode, type MatchStory } from '../../domain/match';
 import { CALCULATING_ACCEPTED_MS, CALCULATING_PARTNER_POSTER_MS, introPosters } from '../../domain/story';
@@ -86,7 +87,7 @@ export function AcceptInviteScreen() {
         <Button
           label={strings.common.close}
           variant="secondary"
-          onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+          onPress={() => nav.back()}
         />
       </View>
     );

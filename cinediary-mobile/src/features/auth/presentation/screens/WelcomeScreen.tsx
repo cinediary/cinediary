@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { NotePencil, Star, Ticket, UsersThree } from 'phosphor-react-native';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -9,6 +8,7 @@ import { usePendingInvite } from '@/features/match/application/matchQueries';
 import { strings } from '@/shared/i18n';
 import { fonts, palette, radius, semantic, space } from '@/shared/theme';
 import { Button, Text, Title } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { PosterWall, type WallPoster } from '../components/PosterWall';
 
 /** Fallback tipográfico da parede (sem rede): só aparece até a vitrine chegar. */
@@ -86,8 +86,8 @@ export function WelcomeScreen() {
         ) : null}
 
         <Animated.View entering={enter(3)} style={styles.actions}>
-          <Button label={a.createAccount} onPress={() => router.push('/(auth)/sign-up')} />
-          <Button label={a.haveAccount} variant="ghost" onPress={() => router.push('/(auth)/sign-in')} />
+          <Button label={a.createAccount} onPress={() => nav.push('/(auth)/sign-up')} />
+          <Button label={a.haveAccount} variant="ghost" onPress={() => nav.push('/(auth)/sign-in')} />
         </Animated.View>
 
         <Animated.View entering={enter(4)}>

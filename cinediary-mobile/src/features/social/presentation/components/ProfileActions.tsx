@@ -1,10 +1,10 @@
-import { router } from 'expo-router';
 import { GearSix, PencilSimple } from 'phosphor-react-native';
 import { Pressable, StyleSheet } from 'react-native';
 
 import { strings } from '@/shared/i18n';
 import { fonts, palette, radius, space, touch } from '@/shared/theme';
 import { Text } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 
 /** Botões do seu próprio perfil: "Editar perfil" (largo) e a engrenagem das Configurações. */
 export function OwnProfileActions() {
@@ -13,7 +13,7 @@ export function OwnProfileActions() {
     <>
       <Pressable
         accessibilityRole="button"
-        onPress={() => router.push('/profile/edit')}
+        onPress={() => nav.push('/profile/edit')}
         style={({ pressed }) => [styles.edit, pressed && styles.pressed]}
       >
         <PencilSimple size={16} weight="bold" color={palette.ink900} />
@@ -24,7 +24,7 @@ export function OwnProfileActions() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={a.settings}
-        onPress={() => router.push('/settings')}
+        onPress={() => nav.push('/settings')}
         style={({ pressed }) => [styles.gear, pressed && styles.pressed]}
       >
         <GearSix size={20} color={palette.ink900} />

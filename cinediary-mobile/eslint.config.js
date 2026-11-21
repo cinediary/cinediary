@@ -64,6 +64,20 @@ module.exports = defineConfig([
     },
   },
   {
+    // Toque repetido abria a mesma tela várias vezes (#102): abrir e voltar passam pelo `nav`, que ignora o 2º toque.
+    files: ['src/**'],
+    ignores: ['src/shared/ui/navigation/nav.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[object.name='router'][property.name=/^(push|navigate|back)$/]",
+          message: 'Use nav.push / nav.navigate / nav.back (@/shared/ui/navigation/nav): eles ignoram o toque repetido.',
+        },
+      ],
+    },
+  },
+  {
     files: ['src/app/**'],
     rules: {
       'no-restricted-imports': restrict(

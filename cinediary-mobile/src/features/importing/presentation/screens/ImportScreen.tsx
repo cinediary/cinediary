@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { ArrowSquareOut, CheckCircle, FilmReel, LockSimple, WarningCircle } from 'phosphor-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -8,6 +7,7 @@ import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, w
 import { strings } from '@/shared/i18n';
 import { palette, radius, semantic, space } from '@/shared/theme';
 import { Button, Card, Text, Title } from '@/shared/ui';
+import { nav } from '@/shared/ui/navigation/nav';
 import { useImportFlow } from '../../application/useImportFlow';
 import { hasNothingNew, type FavoritesMode, type ZipValidationError } from '../../domain/importJob';
 import { ImportFrame } from '../components/ImportFrame';
@@ -38,7 +38,7 @@ export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } =
 
   const goTo = (path: '/(tabs)' | '/(tabs)/together') => {
     void flow.reset();
-    router.navigate(path);
+    nav.navigate(path);
   };
 
   // Falha (rede ou job FAILED)
@@ -49,7 +49,7 @@ export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } =
         footer={
           <>
             <Button label={strings.common.retry} onPress={() => void flow.reset()} />
-            <Button label={t.back} variant="ghost" onPress={() => router.back()} />
+            <Button label={t.back} variant="ghost" onPress={() => nav.back()} />
           </>
         }
       >
@@ -66,7 +66,7 @@ export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } =
   if (flow.step === 'uploading' || (flow.step === 'job' && (!job || job.status === 'PARSING' || job.status === 'APPLYING'))) {
     const label = flow.step === 'uploading' ? t.uploading : job?.status === 'APPLYING' ? t.applying : t.parsing(job?.totalItemsRead ?? 0);
     return (
-      <ImportFrame centered footer={onboarding ? undefined : <Button label={t.keepUsing} variant="secondary" onPress={() => router.back()} />}>
+      <ImportFrame centered footer={onboarding ? undefined : <Button label={t.keepUsing} variant="secondary" onPress={() => nav.back()} />}>
         <SpinningReel />
         <Text variant="h2" style={styles.textCenter} accessibilityLiveRegion="polite">
           {label}
@@ -90,7 +90,7 @@ export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } =
             onboarding ? (
               <Button label={strings.onboarding.continue} loading={onboarding.finishing} onPress={() => onboarding.onDone(flow.reset)} />
             ) : (
-              <Button label={t.ok} onPress={() => void flow.reset().then(() => router.back())} />
+              <Button label={t.ok} onPress={() => void flow.reset().then(() => nav.back())} />
             )
           ) : (
             <>
