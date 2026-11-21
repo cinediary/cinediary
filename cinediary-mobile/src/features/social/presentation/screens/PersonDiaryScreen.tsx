@@ -4,9 +4,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { diaryRows, EntryRow } from '@/features/diary/presentation/components/DiaryTimeline';
 import { strings } from '@/shared/i18n';
-import { semantic, space, touch } from '@/shared/theme';
+import { semantic, space } from '@/shared/theme';
 import { ErrorState, SkeletonRows, Text } from '@/shared/ui';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { usePersonDiary, usePublicProfile } from '../../application/socialQueries';
 import { openPersonEntry } from '../navigation';
 
@@ -18,6 +18,7 @@ export function PersonDiaryScreen() {
   const s = strings.social;
   const { username = '' } = useLocalSearchParams<{ username: string }>();
   const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   const profile = usePublicProfile(username);
   const diary = usePersonDiary(username, !!profile.data?.canSeeContent);
   const entries = diary.data?.pages.flat() ?? [];
@@ -65,7 +66,7 @@ export function PersonDiaryScreen() {
           if (diary.hasNextPage && !diary.isFetchingNextPage) void diary.fetchNextPage();
         }}
         onEndReachedThreshold={0.5}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + space.sm + touch.minTarget }]}
+        contentContainerStyle={[styles.content, { paddingTop: backInset }]}
         showsVerticalScrollIndicator={false}
       />
       <FloatingBackButton />

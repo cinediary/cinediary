@@ -3,9 +3,9 @@ import { Keyboard, ScrollView, StyleSheet, TextInput, View, type ScrollViewInsta
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { semantic, space, touch } from '@/shared/theme';
+import { semantic, space } from '@/shared/theme';
 import { Text, Title, type TitleParts } from '@/shared/ui';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 
 /** Folga abaixo do campo (dica ou erro dele) ao trazê-lo para cima do rodapé. */
 const FIELD_MARGIN = 40;
@@ -28,6 +28,7 @@ export interface AuthFormLayoutProps extends PropsWithChildren {
  */
 export function AuthFormLayout({ title, subtitle, footer, children }: AuthFormLayoutProps) {
   const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   const keyboard = useAnimatedKeyboard();
   const footerStyle = useAnimatedStyle(() => ({
     paddingBottom: Math.max(keyboard.height.value, insets.bottom) + space.md,
@@ -61,7 +62,7 @@ export function AuthFormLayout({ title, subtitle, footer, children }: AuthFormLa
         }}
         scrollEventThrottle={32}
         style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + space.sm + touch.minTarget + space.sm }]}
+        contentContainerStyle={[styles.content, { paddingTop: backInset }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"

@@ -2,9 +2,9 @@ import { FlatList, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { semantic, space, touch } from '@/shared/theme';
+import { semantic, space } from '@/shared/theme';
 import { ErrorState, Skeleton, SkeletonRows, Text, Title } from '@/shared/ui';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { useDiaryEntries } from '../../application/diaryQueries';
 import { diaryRows as toRows, EntryRow } from '../components/DiaryTimeline';
 
@@ -15,6 +15,7 @@ import { diaryRows as toRows, EntryRow } from '../components/DiaryTimeline';
 export function DiaryScreen() {
   const t = strings.diary;
   const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   const diary = useDiaryEntries();
   const entries = diary.data?.pages.flat() ?? [];
 
@@ -24,7 +25,7 @@ export function DiaryScreen() {
         {diary.isError ? (
           <ErrorState onRetry={() => diary.refetch()} />
         ) : (
-          <View style={[styles.content, { paddingTop: insets.top + space.sm + touch.minTarget, gap: space.xl }]}>
+          <View style={[styles.content, { paddingTop: backInset, gap: space.xl }]}>
             <Title parts={t.diaryTitle} />
             <Skeleton width={120} height={12} />
             <SkeletonRows count={7} />
@@ -52,7 +53,7 @@ export function DiaryScreen() {
           )
         }
         ListHeaderComponent={
-          <View style={[styles.header, { paddingTop: insets.top + space.sm + touch.minTarget }]}>
+          <View style={[styles.header, { paddingTop: backInset }]}>
             <Title parts={t.diaryTitle} />
           </View>
         }

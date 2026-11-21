@@ -7,9 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
-import { palette, radius, semantic, space, touch } from '@/shared/theme';
+import { palette, radius, semantic, space } from '@/shared/theme';
 import { ActionSheet, ListRow, Text, Title, useToast } from '@/shared/ui';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { useMe, useUpdateProfile } from '../../application/profileQueries';
 import { useSignOut } from '../../application/usePasswordAuth';
 
@@ -118,6 +118,7 @@ function useSections(openReplyPicker: () => void): SettingSection[] {
 export function SettingsScreen() {
   const a = strings.account;
   const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   const signOut = useSignOut();
   const toast = useToast();
   const me = useMe();
@@ -137,7 +138,7 @@ export function SettingsScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + space.sm + touch.minTarget + space.sm, paddingBottom: insets.bottom + space.xl },
+          { paddingTop: backInset, paddingBottom: insets.bottom + space.xl },
         ]}
         showsVerticalScrollIndicator={false}
       >

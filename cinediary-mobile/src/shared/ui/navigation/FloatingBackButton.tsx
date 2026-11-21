@@ -6,6 +6,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { strings } from '@/shared/i18n';
 import { palette, space, touch } from '@/shared/theme';
 
+/** Distância do voltar até o topo da área segura. */
+const BACK_TOP = space.sm;
+
+/**
+ * Espaço que o voltar flutuante ocupa abaixo da área segura, já com o respiro até o conteúdo. Sem isso cada tela
+ * somava um valor (umas nenhum respiro) e títulos como "Seu diário" ficavam colados no botão.
+ * Use direto num `Screen` (que já desconta a área segura); fora dele, use `useFloatingBackInset`.
+ */
+export const FLOATING_BACK_SPACE = BACK_TOP + touch.minTarget + space.lg;
+
+/** `paddingTop` do conteúdo de uma tela que desenha por baixo da área segura e tem o voltar flutuante. */
+export function useFloatingBackInset() {
+  return useSafeAreaInsets().top + FLOATING_BACK_SPACE;
+}
+
 /**
  * Voltar flutuante, fixo no canto da tela (não rola junto com o conteúdo). Usado nas telas sem
  * cabeçalho nativo (título, pessoa): antes o botão ficava no topo do conteúdo e, depois de rolar
@@ -21,7 +36,7 @@ export function FloatingBackButton() {
       // Sem tela para voltar (ex.: abriu pelo link com o app fechado), vai para o Início.
       onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
       hitSlop={8}
-      style={({ pressed }) => [styles.back, { top: insets.top + space.sm }, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.back, { top: insets.top + BACK_TOP }, pressed && styles.pressed]}
     >
       <CaretLeft size={22} color={palette.ink900} />
     </Pressable>

@@ -4,10 +4,10 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space, touch } from '@/shared/theme';
+import { palette, semantic, space } from '@/shared/theme';
 import { ErrorState, SkeletonRows, Text, useToast } from '@/shared/ui';
 import { usePullToRefresh } from '@/shared/ui/usePullToRefresh';
-import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
+import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { useAnswerRequest, useFollowRequests } from '../../application/socialQueries';
 import { PeopleCard, PeopleEmpty } from '../components/PeopleCard';
 import { PersonRow } from '../components/PersonRow';
@@ -19,6 +19,7 @@ import { PersonRow } from '../components/PersonRow';
 export function FollowRequestsScreen() {
   const s = strings.social;
   const insets = useSafeAreaInsets();
+  const backInset = useFloatingBackInset();
   const toast = useToast();
   const requests = useFollowRequests();
   const answer = useAnswerRequest();
@@ -37,7 +38,7 @@ export function FollowRequestsScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + space.sm + touch.minTarget, paddingBottom: insets.bottom + space.xl },
+          { paddingTop: backInset, paddingBottom: insets.bottom + space.xl },
         ]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={semantic.primary} />}
         showsVerticalScrollIndicator={false}
