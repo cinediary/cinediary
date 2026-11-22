@@ -35,5 +35,6 @@ export * from './Toast';
 export * from './useKeepAboveKeyboard';
 export * from './layout';
 export * from './loading/StarSpinner';
+export * from './OverlaySheet';
 export * from './SwipeRow';
 export * from './TextEditSheet';

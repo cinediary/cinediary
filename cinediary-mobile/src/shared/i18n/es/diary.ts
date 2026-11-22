@@ -51,6 +51,7 @@ export const diary: Strings['diary'] = {
   pickDate: 'Elegir la fecha',
   rewatch: 'Ya la vi antes (volver a ver)',
   writeReview: 'Escribir reseña (opcional)',
+  reviewTitle: 'Tu reseña',
   reviewPlaceholder: '¿Qué te pareció?',
   reviewOverLimit: (max: string) => `Supera el límite de ${max} caracteres: solo puedes borrar.`,
   markEpisodes: 'Marcar episodios',

@@ -24,6 +24,7 @@ export const common = {
   close: 'Fechar',
   back: 'Voltar',
   save: 'Salvar',
+  done: 'Pronto',
   remove: 'Remover',
   seeMore: 'mais',
   seeLess: 'menos',

@@ -1,27 +1,34 @@
-import { useEffect, useState } from 'react';
-import { BackHandler, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import { formatNumber, strings } from '@/shared/i18n';
 import { palette, radius, space, type as typeScale } from '@/shared/theme';
 import { Button } from './Button';
+import { OverlaySheet, OverlaySheetActions } from './OverlaySheet';
 import { Text } from './Text';
 
 /**
- * Folha para editar um texto (ex.: uma resposta), colada no teclado: sobe junto com ele, com os cantos de cima
- * arredondados, um campo grande que cresce com o texto (e rola quando passa de 30% da tela), o contador perto do
- * limite e Cancelar/Salvar.
- * Não é um Modal: fica na própria tela, por cima de tudo, para acompanhar o teclado do mesmo jeito que um campo
- * fixo embaixo (num Modal o Android não acompanha). Renderize por último no container da tela.
+ * Escrever ou editar um texto (uma resposta, a review) num cartão colado no teclado (OverlaySheet): um campo grande
+ * que cresce com o texto até o espaço que sobra acima do teclado (e rola por dentro), o contador e Cancelar/Salvar.
  * Tocar fora não fecha, para não perder o que foi escrito: só "Cancelar" ou o voltar do Android.
- * `onSave` recebe o texto sem espaços nas pontas, e só é chamado se ele mudou.
+ *
+ * - `onSave` recebe o texto sem espaços nas pontas, e só é chamado se ele mudou.
+ * - `limit`: aplica o limite enquanto digita (no lugar do `maxLength` nativo, que no Android corta um texto que já
+ *   passava do limite). Acima do limite o contador fica vermelho, com `overLimitHint`.
+ * - `canSave`: além de "não vazio" (ou vazio, com `allowEmpty`).
+ * - `alwaysShowCount`: o contador fica sempre à vista (ex.: a review), e não só perto do limite.
  */
 export function TextEditSheet({
   title,
   initialText,
   maxLength,
   placeholder,
+  saveLabel = strings.common.save,
+  allowEmpty = false,
+  limit,
+  canSave,
+  overLimitHint,
+  alwaysShowCount = false,
   onSave,
   onClose,
 }: {
@@ -29,24 +36,19 @@ export function TextEditSheet({
   initialText: string;
   maxLength: number;
   placeholder?: string;
+  saveLabel?: string;
+  allowEmpty?: boolean;
+  limit?: (next: string, previous: string) => string;
+  canSave?: (text: string) => boolean;
+  overLimitHint?: string;
+  alwaysShowCount?: boolean;
   onSave: (text: string) => void;
   onClose: () => void;
 }) {
-  const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
-  const keyboard = useAnimatedKeyboard();
   const [text, setText] = useState(initialText);
   const trimmed = text.trim();
-
-  useEffect(() => {
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      onClose();
-      return true;
-    });
-    return () => sub.remove();
-  }, [onClose]);
-
-  const sheet = useAnimatedStyle(() => ({ paddingBottom: Math.max(keyboard.height.value, insets.bottom) + space.md }));
+  const over = text.length > maxLength;
+  const savable = (allowEmpty || trimmed.length > 0) && (canSave?.(text) ?? true);
 
   const save = () => {
     if (trimmed !== initialText.trim()) onSave(trimmed);
@@ -54,70 +56,65 @@ export function TextEditSheet({
   };
 
   return (
-    <View style={StyleSheet.absoluteFill}>
-      <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(180)} style={styles.backdrop}>
-        {/* Bloqueia os toques na tela por trás, sem fechar. */}
-        <Pressable style={StyleSheet.absoluteFill} accessible={false} onPress={() => {}} />
-      </Animated.View>
-      <Animated.View entering={SlideInDown.duration(260)} exiting={SlideOutDown.duration(200)} style={[styles.sheet, sheet]} accessibilityViewIsModal>
-        <Text variant="h3" accessibilityRole="header">
-          {title}
-        </Text>
-        <TextInput
-          style={[styles.input, { maxHeight: Math.round(height * 0.3) }]}
-          value={text}
-          onChangeText={setText}
-          accessibilityLabel={title}
-          placeholder={placeholder}
-          placeholderTextColor={palette.ink500}
-          maxLength={maxLength}
-          multiline
-          autoFocus
-          textAlignVertical="top"
-        />
-        {/* O contador só aparece perto do limite. */}
-        {text.length >= Math.round(maxLength * 0.9) ? (
-          <Text variant="caption" tone="muted" style={styles.count}>
-            {`${formatNumber(text.length)} / ${formatNumber(maxLength)}`}
-          </Text>
-        ) : null}
-        <View style={styles.actions}>
+    <OverlaySheet
+      title={title}
+      onClose={onClose}
+      // O campo encolhe até caber e rola por dentro; o contador fica fixo acima dos botões, sempre à vista.
+      scroll={false}
+      accessory={
+        // Sem `alwaysShowCount`, o contador só aparece perto do limite.
+        alwaysShowCount || text.length >= Math.round(maxLength * 0.9) ? (
+          <View style={styles.count}>
+            <Text variant="caption" tone={over ? 'danger' : 'muted'} style={styles.number}>
+              {`${formatNumber(text.length)} / ${formatNumber(maxLength)}`}
+            </Text>
+            {over && overLimitHint ? (
+              <Text variant="caption" tone="danger">
+                {overLimitHint}
+              </Text>
+            ) : null}
+          </View>
+        ) : null
+      }
+      footer={
+        <OverlaySheetActions>
           <View style={styles.flex}>
             <Button label={strings.common.cancel} variant="secondary" onPress={onClose} fullWidth />
           </View>
           <View style={styles.flex}>
-            <Button label={strings.common.save} onPress={save} disabled={trimmed.length === 0} fullWidth />
+            <Button label={saveLabel} onPress={save} disabled={!savable} fullWidth />
           </View>
-        </View>
-      </Animated.View>
-    </View>
+        </OverlaySheetActions>
+      }
+    >
+      <TextInput
+        style={styles.input}
+        value={text}
+        onChangeText={(next) => setText(limit ? limit(next, text) : next)}
+        accessibilityLabel={title}
+        placeholder={placeholder}
+        placeholderTextColor={palette.ink500}
+        maxLength={limit ? undefined : maxLength}
+        multiline
+        autoFocus
+        textAlignVertical="top"
+      />
+    </OverlaySheet>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(42,33,28,0.4)' },
-  sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    gap: space.md,
-    paddingTop: space.lg,
-    paddingHorizontal: space.screenX,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    borderCurve: 'continuous',
-    backgroundColor: palette.surface,
-  },
+  // Encolhe até caber acima do teclado (o cartão limita a altura) e rola por dentro quando o texto passa disso.
   input: {
     ...typeScale.body,
+    flexShrink: 1,
     minHeight: 120,
     padding: space.md,
     borderRadius: radius.md,
     backgroundColor: palette.surfaceSunken,
     color: palette.ink900,
   },
-  count: { alignSelf: 'flex-end', fontVariant: ['tabular-nums'] },
-  actions: { flexDirection: 'row', gap: space.sm },
+  count: { alignItems: 'flex-end', gap: space.xs },
+  number: { fontVariant: ['tabular-nums'] },
 });

@@ -1,19 +1,29 @@
 import { ArrowCounterClockwise, BookmarkSimple, Check, EyeSlash, Heart, PencilSimple, UsersThree } from 'phosphor-react-native';
-import { useEffect, useRef, useState } from 'react';
-import { Keyboard, ScrollView, StyleSheet, TextInput, View, type ScrollViewInstance } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import type { SeriesStatus, TitleDetail } from '@/features/catalog/domain/title';
 import { SeasonsSkeleton } from '@/features/catalog/presentation/components/Skeletons';
 import { SeriesProgressSection } from '@/features/catalog/presentation/components/SeriesProgressSection';
 import type { Actor } from '@/features/social/domain/social';
-import { CompanionPicker } from '@/features/social/presentation/components/CompanionPicker';
+import { CompanionSheet } from '@/features/social/presentation/components/CompanionSheet';
 import { strings } from '@/shared/i18n';
-import { palette, radius, semantic, space, type as typeScale } from '@/shared/theme';
-import { Button, Chip, IconButton, ListRow, PosterArt, StarRating, Text, useBottomSheet, useToast } from '@/shared/ui';
+import { palette, semantic, space } from '@/shared/theme';
+import {
+  Button,
+  Chip,
+  IconButton,
+  ListRow,
+  PosterArt,
+  StarRating,
+  Text,
+  TextEditSheet,
+  useBottomSheet,
+  useOverlay,
+  useToast,
+} from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useQuickLog } from '../../application/useQuickLog';
 import { REVIEW_MAX, type EntryScope } from '../../domain/diary';
-import { ReviewLength } from './ReviewLength';
 import { WatchedDateField } from './WatchedDateField';
 
 const STATUSES: SeriesStatus[] = ['WATCHING', 'COMPLETED', 'DROPPED'];
@@ -51,18 +61,26 @@ export function QuickLogForm({
   const toast = useToast();
   const sheet = useBottomSheet();
   const { draft, update, cta, isSeries, companions, setCompanions, submit, isSaving } = useQuickLog(title, { undated, scope, date, fromEntry, markedBy });
-  const [showReview, setShowReview] = useState(false);
-  const [showCompanions, setShowCompanions] = useState(false);
   const ct = strings.social.companions;
-  const scrollRef = useRef<ScrollViewInstance>(null);
-  const writing = useRef(false);
-  // Teclado abriu para a review: rola até o fim, onde estão o campo e o texto digitado.
-  useEffect(() => {
-    const sub = Keyboard.addListener('keyboardDidShow', () => {
-      if (writing.current) scrollRef.current?.scrollToEnd({ animated: true });
-    });
-    return () => sub.remove();
-  }, []);
+  // "Vi com…" e a review abrem em cartões colados no teclado, por cima do sheet: o formulário fica sempre do
+  // mesmo tamanho (antes os dois abriam dentro dele e empurravam o resto para baixo).
+  const overlay = useOverlay();
+  const openCompanions = () =>
+    overlay.show(<CompanionSheet selected={companions} onDone={setCompanions} onClose={overlay.hide} />);
+  const openReview = () =>
+    overlay.show(
+      <TextEditSheet
+        title={t.reviewTitle}
+        initialText={draft.reviewText}
+        maxLength={REVIEW_MAX}
+        placeholder={t.reviewPlaceholder}
+        saveLabel={strings.common.done}
+        allowEmpty
+        alwaysShowCount
+        onSave={(reviewText) => update({ reviewText })}
+        onClose={overlay.hide}
+      />,
+    );
   // Parte da série (episódio/temporada) ou o filme: mostra data, rever e review.
   const datedLog = !!scope || (!isSeries && draft.watched);
 
@@ -92,16 +110,10 @@ export function QuickLogForm({
   return (
     <>
       <ScrollView
-        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.root}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => {
-          // A review cresce enquanto a pessoa digita: o fim continua à vista.
-          if (writing.current) scrollRef.current?.scrollToEnd({ animated: false });
-        }}
       >
         <View style={styles.header}>
           <PosterArt title={title.title} posterUrl={title.posterUrl} width={72} />
@@ -193,31 +205,16 @@ export function QuickLogForm({
               icon={<UsersThree size={20} color={palette.ink700} />}
               label={ct.row}
               hint={companions.length > 0 ? ct.withNames(ct.names(companions.map((c) => c.displayName || c.username))) : undefined}
-              onPress={() => setShowCompanions((open) => !open)}
+              onPress={openCompanions}
             />
-            {showCompanions ? <CompanionPicker selected={companions} onChange={setCompanions} /> : null}
-            {showReview ? (
-              <TextInput
-                style={styles.review}
-                value={draft.reviewText}
-                onChangeText={(reviewText) => update({ reviewText })}
-                placeholder={t.reviewPlaceholder}
-                placeholderTextColor={palette.ink500}
-                accessibilityLabel={t.writeReview}
-                onFocus={() => {
-                  writing.current = true;
-                }}
-                onBlur={() => {
-                  writing.current = false;
-                }}
-                maxLength={REVIEW_MAX}
-                multiline
-                autoFocus
-              />
-            ) : (
-              <ListRow icon={<PencilSimple size={20} color={palette.ink700} />} label={t.writeReview} onPress={() => setShowReview(true)} />
-            )}
-            {showReview ? <ReviewLength text={draft.reviewText} /> : null}
+            {/* A review numa linha: sem texto, "Escrever review"; com texto, o começo dele. */}
+            <ListRow
+              icon={<PencilSimple size={20} color={palette.ink700} />}
+              label={draft.reviewText.trim() ? t.reviewTitle : t.writeReview}
+              hint={draft.reviewText.trim() || undefined}
+              hintLines={2}
+              onPress={openReview}
+            />
             {/* Só faz sentido com texto: sem review, não há o que esconder. */}
             {draft.reviewText.trim() ? (
               <ListRow
@@ -249,6 +246,7 @@ export function QuickLogForm({
       <View style={styles.footer}>
         <Button label={ctaLabel} loading={isSaving} onPress={onSubmit} />
       </View>
+      {overlay.node}
     </>
   );
 }
@@ -264,15 +262,4 @@ const styles = StyleSheet.create({
   statusRow: { gap: space.sm },
   chips: { flexDirection: 'row', gap: space.sm },
   center: { alignItems: 'center' },
-  review: {
-    ...typeScale.body,
-    minHeight: 96,
-    padding: space.md,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: palette.borderStrong,
-    backgroundColor: palette.surface,
-    color: palette.ink900,
-    textAlignVertical: 'top',
-  },
 });

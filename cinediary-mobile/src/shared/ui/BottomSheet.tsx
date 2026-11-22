@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, type PropsWithChildren } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type PropsWithChildren, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, {
@@ -22,10 +22,29 @@ const RADIUS = 28;
 const CLOSE_DISTANCE = 120;
 const CLOSE_VELOCITY = 900;
 
-const SheetContext = createContext<{ close: () => void } | null>(null);
+interface SheetApi {
+  close: () => void;
+  showOverlay: (node: ReactNode) => void;
+  hideOverlay: () => void;
+}
+
+const SheetContext = createContext<SheetApi | null>(null);
 
 /** Fecha o sheet com a animação de descida (ex.: depois de salvar). Fora de um sheet, null. */
 export const useBottomSheet = () => useContext(SheetContext);
+
+/**
+ * Abrir um cartão por cima de tudo (OverlaySheet, TextEditSheet) a partir de um formulário. Dentro de um
+ * BottomSheet, ele é desenhado por cima do sheet inteiro (o formulário fica dentro do sheet e não alcança a tela
+ * toda); fora dele, renderize `node` por último no formulário.
+ * O cartão é guardado como foi aberto: ele tem o próprio estado e devolve o resultado ao fechar (ex.: `onSave`).
+ */
+export function useOverlay() {
+  const sheet = useBottomSheet();
+  const [local, setLocal] = useState<ReactNode>(null);
+  if (sheet) return { show: sheet.showOverlay, hide: sheet.hideOverlay, node: null };
+  return { show: (node: ReactNode) => setLocal(node), hide: () => setLocal(null), node: local };
+}
 
 /**
  * Sheet de baixo, desenhado pelo app (rota com presentation "transparentModal"), sempre preso na borda
@@ -46,6 +65,9 @@ export function BottomSheet({ children, onClosed = () => nav.back() }: PropsWith
   const keyboard = useAnimatedKeyboard();
   const offset = useSharedValue(height); // 0 = aberto; height = fora da tela
   const closing = useRef(false);
+  const [overlay, setOverlay] = useState<ReactNode>(null);
+  const showOverlay = useCallback((node: ReactNode) => setOverlay(node), []);
+  const hideOverlay = useCallback(() => setOverlay(null), []);
   const maxHeight = height - insets.top - space.lg;
 
   useEffect(() => {
@@ -80,7 +102,7 @@ export function BottomSheet({ children, onClosed = () => nav.back() }: PropsWith
   const backdropStyle = useAnimatedStyle(() => ({ opacity: interpolate(offset.value, [0, height], [1, 0]) }));
 
   return (
-    <SheetContext.Provider value={{ close }}>
+    <SheetContext.Provider value={{ close, showOverlay, hideOverlay }}>
       <View style={StyleSheet.absoluteFill}>
         <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}>
           <Pressable accessibilityRole="button" accessibilityLabel={strings.common.close} style={StyleSheet.absoluteFill} onPress={close} />
@@ -93,6 +115,7 @@ export function BottomSheet({ children, onClosed = () => nav.back() }: PropsWith
           </GestureDetector>
           {children}
         </Animated.View>
+        {overlay}
       </View>
     </SheetContext.Provider>
   );
