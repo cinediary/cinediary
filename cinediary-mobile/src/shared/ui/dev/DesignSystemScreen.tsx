@@ -27,6 +27,7 @@ import {
   TextEditSheet,
 } from '@/shared/ui';
 import { palette, semantic, space } from '@/shared/theme';
+import { nav } from '../navigation/nav';
 import { OfflineBanner } from '../navigation/OfflineBanner';
 import { AnimatedSplash } from '../splash/AnimatedSplash';
 
@@ -54,6 +55,8 @@ export function DesignSystemScreen() {
           value={tab}
           onChange={setTab}
         />
+        {/* O Match tem o próprio Design System (o shared/ não pode importar das features). */}
+        <Button label="Abrir o Design System do Match" variant="secondary" onPress={() => nav.push('/_dev/match')} />
         {tab === 'screens' ? (
           <>
             <SplashSection />

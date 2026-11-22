@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Export, X } from 'phosphor-react-native';
 import { useCallback, useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text as RNText, View, useWindowDimensions } from 'react-native';
 import { GestureDetector, useCompetingGestures, useLongPressGesture, usePanGesture, useTapGesture } from 'react-native-gesture-handler';
@@ -160,7 +161,7 @@ export function StoryPlayer({
         onPress={closeStory}
         style={[styles.close, { top: insets.top + 20 }]}
       >
-        <RNText style={[styles.closeText, { color: colors.fg }]}>✕</RNText>
+        <X size={24} weight="bold" color={colors.fg} />
       </Pressable>
 
       <View style={[styles.footer, { bottom: insets.bottom + 16 }]}>
@@ -170,8 +171,10 @@ export function StoryPlayer({
           disabled={capturing}
           style={[styles.shareBtn, { backgroundColor: colors.fg }]}
         >
+          {/* Ícone de verdade no lugar do "⤴" colado no texto. */}
+          {capturing ? null : <Export size={18} weight="bold" color={colors.bg} />}
           <RNText style={[styles.shareText, { color: colors.bg }]}>
-            {capturing ? strings.match.story.sharing : `⤴ ${strings.match.story.shareThis}`}
+            {capturing ? strings.match.story.sharing : strings.match.story.shareThis}
           </RNText>
         </Pressable>
       </View>
@@ -190,8 +193,7 @@ const styles = StyleSheet.create({
   slide: { flex: 1, justifyContent: 'center', paddingTop: 120, paddingBottom: 130, paddingHorizontal: 30 },
   bars: { position: 'absolute', left: 14, right: 14 },
   close: { position: 'absolute', right: 16, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  closeText: { fontSize: 22, fontFamily: 'Nunito_800ExtraBold' },
   footer: { position: 'absolute', left: 20, right: 20, flexDirection: 'row', gap: 10 },
-  shareBtn: { flex: 1, height: 48, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  shareBtn: { flex: 1, height: 48, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   shareText: { fontFamily: 'Nunito_800ExtraBold', fontSize: 16 },
 });
