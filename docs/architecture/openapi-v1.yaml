@@ -2027,6 +2027,7 @@ components:
         reviewText:
           type: string
           nullable: true
+          maxLength: 1200
         seasonNumber:
           type: integer
           nullable: true
@@ -2060,6 +2061,9 @@ components:
         reviewText:
           type: string
           nullable: true
+          description: >-
+            Até 1200 caracteres. Uma review já salva maior que isso (importada do Letterboxd ou de antes do
+            limite) pode ser reenviada sem mudança; se o texto mudar, precisa caber no limite.
         containsSpoilers:
           type: boolean
 

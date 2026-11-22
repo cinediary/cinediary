@@ -12,7 +12,8 @@ import { palette, radius, semantic, space, type as typeScale } from '@/shared/th
 import { Button, Chip, IconButton, ListRow, PosterArt, StarRating, Text, useBottomSheet, useToast } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useQuickLog } from '../../application/useQuickLog';
-import type { EntryScope } from '../../domain/diary';
+import { REVIEW_MAX, type EntryScope } from '../../domain/diary';
+import { ReviewLength } from './ReviewLength';
 import { WatchedDateField } from './WatchedDateField';
 
 const STATUSES: SeriesStatus[] = ['WATCHING', 'COMPLETED', 'DROPPED'];
@@ -209,12 +210,14 @@ export function QuickLogForm({
                 onBlur={() => {
                   writing.current = false;
                 }}
+                maxLength={REVIEW_MAX}
                 multiline
                 autoFocus
               />
             ) : (
               <ListRow icon={<PencilSimple size={20} color={palette.ink700} />} label={t.writeReview} onPress={() => setShowReview(true)} />
             )}
+            {showReview ? <ReviewLength text={draft.reviewText} /> : null}
             {/* Só faz sentido com texto: sem review, não há o que esconder. */}
             {draft.reviewText.trim() ? (
               <ListRow

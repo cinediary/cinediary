@@ -23,6 +23,8 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 class LetterboxdImportIntegrationTest extends IntegrationTest
 {
+    private static final String LONG_REVIEW = "Obra-prima do começo ao fim. ".repeat(60).strip();
+
     private static final Map<String, String> EXPORT = Map.of(
             "letterboxd-cinefilo-2026/watched.csv", """
                     Date,Name,Year,Letterboxd URI
@@ -135,10 +137,11 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
                         Date,Name,Year,Letterboxd URI,Rating,Rewatch,Tags,Watched Date
                         2024-01-05,Parasite,2019,https://boxd.it/b1,5,,,2024-01-04
                         """,
+                // Maior que o limite do app (1.200): a importação traz a review inteira, sem cortar nem recusar.
                 "reviews.csv", """
                         Date,Name,Year,Letterboxd URI,Rating,Rewatch,Review,Tags,Watched Date
-                        2024-01-05,Parasite,2019,https://boxd.it/b1,5,,"Obra-prima",,2024-01-04
-                        """);
+                        2024-01-05,Parasite,2019,https://boxd.it/b1,5,,"%s",,2024-01-04
+                        """.formatted(LONG_REVIEW));
 
         String jobId = upload(me, zip(export));
         awaitStatus(me, jobId, "AWAITING_CONFIRMATION");
@@ -157,7 +160,7 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
                 .andExpect(jsonPath("$.favorites[2].tmdbId").value(5255));
         assertThat(jdbc.sql("""
                         SELECT d.review_text FROM diary_entries d JOIN users u ON u.id = d.user_id
-                         WHERE u.clerk_id = ?""").param(clerkId).query(String.class).single()).isEqualTo("Obra-prima");
+                         WHERE u.clerk_id = ?""").param(clerkId).query(String.class).single()).isEqualTo(LONG_REVIEW);
         assertThat(count("""
                 SELECT COUNT(*) FROM user_title_states s JOIN users u ON u.id = s.user_id JOIN catalog_titles t ON t.id = s.title_id
                  WHERE u.clerk_id = ? AND t.tmdb_id = 500104 AND s.watched""", clerkId)).isEqualTo(1);

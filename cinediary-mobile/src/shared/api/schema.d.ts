@@ -3311,6 +3311,7 @@ export interface components {
             rating?: number | null;
             liked?: boolean;
             isRewatch?: boolean;
+            /** @description Até 1200 caracteres. Uma review já salva maior que isso (importada do Letterboxd ou de antes do limite) pode ser reenviada sem mudança; se o texto mudar, precisa caber no limite. */
             reviewText?: string | null;
             containsSpoilers?: boolean;
         };

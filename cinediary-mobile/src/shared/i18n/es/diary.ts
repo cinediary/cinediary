@@ -52,6 +52,7 @@ export const diary: Strings['diary'] = {
   rewatch: 'Ya la vi antes (volver a ver)',
   writeReview: 'Escribir reseña (opcional)',
   reviewPlaceholder: '¿Qué te pareció?',
+  reviewOverLimit: (max: string) => `Supera el límite de ${max} caracteres: solo puedes borrar.`,
   markEpisodes: 'Marcar episodios',
   ctaLog: 'Registrar',
   // Registro del diario
