@@ -50,6 +50,7 @@ export const diary: Strings['diary'] = {
   pickDate: 'Pick the date',
   rewatch: "I've seen it before (rewatch)",
   writeReview: 'Write a review (optional)',
+  reviewTitle: 'Your review',
   reviewPlaceholder: 'What did you think?',
   reviewOverLimit: (max: string) => `Over the ${max}-character limit: you can only delete.`,
   markEpisodes: 'Mark episodes',

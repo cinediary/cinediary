@@ -1,24 +1,36 @@
-import { ArrowCounterClockwise, ChatCircle, EyeSlash, Heart, UsersThree } from 'phosphor-react-native';
-import { useEffect, useRef, useState } from 'react';
-import { Keyboard, ScrollView, StyleSheet, TextInput, View, type ScrollViewInstance } from 'react-native';
+import { ArrowCounterClockwise, ChatCircle, EyeSlash, Heart, PencilSimple, UsersThree } from 'phosphor-react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { saveEntryCompanions, useEntryCompanions } from '@/features/social/application/companionQueries';
 import type { Actor } from '@/features/social/domain/social';
-import { CompanionPicker } from '@/features/social/presentation/components/CompanionPicker';
-import { strings, toIsoDate } from '@/shared/i18n';
-import { palette, radius, semantic, space, type as typeScale } from '@/shared/theme';
-import { ActionSheet, Button, IconButton, ListRow, PosterArt, StarRating, Text, useBottomSheet, useToast } from '@/shared/ui';
+import { CompanionSheet } from '@/features/social/presentation/components/CompanionSheet';
+import { formatNumber, strings, toIsoDate } from '@/shared/i18n';
+import { palette, semantic, space } from '@/shared/theme';
+import {
+  ActionSheet,
+  Button,
+  IconButton,
+  ListRow,
+  PosterArt,
+  StarRating,
+  Text,
+  TextEditSheet,
+  useBottomSheet,
+  useOverlay,
+  useToast,
+} from '@/shared/ui';
 import { useUpdateEntry } from '../../application/diaryQueries';
 import {
   limitReview,
   REPLY_POLICIES,
+  REVIEW_MAX,
   reviewBlocksSave,
   type DiaryEntry,
   type EntryChanges,
   type EntryReplyChoice,
 } from '../../domain/diary';
-import { ReviewLength } from './ReviewLength';
 import { WatchedDateField } from './WatchedDateField';
 import { scopeLabel } from '../scopeLabel';
 
@@ -56,17 +68,30 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
   const [picked, setPicked] = useState<Actor[] | null>(null);
   const companions: Actor[] = picked ?? marked.data?.companions ?? [];
   const companionsReady = marked.isSuccess;
-  const [showCompanions, setShowCompanions] = useState(false);
   const hasReview = !!draft.reviewText?.trim();
 
-  const scrollRef = useRef<ScrollViewInstance>(null);
-  const writing = useRef(false);
-  useEffect(() => {
-    const sub = Keyboard.addListener('keyboardDidShow', () => {
-      if (writing.current) scrollRef.current?.scrollToEnd({ animated: true });
-    });
-    return () => sub.remove();
-  }, []);
+  // "Vi com…" e a review abrem em cartões colados no teclado, por cima do sheet (como no registro rápido).
+  const overlay = useOverlay();
+  const openCompanions = () => overlay.show(<CompanionSheet selected={companions} onDone={setPicked} onClose={overlay.hide} />);
+  const openReview = () =>
+    overlay.show(
+      <TextEditSheet
+        title={t.reviewTitle}
+        initialText={draft.reviewText ?? ''}
+        maxLength={REVIEW_MAX}
+        placeholder={t.reviewPlaceholder}
+        saveLabel={strings.common.done}
+        allowEmpty
+        alwaysShowCount
+        // Review importada maior que o limite: aparece inteira e só dá para apagar até caber (sem maxLength
+        // nativo, que no Android a cortaria ao abrir). "Pronto" só libera quando cabe ou continua igual.
+        limit={limitReview}
+        canSave={(text) => !reviewBlocksSave(text, entry.reviewText)}
+        overLimitHint={t.reviewOverLimit(formatNumber(REVIEW_MAX))}
+        onSave={(reviewText) => set({ reviewText })}
+        onClose={overlay.hide}
+      />,
+    );
 
   const onSave = async () => {
     try {
@@ -82,17 +107,7 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
 
   return (
     <>
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scroll}
-        contentContainerStyle={styles.root}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => {
-          if (writing.current) scrollRef.current?.scrollToEnd({ animated: false });
-        }}
-      >
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.root} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <PosterArt title={entry.title.title} posterUrl={entry.title.posterUrl} width={56} />
           <View style={styles.flex}>
@@ -133,26 +148,17 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
           icon={<UsersThree size={20} color={palette.ink700} />}
           label={ct.row}
           hint={companions.length > 0 ? ct.withNames(ct.names(companions.map((c) => c.displayName || c.username))) : undefined}
-          onPress={companionsReady ? () => setShowCompanions((open) => !open) : undefined}
+          // Só abre depois de carregar quem já está marcado (ver `companionsReady`).
+          onPress={companionsReady ? openCompanions : undefined}
         />
-        {showCompanions && companionsReady ? <CompanionPicker selected={companions} onChange={setPicked} /> : null}
-        <TextInput
-          style={styles.review}
-          value={draft.reviewText ?? ''}
-          // Sem maxLength: no Android ele cortaria na hora uma review importada maior que o limite. O limite é aplicado aqui.
-          onChangeText={(reviewText) => set({ reviewText: limitReview(reviewText, draft.reviewText ?? '') })}
-          placeholder={t.reviewPlaceholder}
-          placeholderTextColor={palette.ink500}
-          accessibilityLabel={t.writeReview}
-          onFocus={() => {
-            writing.current = true;
-          }}
-          onBlur={() => {
-            writing.current = false;
-          }}
-          multiline
+        {/* A review numa linha: sem texto, "Escrever review"; com texto, o começo dele. */}
+        <ListRow
+          icon={<PencilSimple size={20} color={palette.ink700} />}
+          label={hasReview ? t.reviewTitle : t.writeReview}
+          hint={draft.reviewText?.trim() || undefined}
+          hintLines={2}
+          onPress={openReview}
         />
-        <ReviewLength text={draft.reviewText ?? ''} />
         {hasReview ? (
           <ListRow
             icon={<EyeSlash size={20} color={palette.ink700} />}
@@ -189,6 +195,7 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
           onPress={onSave}
         />
       </View>
+      {overlay.node}
     </>
   );
 }
@@ -200,15 +207,4 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', gap: space.md, alignItems: 'center' },
   flex: { flex: 1, gap: 2 },
   center: { alignItems: 'center' },
-  review: {
-    ...typeScale.body,
-    minHeight: 120,
-    padding: space.md,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: palette.borderStrong,
-    backgroundColor: palette.surface,
-    color: palette.ink900,
-    textAlignVertical: 'top',
-  },
 });
