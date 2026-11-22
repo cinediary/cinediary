@@ -4,6 +4,7 @@ import com.cinediary.api.modules.social.application.EntryInteractionsUseCase;
 import com.cinediary.api.modules.social.presentation.dto.CreateCommentRequest;
 import com.cinediary.api.modules.social.presentation.dto.EntryCommentResponse;
 import com.cinediary.api.modules.social.presentation.dto.EntryInteractionsResponse;
+import com.cinediary.api.modules.social.presentation.dto.UpdateCommentRequest;
 import com.cinediary.api.shared.domain.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -65,6 +67,14 @@ public class EntryInteractionsController
     public EntryCommentResponse comment(CurrentUser user, @PathVariable UUID entryId, @Valid @RequestBody CreateCommentRequest request)
     {
         return EntryCommentResponse.from(interactions.comment(entryId, user.id(), request.text()));
+    }
+
+    @PatchMapping("/comments/{commentId}")
+    @Operation(summary = "Editar uma resposta (só quem escreveu)")
+    public EntryCommentResponse editComment(CurrentUser user, @PathVariable UUID entryId, @PathVariable UUID commentId,
+                                            @Valid @RequestBody UpdateCommentRequest request)
+    {
+        return EntryCommentResponse.from(interactions.editComment(entryId, commentId, user.id(), request.text()));
     }
 
     @DeleteMapping("/comments/{commentId}")

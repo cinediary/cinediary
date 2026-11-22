@@ -1,15 +1,13 @@
-import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { ChatCircle, Copy, EyeSlash, Heart, InstagramLogo, LockSimple, PaperPlaneRight, Trash } from 'phosphor-react-native';
+import { ChatCircle, EyeSlash, Heart, InstagramLogo, LockSimple, PaperPlaneRight, PencilSimple, Trash } from 'phosphor-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings, timeAgo } from '@/shared/i18n';
 import { fonts, palette, radius, semantic, space, touch, type as typeScale } from '@/shared/theme';
-import { ActionSheet, Avatar, SkeletonRows, Text, useToast } from '@/shared/ui';
+import { Avatar, SkeletonRows, SwipeRow, Text, useToast } from '@/shared/ui';
 import {
   useAddReply,
   useDeleteReply,
@@ -95,7 +93,20 @@ export function EntryActionBar({
  * As respostas, mais antigas primeiro. `hidden`: a review tem spoiler escondido para quem vê, então as
  * respostas também ficam fechadas até tocar (elas costumam comentar o que a review conta).
  */
-export function ReplyList({ entryId, meId, hidden, onReveal }: { entryId: string; meId?: string; hidden: boolean; onReveal: () => void }) {
+export function ReplyList({
+  entryId,
+  meId,
+  hidden,
+  onReveal,
+  onEdit,
+}: {
+  entryId: string;
+  meId?: string;
+  hidden: boolean;
+  onReveal: () => void;
+  /** Editar no arrastar: a tela abre a folha de edição (ReplyEditSheet) por cima de tudo. */
+  onEdit: (comment: EntryComment) => void;
+}) {
   const s = strings.social;
   const comments = useEntryComments(entryId);
 
@@ -118,7 +129,7 @@ export function ReplyList({ entryId, meId, hidden, onReveal }: { entryId: string
       ) : (
         <View style={styles.replyList}>
           {comments.data!.map((c) => (
-            <ReplyItem key={c.id} entryId={entryId} comment={c} meId={meId} />
+            <ReplyItem key={c.id} entryId={entryId} comment={c} meId={meId} onEdit={onEdit} />
           ))}
         </View>
       )}
@@ -126,98 +137,69 @@ export function ReplyList({ entryId, meId, hidden, onReveal }: { entryId: string
   );
 }
 
-const SWIPE_WIDTH = 92;
-
 /**
- * Uma resposta. Arrastar para a esquerda mostra "Apagar" (só em quem pode: quem escreveu ou o dono do
- * registro). Segurar vibra e abre o menu do app (Copiar texto, Apagar). Tocar abre o perfil de quem escreveu.
+ * Uma resposta. As ações ficam todas no arrastar para a esquerda (SwipeRow):
+ * - sua: Editar e Apagar;
+ * - de outra pessoa no seu registro: Apagar;
+ * - de outra pessoa no registro de outra pessoa: não arrasta.
+ * Apagar pede confirmação; Editar abre a folha de edição colada no teclado. O segurar (menu com Copiar e Apagar)
+ * saiu: o texto é selecionável, e segurar abre a seleção do sistema, com Copiar. Tocar abre o perfil de quem escreveu.
  */
-function ReplyItem({ entryId, comment: c, meId }: { entryId: string; comment: EntryComment; meId?: string }) {
+function ReplyItem({
+  entryId,
+  comment: c,
+  meId,
+  onEdit,
+}: {
+  entryId: string;
+  comment: EntryComment;
+  meId?: string;
+  onEdit: (comment: EntryComment) => void;
+}) {
   const s = strings.social;
   const toast = useToast();
   const remove = useDeleteReply(entryId);
-  const [menuOpen, setMenuOpen] = useState(false);
   const own = c.author.id === meId;
 
-  const del = () => remove.mutate({ comment: c, ownReply: own }, { onError: () => toast(strings.common.genericError) });
-  const copy = () => {
-    void Clipboard.setStringAsync(c.text);
-    toast(s.copied);
-  };
-
-  const body = (
-    <View style={styles.reply}>
-      <Avatar name={c.author.displayName || c.author.username} imageUrl={c.author.avatarUrl} size={34} />
-      <View style={styles.flex}>
-        <View style={styles.replyHead}>
-          <Text variant="bodyStrong" numberOfLines={1} style={styles.shrink}>
-            {c.author.displayName || c.author.username}
-          </Text>
-          <Text variant="caption" tone="muted">
-            {timeAgo(c.createdAt)}
-          </Text>
-        </View>
-        <Text tone="secondary" style={styles.replyText}>
-          {c.text}
-        </Text>
-      </View>
-    </View>
-  );
-
-  // Segurar: vibra, o item "afunda" um pouco e o menu do app abre. Antes era o menu de contexto nativo, mas a
-  // "foto" que o iOS tira do item saía torta dentro da linha de arrastar (glitch ao segurar).
-  const content = (
-    <Pressable
-      onPress={() => openProfile(c.author.username, 'link')}
-      onLongPress={() => {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setMenuOpen(true);
-      }}
-      delayLongPress={280}
-      accessibilityHint={s.moreOptions}
-      style={({ pressed }) => pressed && styles.replyPressed}
-    >
-      {body}
-    </Pressable>
-  );
+  const confirmDelete = () =>
+    Alert.alert(s.deleteReplyConfirm, undefined, [
+      { text: strings.common.cancel, style: 'cancel' },
+      {
+        text: s.deleteReply,
+        style: 'destructive',
+        onPress: () => remove.mutate({ comment: c, ownReply: own }, { onError: () => toast(strings.common.genericError) }),
+      },
+    ]);
 
   return (
-    <>
-      <Swipeable
-        enabled={c.canDelete}
-        friction={1.6}
-        rightThreshold={SWIPE_WIDTH / 2}
-        overshootRight={false}
-        renderRightActions={(_progress, _translation, methods) => (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={s.deleteReply}
-            onPress={() => {
-              methods.close();
-              del();
-            }}
-            style={styles.swipeDelete}
-          >
-            <Trash size={20} color={palette.surface} weight="bold" />
-            <Text variant="caption" style={styles.swipeText}>
-              {strings.common.remove}
+    <SwipeRow
+      actions={[
+        ...(c.canEdit ? [{ key: 'edit', label: s.editShort, Icon: PencilSimple, onPress: () => onEdit(c) }] : []),
+        ...(c.canDelete ? [{ key: 'delete', label: s.deleteShort, Icon: Trash, tone: 'danger' as const, onPress: confirmDelete }] : []),
+      ]}
+    >
+      <View style={styles.replyRow}>
+        <Pressable
+          onPress={() => openProfile(c.author.username, 'link')}
+          style={({ pressed }) => [styles.reply, pressed && styles.replyPressed]}
+        >
+          <Avatar name={c.author.displayName || c.author.username} imageUrl={c.author.avatarUrl} size={34} />
+          <View style={styles.flex}>
+            <View style={styles.replyHead}>
+              <Text variant="bodyStrong" numberOfLines={1} style={styles.shrink}>
+                {c.author.displayName || c.author.username}
+              </Text>
+              <Text variant="caption" tone="muted">
+                {c.editedAt ? `${timeAgo(c.createdAt)} · ${s.edited}` : timeAgo(c.createdAt)}
+              </Text>
+            </View>
+            <Text tone="secondary" style={styles.replyText} selectable>
+              {c.text}
             </Text>
-          </Pressable>
-        )}
-      >
-        <View style={styles.replyRow}>{content}</View>
-      </Swipeable>
-      <ActionSheet
-        visible={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        options={[
-          { key: 'copy', label: s.copyReply, icon: <Copy size={20} color={palette.ink900} />, onPress: copy },
-          ...(c.canDelete
-            ? [{ key: 'delete', label: s.deleteReply, destructive: true, icon: <Trash size={20} color={semantic.danger} />, onPress: del }]
-            : []),
-        ]}
-      />
-    </>
+          </View>
+        </Pressable>
+      </View>
+    </SwipeRow>
   );
 }
 
@@ -341,14 +323,6 @@ const styles = StyleSheet.create({
   replyRow: { paddingHorizontal: space.screenX, paddingVertical: space.sm, backgroundColor: semantic.background },
   reply: { flexDirection: 'row', gap: space.md },
   replyPressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-  swipeDelete: {
-    width: SWIPE_WIDTH,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    backgroundColor: semantic.danger,
-  },
-  swipeText: { color: palette.surface, fontFamily: fonts.bodyHeavy },
   closed: { alignItems: 'center', paddingTop: space.md, minHeight: touch.minTarget },
   replyHead: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm },
   replyText: { lineHeight: 22 },

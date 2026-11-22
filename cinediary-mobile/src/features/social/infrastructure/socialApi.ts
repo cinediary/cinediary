@@ -72,7 +72,9 @@ const toComment = (dto: Schemas['EntryCommentResponse']): EntryComment => ({
   },
   text: dto.text,
   createdAt: dto.createdAt,
+  editedAt: dto.editedAt ?? null,
   canDelete: dto.canDelete,
+  canEdit: dto.canEdit,
 });
 
 const toActor = (dto: Schemas['FeedAuthor']): Actor => ({
@@ -156,6 +158,10 @@ export const socialApi = {
   addComment: async (entryId: string, text: string) =>
     toComment(await unwrap(api.POST('/api/v1/entries/{entryId}/comments', { ...entryPath(entryId), body: { text } }))),
 
+  editComment: async (entryId: string, commentId: string, text: string) =>
+    toComment(
+      await unwrap(api.PATCH('/api/v1/entries/{entryId}/comments/{commentId}', { params: { path: { entryId, commentId } }, body: { text } })),
+    ),
   deleteComment: (entryId: string, commentId: string) =>
     unwrapVoid(api.DELETE('/api/v1/entries/{entryId}/comments/{commentId}', { params: { path: { entryId, commentId } } })),
 

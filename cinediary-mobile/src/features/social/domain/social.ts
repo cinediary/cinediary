@@ -63,7 +63,11 @@ export interface EntryComment {
   author: { id: string; username: string; displayName: string; avatarUrl: string | null };
   text: string;
   createdAt: string;
+  /** Quando foi editada; null se nunca foi ("editado" ao lado do tempo). */
+  editedAt: string | null;
   canDelete: boolean;
+  /** Você escreveu a resposta (o dono do registro apaga a dos outros, mas não edita). */
+  canEdit: boolean;
 }
 
 export const REPLY_MAX = 1000;

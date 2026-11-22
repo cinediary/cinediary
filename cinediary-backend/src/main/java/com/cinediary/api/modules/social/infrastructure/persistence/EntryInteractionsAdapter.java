@@ -21,7 +21,8 @@ class EntryInteractionsAdapter implements EntryInteractionsPort
     private static EntryComment map(ResultSet rs, int n) throws SQLException
     {
         return new EntryComment(rs.getObject("id", UUID.class), rs.getObject("entry_id", UUID.class),
-                rs.getObject("user_id", UUID.class), rs.getString("body"), rs.getTimestamp("created_at").toInstant());
+                rs.getObject("user_id", UUID.class), rs.getString("body"), rs.getTimestamp("created_at").toInstant(),
+                rs.getTimestamp("edited_at") == null ? null : rs.getTimestamp("edited_at").toInstant());
     }
 
     @Override
@@ -83,6 +84,14 @@ class EntryInteractionsAdapter implements EntryInteractionsPort
     {
         return jdbc.sql("SELECT * FROM entry_comments WHERE id = :id").param("id", commentId)
                 .query(EntryInteractionsAdapter::map).optional();
+    }
+
+    @Override
+    public EntryComment editComment(UUID commentId, String body)
+    {
+        return jdbc.sql("UPDATE entry_comments SET body = :b, edited_at = NOW() WHERE id = :id RETURNING *")
+                .param("b", body).param("id", commentId)
+                .query(EntryInteractionsAdapter::map).single();
     }
 
     @Override

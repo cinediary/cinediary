@@ -85,7 +85,7 @@ public class EntryInteractionsUseCase
         users.findByIds(list.stream().map(EntryComment::authorId).distinct().toList()).forEach(u -> authors.put(u.id(), u));
         return list.stream()
                 .filter(c -> authors.containsKey(c.authorId())) // conta excluída: a resposta some junto
-                .map(c -> new CommentItem(c, authors.get(c.authorId()), c.canBeDeletedBy(viewerId, owner)))
+                .map(c -> new CommentItem(c, authors.get(c.authorId()), c.canBeDeletedBy(viewerId, owner), c.canBeEditedBy(viewerId)))
                 .toList();
     }
 
@@ -102,10 +102,7 @@ public class EntryInteractionsUseCase
             });
         }
         UUID owner = ctx.ownerId();
-        String body = text == null ? "" : text.strip();
-        if (body.isEmpty() || body.length() > EntryComment.MAX_LENGTH) {
-            throw new DomainValidationException("A resposta precisa ter de 1 a " + EntryComment.MAX_LENGTH + " caracteres");
-        }
+        String body = validBody(text);
         EntryComment saved = interactions.addComment(entryId, viewerId, body);
         notifications.add(owner, viewerId, NotificationKind.ENTRY_REPLIED, entryId, saved.id());
         activity.add(viewerId, ActivityKind.REPLIED_ENTRY, owner, entryId, saved.id());
@@ -113,7 +110,37 @@ public class EntryInteractionsUseCase
             events.publishEvent(new EntryInteractionEvent(EntryInteractionEvent.Kind.COMMENTED, entryId, owner, viewerId, saved.id()));
         }
         UserView author = users.findById(viewerId).orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
-        return new CommentItem(saved, author, true);
+        return new CommentItem(saved, author, true, true);
+    }
+
+    /**
+     * Editar uma resposta: só quem escreveu, com as mesmas regras do texto de quando ela foi escrita. Não depende da
+     * regra de quem pode responder (a resposta já existe) e não gera aviso de novo; o sino mostra o texto novo.
+     */
+    @Transactional
+    public CommentItem editComment(UUID entryId, UUID commentId, UUID viewerId, String text)
+    {
+        UUID owner = visibleOwner(entryId, viewerId);
+        EntryComment c = interactions.findComment(commentId)
+                .filter(x -> x.entryId().equals(entryId))
+                .orElseThrow(() -> new NotFoundException("Resposta não encontrada"));
+        if (!c.canBeEditedBy(viewerId)) {
+            throw new ForbiddenException("Só quem escreveu pode editar a resposta");
+        }
+        String body = validBody(text);
+        // Sem mudança: não marca como editada.
+        EntryComment saved = body.equals(c.body()) ? c : interactions.editComment(commentId, body);
+        UserView author = users.findById(viewerId).orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+        return new CommentItem(saved, author, saved.canBeDeletedBy(viewerId, owner), true);
+    }
+
+    private static String validBody(String text)
+    {
+        String body = text == null ? "" : text.strip();
+        if (body.isEmpty() || body.length() > EntryComment.MAX_LENGTH) {
+            throw new DomainValidationException("A resposta precisa ter de 1 a " + EntryComment.MAX_LENGTH + " caracteres");
+        }
+        return body;
     }
 
     @Transactional

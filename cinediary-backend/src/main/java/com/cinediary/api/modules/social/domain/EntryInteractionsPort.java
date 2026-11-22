@@ -30,6 +30,9 @@ public interface EntryInteractionsPort
 
     Optional<EntryComment> findComment(UUID commentId);
 
+    /** Troca o texto e marca {@code edited_at}. */
+    EntryComment editComment(UUID commentId, String body);
+
     void deleteComment(UUID commentId);
 
     /** Texto das respostas (as que ainda existem), para o sino. */

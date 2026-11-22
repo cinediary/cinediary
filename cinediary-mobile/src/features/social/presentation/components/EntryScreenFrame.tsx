@@ -12,7 +12,9 @@ import { strings } from '@/shared/i18n';
 import { palette, semantic, space, touch } from '@/shared/theme';
 import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
 import { conversationKeys, useEntryInteractions } from '../../application/entryConversation';
+import type { EntryComment } from '../../domain/social';
 import { EntryActionBar, ReplyComposer, ReplyList } from './EntryConversation';
+import { ReplyEditSheet } from './ReplyEditSheet';
 import { WatchedWith } from './WatchedWith';
 
 /**
@@ -45,6 +47,8 @@ export function EntryScreenFrame({
   const me = useMe();
   const hides = useHidesSpoiler(entry);
   const [revealed, setRevealed] = useState(false);
+  // A resposta sendo editada: a folha de edição abre por cima de tudo, colada no teclado.
+  const [editing, setEditing] = useState<EntryComment | null>(null);
   // "Só assistido" (sem review): a tela existe, mas sem curtidas nem respostas. Enquanto não sabe, decide pela
   // review que já está na entrada (não pisca a conversa num registro sem review).
   const interactions = useEntryInteractions(entry.id);
@@ -109,7 +113,13 @@ export function EntryScreenFrame({
           {interactive ? (
             <>
               <EntryActionBar entryId={entry.id} ownEntry={ownEntry} onShare={onShare} />
-              <ReplyList entryId={entry.id} meId={me.data?.id} hidden={hides && !revealed} onReveal={() => setRevealed(true)} />
+              <ReplyList
+                entryId={entry.id}
+                meId={me.data?.id}
+                hidden={hides && !revealed}
+                onReveal={() => setRevealed(true)}
+                onEdit={setEditing}
+              />
             </>
           ) : null}
         </View>
@@ -131,6 +141,8 @@ export function EntryScreenFrame({
         </Animated.View>
       ) : null}
       {more ? <View style={[styles.more, { top: insets.top + space.sm }]}>{more}</View> : null}
+      {/* Por último: cobre a conversa, o voltar e o "⋯". */}
+      {editing ? <ReplyEditSheet entryId={entry.id} comment={editing} onClose={() => setEditing(null)} /> : null}
     </View>
   );
 }

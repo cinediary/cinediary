@@ -118,6 +118,7 @@ export interface AnalyticsEvents {
   entry_liked: { own_entry: boolean; liked: boolean };
   entry_replied: { own_entry: boolean; length: number };
   entry_reply_deleted: { own_reply: boolean };
+  entry_reply_edited: { length: number };
   /** Feed de amigos: abriu um registro pela faixa da Início ou pela tela "Ver tudo". */
   feed_item_opened: { from: 'rail' | 'feed'; position: number; has_review: boolean };
   friends_feed_opened: Record<string, never>;
