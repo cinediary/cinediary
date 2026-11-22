@@ -35,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class EntryCompanionsUseCase
 {
-    private static final int FRIENDS_WINDOW = 500;
     private static final int FRIENDS_RESULTS = 20;
 
     private final DiaryModulePort diary;
@@ -77,7 +76,9 @@ public class EntryCompanionsUseCase
         Map<String, UserView> byUsername = new HashMap<>();
         users.findByUsernames(wanted).stream().filter(UserView::onboardingCompleted)
                 .forEach(u -> byUsername.put(u.username().toLowerCase(Locale.ROOT), u));
-        Set<UUID> friends = Set.copyOf(companions.mutualFriends(ownerId, FRIENDS_WINDOW));
+        // Só as pessoas novas precisam ser amigas; uma consulta só, para qualquer número de amigos.
+        Set<UUID> friends = companions.mutualFriendsAmong(ownerId, byUsername.values().stream().map(UserView::id)
+                .filter(id -> !existing.containsKey(id)).toList());
         Set<UUID> wantedIds = new LinkedHashSet<>();
         for (String username : wanted) {
             UserView person = byUsername.get(username);
@@ -180,11 +181,11 @@ public class EntryCompanionsUseCase
     public List<UserView> friends(UUID userId, String query)
     {
         String q = query == null ? "" : query.strip().replaceFirst("^@", "").toLowerCase(Locale.ROOT);
-        return users.findByIds(companions.mutualFriends(userId, FRIENDS_WINDOW)).stream()
-                .filter(u -> q.isEmpty() || u.username().toLowerCase(Locale.ROOT).startsWith(q)
-                        || (u.displayName() != null && u.displayName().toLowerCase(Locale.ROOT).startsWith(q)))
-                .limit(FRIENDS_RESULTS)
-                .toList();
+        List<UUID> ids = companions.searchMutualFriends(userId, q, FRIENDS_RESULTS);
+        Map<UUID, UserView> byId = new HashMap<>();
+        users.findByIds(ids).forEach(u -> byId.put(u.id(), u));
+        // Na ordem da busca (amizades mais recentes primeiro).
+        return ids.stream().map(byId::get).filter(java.util.Objects::nonNull).toList();
     }
 
     /**
