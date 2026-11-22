@@ -127,14 +127,33 @@ class EntryCompanionsAdapter implements EntryCompanionsPort
     }
 
     @Override
-    public List<UUID> mutualFriends(UUID userId, int limit)
+    public Set<UUID> mutualFriendsAmong(UUID userId, Collection<UUID> ids)
     {
+        if (ids.isEmpty()) {
+            return Set.of();
+        }
+        return Set.copyOf(jdbc.sql("""
+                        SELECT a.followee_id FROM follows a
+                          JOIN follows b ON b.follower_id = a.followee_id AND b.followee_id = a.follower_id
+                         WHERE a.follower_id = :u AND a.followee_id IN (:ids)
+                           AND a.status = 'ACCEPTED' AND b.status = 'ACCEPTED'""")
+                .param("u", userId).param("ids", List.copyOf(ids)).query(UUID.class).list());
+    }
+
+    @Override
+    public List<UUID> searchMutualFriends(UUID userId, String prefix, int limit)
+    {
+        // % e _ são curingas do LIKE (e _ é comum no @): escapados, o texto vale só como ele mesmo.
+        String like = prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
         return jdbc.sql("""
                         SELECT a.followee_id FROM follows a
                           JOIN follows b ON b.follower_id = a.followee_id AND b.followee_id = a.follower_id
+                          JOIN users u ON u.id = a.followee_id
                          WHERE a.follower_id = :u AND a.status = 'ACCEPTED' AND b.status = 'ACCEPTED'
+                           AND (lower(u.username) LIKE lower(:like) ESCAPE '\\'
+                                OR lower(u.display_name) LIKE lower(:like) ESCAPE '\\')
                          ORDER BY GREATEST(a.created_at, b.created_at) DESC
                          LIMIT :limit""")
-                .param("u", userId).param("limit", limit).query(UUID.class).list();
+                .param("u", userId).param("like", like).param("limit", limit).query(UUID.class).list();
     }
 }

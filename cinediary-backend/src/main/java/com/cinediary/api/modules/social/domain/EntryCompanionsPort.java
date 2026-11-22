@@ -43,6 +43,12 @@ public interface EntryCompanionsPort
      */
     Set<UUID> whoMarked(UUID companionId, UUID entryId, Collection<UUID> candidates);
 
-    /** Amigos (segue e é seguido, os dois aprovados), mais recentes primeiro, até {@code limit}. */
-    List<UUID> mutualFriends(UUID userId, int limit);
+    /** Dos {@code ids}, quem é amigo de {@code userId} (segue e é seguido, os dois aprovados). Uma consulta só. */
+    Set<UUID> mutualFriendsAmong(UUID userId, Collection<UUID> ids);
+
+    /**
+     * Amigos cujo @ ou nome começa com {@code prefix} (sem diferenciar maiúsculas; vazio = todos), amizades mais
+     * recentes primeiro, até {@code limit}. O filtro é no banco: vale para quem tem qualquer número de amigos.
+     */
+    List<UUID> searchMutualFriends(UUID userId, String prefix, int limit);
 }
