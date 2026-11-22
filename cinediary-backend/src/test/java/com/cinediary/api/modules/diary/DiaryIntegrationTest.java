@@ -216,6 +216,37 @@ class DiaryIntegrationTest extends IntegrationTest
         assertThat(count("SELECT COUNT(*) FROM user_title_states WHERE title_id = ? AND watched", title)).isEqualTo(1);
     }
 
+    @Test
+    void reviewIsLimitedTo1200CharactersButOldLongReviewsStillSave() throws Exception
+    {
+        RequestPostProcessor me = user("user_" + UUID.randomUUID());
+        long title = TestTitles.movie(jdbc, "Review longa", 1, "18:Drama");
+        String create = "{\"titleId\":%d,\"watchedDate\":\"2026-01-10\",\"reviewText\":\"%s\"}";
+
+        // Registrar: 1.200 passa, 1.201 é recusado
+        entry(me, create.formatted(title, "a".repeat(1200))).andExpect(status().isCreated());
+        entry(me, create.formatted(title, "a".repeat(1201)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("A review pode ter até 1200 caracteres"));
+
+        // Uma review antiga maior que o limite (importada do Letterboxd ou de antes dele)
+        String id = com.jayway.jsonpath.JsonPath.read(entry(me, create.formatted(title, "curta")).andReturn().getResponse().getContentAsString(), "$.id");
+        String longReview = "b".repeat(3000);
+        jdbc.sql("UPDATE diary_entries SET review_text = :r WHERE id = :id").param("r", longReview).param("id", UUID.fromString(id)).update();
+        String edit = "{\"watchedDate\":\"2026-01-10\",\"rating\":4,\"reviewText\":\"%s\"}";
+
+        // Editar só a nota, com a review igual, salva
+        update(me, id, edit.formatted(longReview)).andExpect(status().isOk()).andExpect(jsonPath("$.rating").value(4));
+        // Mexer no texto e continuar acima do limite é recusado; encurtar até 1.200 salva
+        update(me, id, edit.formatted("b".repeat(2999))).andExpect(status().isBadRequest());
+        update(me, id, edit.formatted("b".repeat(1200))).andExpect(status().isOk());
+    }
+
+    private ResultActions update(RequestPostProcessor me, String id, String body) throws Exception
+    {
+        return mvc.perform(put("/api/v1/diary/entries/{id}", id).with(me).contentType(MediaType.APPLICATION_JSON).content(body));
+    }
+
     private ResultActions entry(RequestPostProcessor me, String body) throws Exception
     {
         return mvc.perform(post("/api/v1/diary/entries").with(me).contentType(MediaType.APPLICATION_JSON).content(body));

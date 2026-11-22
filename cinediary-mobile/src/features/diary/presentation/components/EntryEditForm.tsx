@@ -10,7 +10,15 @@ import { strings, toIsoDate } from '@/shared/i18n';
 import { palette, radius, semantic, space, type as typeScale } from '@/shared/theme';
 import { ActionSheet, Button, IconButton, ListRow, PosterArt, StarRating, Text, useBottomSheet, useToast } from '@/shared/ui';
 import { useUpdateEntry } from '../../application/diaryQueries';
-import { REPLY_POLICIES, type DiaryEntry, type EntryChanges, type EntryReplyChoice } from '../../domain/diary';
+import {
+  limitReview,
+  REPLY_POLICIES,
+  reviewBlocksSave,
+  type DiaryEntry,
+  type EntryChanges,
+  type EntryReplyChoice,
+} from '../../domain/diary';
+import { ReviewLength } from './ReviewLength';
 import { WatchedDateField } from './WatchedDateField';
 import { scopeLabel } from '../scopeLabel';
 
@@ -131,11 +139,11 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
         <TextInput
           style={styles.review}
           value={draft.reviewText ?? ''}
-          onChangeText={(reviewText) => set({ reviewText })}
+          // Sem maxLength: no Android ele cortaria na hora uma review importada maior que o limite. O limite é aplicado aqui.
+          onChangeText={(reviewText) => set({ reviewText: limitReview(reviewText, draft.reviewText ?? '') })}
           placeholder={t.reviewPlaceholder}
           placeholderTextColor={palette.ink500}
           accessibilityLabel={t.writeReview}
-          maxLength={10_000}
           onFocus={() => {
             writing.current = true;
           }}
@@ -144,6 +152,7 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
           }}
           multiline
         />
+        <ReviewLength text={draft.reviewText ?? ''} />
         {hasReview ? (
           <ListRow
             icon={<EyeSlash size={20} color={palette.ink700} />}
@@ -173,7 +182,12 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
         }))}
       />
       <View style={styles.footer}>
-        <Button label={t.entrySave} loading={update.isPending} onPress={onSave} />
+        <Button
+          label={t.entrySave}
+          loading={update.isPending}
+          disabled={reviewBlocksSave(draft.reviewText ?? '', entry.reviewText)}
+          onPress={onSave}
+        />
       </View>
     </>
   );

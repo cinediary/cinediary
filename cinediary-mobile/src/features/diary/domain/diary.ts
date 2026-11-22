@@ -189,3 +189,22 @@ export function initialDraft(state: TitleSummary['state'], isSeries: boolean, to
 /** Considerado "registro" para o evento title_logged (ADR §2). */
 export const isLoggable = (draft: QuickLogDraft, isSeries: boolean) =>
   (!isSeries && draft.watched) || draft.rating > 0 || (isSeries && draft.seriesStatus === 'COMPLETED');
+
+/**
+ * Limite de uma review escrita no app (o backend recusa acima disso). A importação do Letterboxd traz reviews
+ * inteiras, mesmo maiores: essas aparecem inteiras e continuam salvando enquanto o texto não muda.
+ */
+export const REVIEW_MAX = 1200;
+
+/**
+ * Aplica o limite enquanto a pessoa digita. Dentro do limite, ou apagando, passa. Acima dele não cresce: numa review
+ * que já passava do limite (importada), só dá para apagar até caber; colar um texto grande corta no limite.
+ */
+export function limitReview(next: string, previous: string): string {
+  if (next.length <= REVIEW_MAX || next.length < previous.length) return next;
+  return previous.length >= REVIEW_MAX ? previous : next.slice(0, REVIEW_MAX);
+}
+
+/** Texto acima do limite e diferente do salvo: o backend recusaria, então o app não deixa salvar. */
+export const reviewBlocksSave = (text: string, saved: string | null) =>
+  text.trim().length > REVIEW_MAX && text.trim() !== (saved ?? '').trim();

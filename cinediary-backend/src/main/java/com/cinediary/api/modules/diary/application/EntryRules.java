@@ -8,7 +8,11 @@ import java.time.LocalDate;
 /** Regras de uma entrada do diário, iguais ao registrar e ao editar. */
 final class EntryRules
 {
-    static final int MAX_REVIEW = 10_000;
+    /**
+     * Limite de uma review escrita no app (antes 10.000). A importação do Letterboxd não passa por aqui: reviews
+     * importadas entram inteiras, mesmo maiores.
+     */
+    static final int MAX_REVIEW = 1_200;
 
     private EntryRules()
     {
@@ -33,8 +37,18 @@ final class EntryRules
     /** Review sem espaços nas pontas; vazia vira null. */
     static String review(String reviewText)
     {
+        return review(reviewText, null);
+    }
+
+    /**
+     * Ao editar: {@code current} é a review que já estava salva. Uma review maior que o limite (importada do
+     * Letterboxd ou de antes dele) continua salvando enquanto não muda, para dar para editar a nota ou a data. Se o
+     * texto mudar, ele precisa caber no limite.
+     */
+    static String review(String reviewText, String current)
+    {
         String review = reviewText == null || reviewText.isBlank() ? null : reviewText.strip();
-        if (review != null && review.length() > MAX_REVIEW) {
+        if (review != null && review.length() > MAX_REVIEW && (current == null || !review.equals(current.strip()))) {
             throw new DomainValidationException("A review pode ter até " + MAX_REVIEW + " caracteres");
         }
         return review;

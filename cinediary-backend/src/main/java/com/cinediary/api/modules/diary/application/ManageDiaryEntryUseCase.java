@@ -37,7 +37,7 @@ public class ManageDiaryEntryUseCase
     {
         DiaryEntryModel entry = owned(userId, entryId);
         DiaryEntryModel saved = repository.updateEntry(entry.edited(EntryRules.date(cmd.watchedDate()),
-                EntryRules.rating(cmd.rating()), cmd.liked(), cmd.rewatch(), EntryRules.review(cmd.reviewText()),
+                EntryRules.rating(cmd.rating()), cmd.liked(), cmd.rewatch(), EntryRules.review(cmd.reviewText(), entry.reviewText()),
                 cmd.containsSpoilers(), cmd.replyPolicy()));
         if (!saved.isScoped() && isLatestTitleEntry(userId, saved)) {
             TitleStateModel state = repository.findState(userId, saved.titleId())
