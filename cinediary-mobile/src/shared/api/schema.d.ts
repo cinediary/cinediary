@@ -1211,7 +1211,50 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        patch?: never;
+        /** Editar uma resposta (só quem escreveu) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                    commentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        text: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description A resposta editada */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntryCommentResponse"];
+                    };
+                };
+                /** @description Texto vazio ou maior que 1000 caracteres */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Só quem escreveu pode editar */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         trace?: never;
     };
     "/api/v1/feed": {
@@ -3013,8 +3056,15 @@ export interface components {
             text: string;
             /** Format: date-time */
             createdAt: string;
+            /**
+             * Format: date-time
+             * @description Quando foi editada; null se nunca foi
+             */
+            editedAt?: string | null;
             /** @description Você escreveu ou é o dono da entrada */
             canDelete: boolean;
+            /** @description Você escreveu a resposta (o dono da entrada não edita a dos outros) */
+            canEdit: boolean;
         };
         /**
          * @description SELF: seu perfil. FOLLOWING: você segue. REQUESTED: pediu para seguir (privado). NONE: não segue.

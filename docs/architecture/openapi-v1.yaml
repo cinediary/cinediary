@@ -456,6 +456,29 @@ paths:
               schema: { $ref: '#/components/schemas/EntryCommentResponse' }
 
   /api/v1/entries/{entryId}/comments/{commentId}:
+    patch:
+      tags: [Social]
+      summary: "Editar uma resposta (só quem escreveu)"
+      parameters:
+        - { in: path, name: entryId, required: true, schema: { type: string, format: uuid } }
+        - { in: path, name: commentId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, maxLength: 1000 }
+      responses:
+        '200':
+          description: "A resposta editada"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntryCommentResponse' }
+        '400': { description: "Texto vazio ou maior que 1000 caracteres" }
+        '403': { description: "Só quem escreveu pode editar" }
     delete:
       tags: [Social]
       summary: "Apagar uma resposta (quem escreveu ou o dono da entrada)"
@@ -1480,7 +1503,7 @@ components:
         commentsCount: { type: integer, format: int64 }
     EntryCommentResponse:
       type: object
-      required: [id, author, text, createdAt, canDelete]
+      required: [id, author, text, createdAt, canDelete, canEdit]
       properties:
         id: { type: string, format: uuid }
         author:
@@ -1493,7 +1516,9 @@ components:
             avatarUrl: { type: string, nullable: true }
         text: { type: string }
         createdAt: { type: string, format: date-time }
+        editedAt: { type: string, format: date-time, nullable: true, description: "Quando foi editada; null se nunca foi" }
         canDelete: { type: boolean, description: "Você escreveu ou é o dono da entrada" }
+        canEdit: { type: boolean, description: "Você escreveu a resposta (o dono da entrada não edita a dos outros)" }
     Relationship:
       type: string
       enum: [SELF, FOLLOWING, REQUESTED, NONE]

@@ -254,4 +254,49 @@ class SocialIntegrationTest extends IntegrationTest
                 .andExpect(jsonPath("$.replyPolicy").value("FOLLOWING"))
                 .andExpect(jsonPath("$.canReply").value(true));
     }
+
+    @Test
+    void onlyTheAuthorEditsAReplyAndItShowsAsEdited() throws Exception
+    {
+        Person ana = person("ana", false);
+        Person bia = person("bia", false);
+        Person davi = person("davi", false);
+        long title = TestTitles.movie(jdbc, "Filme da edição", 10, "18:Drama");
+        String entry = com.jayway.jsonpath.JsonPath.read(mvc.perform(post("/api/v1/diary/entries").with(ana.auth())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"titleId\":%d,\"watchedDate\":\"2026-01-10\",\"reviewText\":\"Que filme\"}".formatted(title)))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.id");
+        String reply = com.jayway.jsonpath.JsonPath.read(mvc.perform(post("/api/v1/entries/{e}/comments", entry).with(bia.auth())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"text\":\"Concrodo\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.editedAt").doesNotExist())
+                .andExpect(jsonPath("$.canEdit").value(true))
+                .andReturn().getResponse().getContentAsString(), "$.id");
+
+        // Quem escreveu edita, e a resposta fica marcada como editada para todo mundo
+        edit(bia, entry, reply, "Concordo demais!").andExpect(status().isOk())
+                .andExpect(jsonPath("$.text").value("Concordo demais!"))
+                .andExpect(jsonPath("$.editedAt").exists());
+        mvc.perform(get("/api/v1/entries/{e}/comments", entry).with(ana.auth()))
+                .andExpect(jsonPath("$[0].text").value("Concordo demais!"))
+                .andExpect(jsonPath("$[0].editedAt").exists())
+                .andExpect(jsonPath("$[0].canEdit").value(false))
+                .andExpect(jsonPath("$[0].canDelete").value(true));
+
+        // O dono do registro apaga, mas não edita; outras pessoas também não
+        edit(ana, entry, reply, "Mudei o que você disse").andExpect(status().isForbidden());
+        edit(davi, entry, reply, "Eu também").andExpect(status().isForbidden());
+
+        // As mesmas regras do texto de quando foi escrita
+        edit(bia, entry, reply, "   ").andExpect(status().isBadRequest());
+        edit(bia, entry, reply, "a".repeat(1001)).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/entries/{e}/comments", entry).with(bia.auth()))
+                .andExpect(jsonPath("$[0].text").value("Concordo demais!"));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions edit(Person p, String entry, String reply, String text) throws Exception
+    {
+        return mvc.perform(patch("/api/v1/entries/{e}/comments/{c}", entry, reply).with(p.auth())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"text\":\"%s\"}".formatted(text)));
+    }
 }
