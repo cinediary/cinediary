@@ -2,9 +2,13 @@ import { router, useNavigation } from 'expo-router';
 import { CommonActions } from 'expo-router/react-navigation';
 import { useCallback } from 'react';
 import { nav } from '@/shared/ui/navigation/nav';
+import type { SlideKind } from '../domain/story';
 
 export const openMatch = (matchId: string) => nav.push({ pathname: '/match/[matchId]', params: { matchId } });
 export const openStory = (matchId: string) => nav.push({ pathname: '/match/[matchId]/story', params: { matchId } });
+/** Prévia de um slide do Story antes de compartilhar nos Stories (#110). */
+export const openSlideShare = (matchId: string, slide: SlideKind) =>
+  nav.push({ pathname: '/match/[matchId]/share', params: { matchId, slide } });
 export const openAddToShared = (matchId: string) => nav.push({ pathname: '/match/[matchId]/add', params: { matchId } });
 /** MA-04 · Entrar num Match pelo código: a mesma tela do link (aceita, "Calculando" e abre o Story). */
 export const openInvite = (code: string) => nav.push({ pathname: '/match/invite/[code]', params: { code } });

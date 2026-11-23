@@ -74,7 +74,12 @@ export interface AnalyticsEvents {
     discovery_mode: boolean;
   };
   match_story_viewed: { match_id: string; compatibility_score: number | null; slides_viewed_count: number };
-  match_story_shared: { match_id: string; slide_index: number; slide_type: StorySlideType };
+  match_story_shared: {
+    match_id: string;
+    slide_index: number;
+    slide_type: StorySlideType;
+    target: 'system_sheet' | 'instagram_stories';
+  };
   /** Tocou num título de uma seção de recomendação (`position` começa em 0; `source`: de onde veio o "Para você"). */
   recommendation_opened: {
     section: RecommendationSection;

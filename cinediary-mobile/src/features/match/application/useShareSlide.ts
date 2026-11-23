@@ -1,46 +1,59 @@
-import * as Sharing from 'expo-sharing';
 import { useState, type ComponentRef, type RefObject } from 'react';
 import type { View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 
 import { analytics } from '@/shared/analytics/analytics';
-import { story as storyTokens } from '@/shared/theme';
 import type { StorySlideType } from '@/shared/analytics/events';
+import { shareToStories, type StoryShareResult } from '@/shared/sharing/storyShare';
+import { story as storyTokens } from '@/shared/theme';
 
 export type SlideRef = RefObject<ComponentRef<typeof View> | null>;
 
-export type ShareResult = 'shared' | 'unavailable' | 'error';
+/** As três camadas do slide na prévia (ver MatchSlideShareScreen). */
+export interface SlideRefs {
+  /** O slide inteiro (cor, conteúdo e marca): a folha do sistema, que não tem sticker. */
+  full: SlideRef;
+  /** Só a cor do slide e a marca: o fundo no Instagram. */
+  background: SlideRef;
+  /** Só o conteúdo, com fundo transparente: o sticker que a pessoa move no Instagram. */
+  sticker: SlideRef;
+}
+
+const capture = (ref: SlideRef) =>
+  captureRef(ref, { format: 'png', quality: 1, width: storyTokens.exportWidth, height: storyTokens.exportHeight, result: 'tmpfile' });
 
 /**
- * Exporta o slide como PNG 9:16 (1080×1920) e abre o compartilhamento nativo.
- * `capturing` fica true durante a captura, para a tela esconder botões e barras.
+ * Compartilhar um slide do Match Story nos Stories, como as entradas (#83): com o Instagram, abre direto o editor
+ * com o fundo e o conteúdo como sticker; sem ele, a imagem inteira na folha do sistema (shared/sharing/storyShare).
+ * As capturas são da prévia visível, em 1080×1920.
  */
 export function useShareSlide(matchId: string) {
-  const [capturing, setCapturing] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
-  async function share(ref: SlideRef, slideIndex: number, slideType: StorySlideType): Promise<ShareResult> {
-    if (!(await Sharing.isAvailableAsync())) return 'unavailable';
-    setCapturing(true);
+  async function share(refs: SlideRefs, slideIndex: number, slideType: StorySlideType): Promise<StoryShareResult['status']> {
+    if (sharing) return 'error';
+    setSharing(true);
     try {
-      // Espera um frame para os botões sumirem antes da captura.
-      await new Promise((r) => requestAnimationFrame(() => r(null)));
-      const uri = await captureRef(ref, {
-        format: 'png',
-        quality: 1,
-        width: storyTokens.exportWidth,
-        height: storyTokens.exportHeight,
-        result: 'tmpfile',
+      const result = await shareToStories({
+        full: () => capture(refs.full),
+        background: () => capture(refs.background),
+        sticker: () => capture(refs.sticker),
       });
-      setCapturing(false);
-      await Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: 'CineDiary' });
-      analytics.track('match_story_shared', { match_id: matchId, slide_index: slideIndex + 1, slide_type: slideType });
-      return 'shared';
+      if (result.status === 'shared') {
+        analytics.track('match_story_shared', {
+          match_id: matchId,
+          slide_index: slideIndex + 1,
+          slide_type: slideType,
+          target: result.target,
+        });
+      }
+      return result.status;
     } catch {
       return 'error';
     } finally {
-      setCapturing(false);
+      setSharing(false);
     }
   }
 
-  return { share, capturing };
+  return { share, sharing };
 }
