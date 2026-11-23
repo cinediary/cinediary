@@ -118,6 +118,7 @@ export function RootNavigator() {
         <Stack.Screen name="match/invite/[code]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Protected guard={__DEV__ && inApp}>
           <Stack.Screen name="_dev/design-system" options={{ headerShown: true, title: 'Design System' }} />
+          <Stack.Screen name="_dev/match" options={{ headerShown: true, title: 'Design System · Match' }} />
         </Stack.Protected>
       </Stack>
 

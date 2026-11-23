@@ -1,3 +1,4 @@
+import { ArrowRight, Check } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 // Botões do Gesture Handler: participam dos gestos nativos do Story, então tocar no botão não conta
@@ -360,6 +361,7 @@ function RecommendationsSlide(props: SlideProps) {
         <Pop step={3} reduceMotion={reduceMotion}>
           {/* As sugestões já entram sozinhas na lista de vocês quando o Match fica ativo (backend). */}
           <View accessible accessibilityRole="text" style={[styles.pill, { backgroundColor: party.butter }]}>
+            <Check size={18} weight="bold" color={party.ink} />
             <StoryText size={16} weight="heavy" color={party.ink}>
               {s.inYourList}
             </StoryText>
@@ -393,6 +395,7 @@ function ClosingSlide({ story, reduceMotion, capturing, onGoToRoom }: SlideProps
             <StoryText size={16} weight="heavy" color={party.cream}>
               {s.goToRoom}
             </StoryText>
+            <ArrowRight size={18} weight="bold" color={party.cream} />
           </Pressable>
         </Pop>
       ) : null}
@@ -464,7 +467,18 @@ const styles = StyleSheet.create({
   column: { flex: 1 },
   recRow: { flexDirection: 'row', gap: 12, alignItems: 'center', marginBottom: 12 },
   flex: { flex: 1 },
-  pill: { marginTop: 10, minHeight: 48, borderRadius: 99, paddingHorizontal: 20, alignSelf: 'flex-start', justifyContent: 'center' },
+  // Ícone e texto lado a lado (antes "✓" e "→" eram caracteres colados no texto).
+  pill: {
+    marginTop: 10,
+    minHeight: 48,
+    borderRadius: 99,
+    paddingHorizontal: 20,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
   pillTall: { minHeight: 52, paddingHorizontal: 22 },
   closingText: { marginTop: 16, marginBottom: 26 },
   brand: { position: 'absolute', left: 30, right: 30, bottom: 40, alignItems: 'center', gap: 2 },
