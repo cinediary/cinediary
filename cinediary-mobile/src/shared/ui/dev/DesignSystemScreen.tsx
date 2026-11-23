@@ -1,4 +1,4 @@
-import { X } from 'phosphor-react-native';
+import { PencilSimple, Trash, X } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
@@ -20,8 +20,14 @@ import {
   type ConnectionErrorVariant,
   type ConnectionProblem,
   StarSpinner,
+  Avatar,
+  MoreMenu,
+  menuIcons,
+  SwipeRow,
+  TextEditSheet,
 } from '@/shared/ui';
 import { palette, semantic, space } from '@/shared/theme';
+import { nav } from '../navigation/nav';
 import { OfflineBanner } from '../navigation/OfflineBanner';
 import { AnimatedSplash } from '../splash/AnimatedSplash';
 
@@ -34,120 +40,202 @@ export function DesignSystemScreen() {
 
   const toggleGenre = (g: string) => setGenres((cur) => (cur.includes(g) ? cur.filter((x) => x !== g) : [...cur, g]));
   const [tab, setTab] = useState<'components' | 'screens'>('components');
+  // Folha de edição: fica fora do Screen (por cima de tudo), como nas telas de verdade.
+  const [editText, setEditText] = useState('Concordo demais! O final é lindo e a trilha também.');
+  const [editing, setEditing] = useState(false);
 
   return (
-    <Screen scroll edges={[]}>
-      <SegmentedControl
-        options={[
-          { value: 'components', label: 'Componentes' },
-          { value: 'screens', label: 'Telas' },
-        ]}
-        value={tab}
-        onChange={setTab}
-      />
-      {tab === 'screens' ? (
-        <>
-          <SplashSection />
-          <TitleLoadingSection />
-          <ErrorScreensTab />
-          <OfflineBannerSection />
-        </>
-      ) : (
-        <>
-          <Section title="Tipografia">
-            <Text variant="display">78%</Text>
-            <Text variant="h1">
-              Seu ano em{' '}
-              <Text variant="h1" italic>
-                filmes
+    <View style={styles.root}>
+      <Screen scroll edges={[]}>
+        <SegmentedControl
+          options={[
+            { value: 'components', label: 'Componentes' },
+            { value: 'screens', label: 'Telas' },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
+        {/* O Match tem o próprio Design System (o shared/ não pode importar das features). */}
+        <Button label="Abrir o Design System do Match" variant="secondary" onPress={() => nav.push('/_dev/match')} />
+        {tab === 'screens' ? (
+          <>
+            <SplashSection />
+            <TitleLoadingSection />
+            <ErrorScreensTab />
+            <OfflineBannerSection />
+          </>
+        ) : (
+          <>
+            <Section title="Tipografia">
+              <Text variant="display">78%</Text>
+              <Text variant="h1">
+                Seu ano em{' '}
+                <Text variant="h1" italic>
+                  filmes
+                </Text>
               </Text>
-            </Text>
-            <Text variant="h2">Duna: Parte Dois</Text>
-            <Text variant="h3">Continue assistindo</Text>
-            <Text>Texto corrido em Nunito 500, 16/24.</Text>
-            <Text variant="caption" tone="muted">
-              2024 · 2h46 · Ficção científica
-            </Text>
-            <Text variant="overline" tone="secondary">
-              Continue assistindo
-            </Text>
-          </Section>
+              <Text variant="h2">Duna: Parte Dois</Text>
+              <Text variant="h3">Continue assistindo</Text>
+              <Text>Texto corrido em Nunito 500, 16/24.</Text>
+              <Text variant="caption" tone="muted">
+                2024 · 2h46 · Ficção científica
+              </Text>
+              <Text variant="overline" tone="secondary">
+                Continue assistindo
+              </Text>
+            </Section>
 
-          <Section title="Cores">
-            <View style={styles.swatches}>
-              {Object.entries(palette).map(([name, hex]) => (
-                <View key={name} style={[styles.swatch, { backgroundColor: hex }]} accessibilityLabel={name} />
-              ))}
+            <Section title="Cores">
+              <View style={styles.swatches}>
+                {Object.entries(palette).map(([name, hex]) => (
+                  <View key={name} style={[styles.swatch, { backgroundColor: hex }]} accessibilityLabel={name} />
+                ))}
+              </View>
+            </Section>
+
+            <Section title="Botões">
+              <Button label="Registrar filme" />
+              <Button label="Secundário" variant="secondary" />
+              <Button label="Ghost" variant="ghost" />
+              <Button label="Excluir registro" variant="danger" />
+              <Button label="Carregando" loading />
+              <Button label="Desabilitado" disabled disabledReason="Preencha usuário, e-mail e senha" />
+            </Section>
+
+            <Section title="Chips">
+              <View style={styles.wrap}>
+                {['Drama', 'Comédia', 'Terror', 'Animação'].map((g) => (
+                  <Chip key={g} label={g} selected={genres.includes(g)} onToggle={() => toggleGenre(g)} />
+                ))}
+              </View>
+            </Section>
+
+            <Section title="Nota e curtida">
+              <StarRating value={rating} onChange={setRating} />
+              <StarRating value={4.5} size="mini" />
+              <LikeButton liked={liked} onToggle={setLiked} />
+            </Section>
+
+            <Section title="Pôsteres">
+              <View style={styles.wrap}>
+                <PosterCard title="Ainda Estou Aqui" year={2024} size="sm" watched rating={4.5} showCaption />
+                <PosterCard title="Bacurau" year={2019} size="sm" liked selected showCaption onPress={() => {}} />
+                <PosterCard title="Central do Brasil" size="sm" showCaption />
+              </View>
+            </Section>
+
+            <Section title="Segmentos, avatares e barras">
+              <SegmentedControl
+                options={[
+                  { value: 'all', label: 'Tudo' },
+                  { value: 'movie', label: 'Filmes' },
+                  { value: 'series', label: 'Séries' },
+                ]}
+                value={segment}
+                onChange={setSegment}
+              />
+              <AvatarPair a={{ name: 'Edu' }} b={{ name: 'Ana' }} />
+              <HorizontalBars
+                data={[
+                  { label: 'Drama', value: 42 },
+                  { label: 'Terror', value: 30 },
+                  { label: 'Comédia', value: 12 },
+                ]}
+              />
+            </Section>
+
+            <Section title="Progresso">
+              <ProgressBar current={23} total={62} unit="ep." />
+              <ProgressBar current={10} total={10} unit="ep." />
+            </Section>
+
+            <Section title="Estado vazio">
+              <EmptyState
+                title={['O que você viu ', 'ontem', '?'] as const}
+                description="Que tal registrar o primeiro filme do seu diário?"
+                actionLabel="Buscar um título"
+                onAction={() => {}}
+              />
+            </Section>
+
+            <ActionsSection editText={editText} onEdit={() => setEditing(true)} />
+          </>
+        )}
+      </Screen>
+      {editing ? (
+        <TextEditSheet
+          title="Editar resposta"
+          initialText={editText}
+          maxLength={1000}
+          placeholder="Escreva uma resposta…"
+          onSave={setEditText}
+          onClose={() => setEditing(false)}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * Ações sobre um item: o arrastar (SwipeRow, usado nas respostas), a folha de edição colada no teclado
+ * (TextEditSheet) e o menu "⋯" nativo (MoreMenu: SwiftUI no iOS, Jetpack Compose no Android; sem o @expo/ui no
+ * binário, o menu do próprio app).
+ */
+function ActionsSection({ editText, onEdit }: { editText: string; onEdit: () => void }) {
+  const [last, setLast] = useState<string | null>(null);
+  return (
+    <>
+      <Section title="Ações ao arrastar (SwipeRow)">
+        <Text variant="caption" tone="muted">
+          Arraste a linha para a esquerda. Editar abre a folha de edição.
+        </Text>
+        <View style={styles.swipeDemo}>
+          <SwipeRow
+            actions={[
+              { key: 'edit', label: 'Editar', Icon: PencilSimple, onPress: onEdit },
+              { key: 'delete', label: 'Apagar', Icon: Trash, tone: 'danger', onPress: () => setLast('Apagar (arrastar)') },
+            ]}
+          >
+            <View style={styles.swipeItem}>
+              <Avatar name="Ana Lima" size={34} />
+              <View style={styles.flex}>
+                <Text variant="bodyStrong">Ana Lima</Text>
+                <Text tone="secondary">{editText}</Text>
+              </View>
             </View>
-          </Section>
+          </SwipeRow>
+        </View>
+      </Section>
 
-          <Section title="Botões">
-            <Button label="Registrar filme" />
-            <Button label="Secundário" variant="secondary" />
-            <Button label="Ghost" variant="ghost" />
-            <Button label="Excluir registro" variant="danger" />
-            <Button label="Carregando" loading />
-            <Button label="Desabilitado" disabled disabledReason="Preencha usuário, e-mail e senha" />
-          </Section>
-
-          <Section title="Chips">
-            <View style={styles.wrap}>
-              {['Drama', 'Comédia', 'Terror', 'Animação'].map((g) => (
-                <Chip key={g} label={g} selected={genres.includes(g)} onToggle={() => toggleGenre(g)} />
-              ))}
-            </View>
-          </Section>
-
-          <Section title="Nota e curtida">
-            <StarRating value={rating} onChange={setRating} />
-            <StarRating value={4.5} size="mini" />
-            <LikeButton liked={liked} onToggle={setLiked} />
-          </Section>
-
-          <Section title="Pôsteres">
-            <View style={styles.wrap}>
-              <PosterCard title="Ainda Estou Aqui" year={2024} size="sm" watched rating={4.5} showCaption />
-              <PosterCard title="Bacurau" year={2019} size="sm" liked selected showCaption onPress={() => {}} />
-              <PosterCard title="Central do Brasil" size="sm" showCaption />
-            </View>
-          </Section>
-
-          <Section title="Segmentos, avatares e barras">
-            <SegmentedControl
-              options={[
-                { value: 'all', label: 'Tudo' },
-                { value: 'movie', label: 'Filmes' },
-                { value: 'series', label: 'Séries' },
-              ]}
-              value={segment}
-              onChange={setSegment}
-            />
-            <AvatarPair a={{ name: 'Edu' }} b={{ name: 'Ana' }} />
-            <HorizontalBars
-              data={[
-                { label: 'Drama', value: 42 },
-                { label: 'Terror', value: 30 },
-                { label: 'Comédia', value: 12 },
-              ]}
-            />
-          </Section>
-
-          <Section title="Progresso">
-            <ProgressBar current={23} total={62} unit="ep." />
-            <ProgressBar current={10} total={10} unit="ep." />
-          </Section>
-
-          <Section title="Estado vazio">
-            <EmptyState
-              title={['O que você viu ', 'ontem', '?'] as const}
-              description="Que tal registrar o primeiro filme do seu diário?"
-              actionLabel="Buscar um título"
-              onAction={() => {}}
-            />
-          </Section>
-        </>
-      )}
-    </Screen>
+      <Section title="Menu ⋯ nativo (MoreMenu)">
+        <View style={styles.menuRow}>
+          <MoreMenu
+            options={[
+              {
+                key: 'edit',
+                label: 'Editar',
+                systemImage: 'pencil',
+                androidIcon: menuIcons.edit,
+                icon: <PencilSimple size={20} color={palette.ink900} />,
+                onPress: () => setLast('Editar (menu)'),
+              },
+              {
+                key: 'delete',
+                label: 'Apagar',
+                destructive: true,
+                systemImage: 'trash',
+                androidIcon: menuIcons.delete,
+                icon: <Trash size={20} color={semantic.danger} />,
+                onPress: () => setLast('Apagar (menu)'),
+              },
+            ]}
+          />
+          <Text variant="caption" tone="muted" style={styles.flex}>
+            {last ? `Tocou em: ${last}` : 'Toque no ⋯ para abrir o menu.'}
+          </Text>
+        </View>
+      </Section>
+    </>
   );
 }
 
@@ -226,7 +314,11 @@ function OfflineBannerSection() {
   const [visible, setVisible] = useState(false);
   return (
     <Section title="Sem internet durante o uso (faixa no topo)">
-      <Button label={visible ? 'Esconder a faixa' : 'Mostrar a faixa'} variant="secondary" onPress={() => setVisible((v) => !v)} />
+      <Button
+        label={visible ? 'Esconder a faixa' : 'Mostrar a faixa'}
+        variant="secondary"
+        onPress={() => setVisible((v) => !v)}
+      />
       <OfflineBanner visible={visible} />
     </Section>
   );
@@ -282,7 +374,12 @@ function ErrorScreensTab() {
 
       <Modal visible={fullscreen} animationType="fade" presentationStyle="fullScreen" onRequestClose={() => setFullscreen(false)}>
         {screen}
-        <Pressable accessibilityRole="button" accessibilityLabel="Fechar" onPress={() => setFullscreen(false)} style={styles.close}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Fechar"
+          onPress={() => setFullscreen(false)}
+          style={styles.close}
+        >
           <X size={20} color={palette.ink900} />
         </Pressable>
       </Modal>
@@ -316,6 +413,18 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
+  flex: { flex: 1 },
+  // A linha vai de ponta a ponta (como as respostas): sai da margem do Screen.
+  swipeDemo: { marginHorizontal: -space.screenX },
+  swipeItem: {
+    flexDirection: 'row',
+    gap: space.md,
+    paddingHorizontal: space.screenX,
+    paddingVertical: space.sm,
+    backgroundColor: semantic.background,
+  },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   section: { gap: space.md, paddingBottom: space.xl, borderBottomWidth: 1, borderBottomColor: palette.border },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },

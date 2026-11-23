@@ -339,4 +339,42 @@ class EntryCompanionsIntegrationTest extends IntegrationTest
                 .andExpect(jsonPath("$.length()").value(1));
         mvc.perform(get("/api/v1/entries/{e}/companions", entry).with(dora.auth())).andExpect(status().isForbidden());
     }
+
+    @Test
+    void anOldFriendCanBeMarkedAndFoundEvenWithManyNewerFriends() throws Exception
+    {
+        Person ana = person("ana", false);
+        Person velho = person("velho", false);
+        friends(ana, velho);
+        // A amizade com o Velho é antiga...
+        jdbc.sql("UPDATE follows SET created_at = NOW() - INTERVAL '2 years' WHERE follower_id IN (:a, :v) AND followee_id IN (:a, :v)")
+                .param("a", UUID.fromString(ana.id())).param("v", UUID.fromString(velho.id())).update();
+        // ...e a Ana tem 501 amigos mais recentes (antes só os 500 mais recentes contavam).
+        String batch = UUID.randomUUID().toString().substring(0, 6);
+        jdbc.sql("""
+                        INSERT INTO users (clerk_id, username, display_name, onboarding_completed)
+                        SELECT 'bulk_' || :b || '_' || g, 'amigo' || :b || '_' || g, 'Amigo ' || g, TRUE
+                          FROM generate_series(1, 501) g""").param("b", batch).update();
+        jdbc.sql("""
+                        INSERT INTO follows (follower_id, followee_id, status)
+                        SELECT :a, u.id, 'ACCEPTED' FROM users u WHERE u.clerk_id LIKE 'bulk_' || :b || '_%'
+                        UNION ALL
+                        SELECT u.id, :a, 'ACCEPTED' FROM users u WHERE u.clerk_id LIKE 'bulk_' || :b || '_%'""")
+                .param("a", UUID.fromString(ana.id())).param("b", batch).update();
+
+        // Dá para marcar o Velho
+        String entry = log(ana, TestTitles.movie(jdbc, "Filme com amigo antigo", 1, "18:Drama"));
+        mark(ana, entry, velho.username()).andExpect(status().isOk());
+
+        // E ele aparece na busca do "Vi com…" (o filtro é no banco, não nos 500 mais recentes)
+        mvc.perform(get("/api/v1/me/friends").param("q", velho.username()).with(ana.auth()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].username").value(velho.username()));
+        mvc.perform(get("/api/v1/me/friends").param("q", "amigo" + batch + "_501").with(ana.auth()))
+                .andExpect(jsonPath("$.length()").value(1));
+        // % e _ valem como texto, não como curinga do LIKE: "amig%" não traz todo mundo
+        mvc.perform(get("/api/v1/me/friends").param("q", "amig%").with(ana.auth()))
+                .andExpect(jsonPath("$.length()").value(0));
+    }
 }

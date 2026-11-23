@@ -1,5 +1,6 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Export, X } from 'phosphor-react-native';
 import { useCallback, useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text as RNText, View, useWindowDimensions } from 'react-native';
 import { GestureDetector, useCompetingGestures, useLongPressGesture, usePanGesture, useTapGesture } from 'react-native-gesture-handler';
@@ -8,15 +9,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
 import { party, story as storyTokens } from '@/shared/theme';
-import { useToast } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
-import { useShareSlide, type SlideRef } from '../../../application/useShareSlide';
 import { useStoryPlayer } from '../../../application/useStoryPlayer';
 import type { MatchStory } from '../../../domain/match';
 import { storySlides } from '../../../domain/story';
-import { useRevealRoom } from '../../navigation';
+import { openSlideShare, useRevealRoom } from '../../navigation';
 import { StoryProgress } from './StoryProgress';
-import { SLIDE_COLORS, StoryBrand, StorySlide } from './StorySlides';
+import { SLIDE_COLORS, StorySlide } from './StorySlides';
 
 /** Fração da largura que conta como "voltar" (o resto avança), como no Instagram. */
 const BACK_ZONE = 0.3;
@@ -51,7 +50,6 @@ export function StoryPlayer({
 
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const toast = useToast();
   const slides = storySlides(story);
   const matchId = story.matchId;
   const revealRoom = useRevealRoom();
@@ -60,8 +58,6 @@ export function StoryPlayer({
     [toRoomOnClose, matchId, revealRoom],
   );
   const player = useStoryPlayer(slides, story.matchId, story.score, closeStory);
-  const { share, capturing } = useShareSlide(story.matchId);
-  const slideRef: SlideRef = useRef(null);
   const kind = player.kind ?? 'OPENING';
   const colors = SLIDE_COLORS[kind];
 
@@ -108,30 +104,27 @@ export function StoryPlayer({
     borderRadius: Math.min(dragY.value / 4, 32),
   }));
 
-  const onShare = async () => {
-    player.pause();
-    const result = await share(slideRef, player.index, kind);
-    if (result === 'unavailable') toast(strings.match.story.shareUnavailable);
-    if (result === 'error') toast(strings.match.story.shareError);
-    player.resume();
-  };
+  // Compartilhar abre a prévia do slide (MatchSlideShareScreen) por cima. Enquanto ela está aberta o Story fica
+  // parado, e volta a andar quando a pessoa volta para ele.
+  const onShare = () => openSlideShare(story.matchId, kind);
+  const { pause, resume } = player;
+  useFocusEffect(
+    useCallback(() => {
+      resume();
+      return () => pause();
+    }, [pause, resume]),
+  );
 
   return (
     <Animated.View style={[styles.root, { backgroundColor: colors.bg }, dragStyle]}>
       <StatusBar style={colors.fg === party.cream ? 'light' : 'dark'} />
       <GestureDetector gesture={gestures}>
         <View style={styles.gestureArea} collapsable={false}>
-          <View
-            ref={slideRef}
-            collapsable={false}
-            accessible={false}
-            style={[styles.canvas, { width: canvasWidth, height: canvasHeight, backgroundColor: colors.bg }]}
-          >
+          <View accessible={false} style={[styles.canvas, { width: canvasWidth, height: canvasHeight, backgroundColor: colors.bg }]}>
             {/* round na key: recomeçar o slide também repete as animações de entrada dele. */}
             <View key={`${player.index}-${player.round}`} style={styles.slide}>
-              <StorySlide kind={kind} story={story} reduceMotion={player.reduceMotion} capturing={capturing} onGoToRoom={goToRoom} />
+              <StorySlide kind={kind} story={story} reduceMotion={player.reduceMotion} capturing={false} onGoToRoom={goToRoom} />
             </View>
-            {capturing ? <StoryBrand color={colors.fg} /> : null}
           </View>
         </View>
       </GestureDetector>
@@ -160,19 +153,14 @@ export function StoryPlayer({
         onPress={closeStory}
         style={[styles.close, { top: insets.top + 20 }]}
       >
-        <RNText style={[styles.closeText, { color: colors.fg }]}>✕</RNText>
+        <X size={24} weight="bold" color={colors.fg} />
       </Pressable>
 
       <View style={[styles.footer, { bottom: insets.bottom + 16 }]}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => void onShare()}
-          disabled={capturing}
-          style={[styles.shareBtn, { backgroundColor: colors.fg }]}
-        >
-          <RNText style={[styles.shareText, { color: colors.bg }]}>
-            {capturing ? strings.match.story.sharing : `⤴ ${strings.match.story.shareThis}`}
-          </RNText>
+        <Pressable accessibilityRole="button" onPress={onShare} style={[styles.shareBtn, { backgroundColor: colors.fg }]}>
+          {/* Ícone de verdade no lugar do "⤴" colado no texto. */}
+          <Export size={18} weight="bold" color={colors.bg} />
+          <RNText style={[styles.shareText, { color: colors.bg }]}>{strings.match.story.shareThis}</RNText>
         </Pressable>
       </View>
     </Animated.View>
@@ -190,8 +178,7 @@ const styles = StyleSheet.create({
   slide: { flex: 1, justifyContent: 'center', paddingTop: 120, paddingBottom: 130, paddingHorizontal: 30 },
   bars: { position: 'absolute', left: 14, right: 14 },
   close: { position: 'absolute', right: 16, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  closeText: { fontSize: 22, fontFamily: 'Nunito_800ExtraBold' },
   footer: { position: 'absolute', left: 20, right: 20, flexDirection: 'row', gap: 10 },
-  shareBtn: { flex: 1, height: 48, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  shareBtn: { flex: 1, height: 48, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   shareText: { fontFamily: 'Nunito_800ExtraBold', fontSize: 16 },
 });

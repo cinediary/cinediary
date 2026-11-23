@@ -69,6 +69,30 @@ export function useAddReply(entryId: string, ownEntry: boolean) {
   });
 }
 
+/** Editar a sua resposta: o texto muda na hora (já com "editado") e volta se o servidor recusar. */
+export function useEditReply(entryId: string) {
+  const key = conversationKeys.comments(entryId);
+  return useMutation({
+    mutationFn: ({ comment, text }: { comment: EntryComment; text: string }) => socialApi.editComment(entryId, comment.id, text.trim()),
+    onMutate: async ({ comment, text }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<EntryComment[]>(key);
+      const editedAt = new Date().toISOString();
+      queryClient.setQueryData<EntryComment[]>(key, (list) =>
+        list?.map((c) => (c.id === comment.id ? { ...c, text: text.trim(), editedAt } : c)),
+      );
+      return { previous };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+    },
+    onSuccess: (saved, { text }) => {
+      queryClient.setQueryData<EntryComment[]>(key, (list) => list?.map((c) => (c.id === saved.id ? saved : c)));
+      analytics.track('entry_reply_edited', { length: text.trim().length });
+    },
+  });
+}
+
 export function useDeleteReply(entryId: string) {
   return useMutation({
     mutationFn: ({ comment }: { comment: EntryComment; ownReply: boolean }) => socialApi.deleteComment(entryId, comment.id),

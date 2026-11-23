@@ -75,7 +75,12 @@ export interface AnalyticsEvents {
     discovery_mode: boolean;
   };
   match_story_viewed: { match_id: string; compatibility_score: number | null; slides_viewed_count: number };
-  match_story_shared: { match_id: string; slide_index: number; slide_type: StorySlideType };
+  match_story_shared: {
+    match_id: string;
+    slide_index: number;
+    slide_type: StorySlideType;
+    target: 'system_sheet' | 'instagram_stories';
+  };
   /** Tocou num título de uma seção de recomendação (`position` começa em 0; `source`: de onde veio o "Para você"). */
   recommendation_opened: {
     section: RecommendationSection;
@@ -119,6 +124,7 @@ export interface AnalyticsEvents {
   entry_liked: { own_entry: boolean; liked: boolean };
   entry_replied: { own_entry: boolean; length: number };
   entry_reply_deleted: { own_reply: boolean };
+  entry_reply_edited: { length: number };
   /** Feed de amigos: abriu um registro pela faixa da Início ou pela tela "Ver tudo". */
   feed_item_opened: { from: 'rail' | 'feed'; position: number; has_review: boolean };
   friends_feed_opened: Record<string, never>;

@@ -26,6 +26,7 @@ export const common: Strings['common'] = {
   close: 'Fermer',
   back: 'Retour',
   save: 'Enregistrer',
+  done: 'OK',
   remove: 'Retirer',
   seeMore: 'plus',
   seeLess: 'moins',

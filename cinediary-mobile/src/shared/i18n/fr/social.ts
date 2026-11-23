@@ -26,6 +26,8 @@ export const social: Strings['social'] = {
   profileError: 'Impossible d’ouvrir ce profil pour le moment.',
   notFound: 'Ce profil n’existe pas ou a quitté CineDiary.',
   followError: 'Impossible de suivre pour le moment. Réessaie.',
+  unfollowError: 'Impossible de ne plus suivre pour le moment. Réessaie.',
+  cancelRequestError: "Impossible d'annuler la demande pour le moment. Réessaie.",
   // Demandes (profil privé)
   requestsTitle: 'Demandes d’abonnement',
   requestsBanner: (n: number) => (n === 1 ? '1 demande pour te suivre' : `${n} demandes pour te suivre`),
@@ -53,6 +55,10 @@ export const social: Strings['social'] = {
   send: 'Envoyer',
   repliesEmpty: 'Personne n’a encore répondu. Et si tu lançais la conversation ?',
   deleteReply: 'Supprimer la réponse',
+  edited: 'modifié',
+  editReply: 'Modifier la réponse',
+  editShort: 'Modifier',
+  deleteShort: 'Supprimer',
   deleteReplyConfirm: 'Supprimer cette réponse ?',
   replyError: 'Impossible d’envoyer pour le moment. Réessaie.',
   repliesSpoiler: 'Les réponses peuvent contenir des spoilers · Touche pour voir',
@@ -121,8 +127,6 @@ export const social: Strings['social'] = {
   },
   repliesClosed: (policy: 'ME' | 'FOLLOWING', user: string) =>
     policy === 'ME' ? `Seul·e @${user} peut répondre à cette entrée.` : `Seules les personnes que @${user} suit peuvent répondre.`,
-  copyReply: 'Copier le texte',
-  copied: 'Texte copié',
   viewProfileOf: (user: string) => `Voir le profil de @${user}`,
   followersSubtitle: (n: number) => (n === 1 ? '1 personne' : `${n} personnes`),
   requestsSubtitle: 'Seules les personnes que tu acceptes voient ton journal et tes statistiques.',

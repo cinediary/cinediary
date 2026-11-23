@@ -108,6 +108,8 @@ export function RootNavigator() {
           <Stack.Screen name="match/[matchId]/index" />
           <Stack.Screen name="match/[matchId]/add" options={{ presentation: 'modal' }} />
           <Stack.Screen name="match/[matchId]/story" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+          {/* Prévia de um slide antes de compartilhar nos Stories, por cima do Story (que fica pausado). */}
+          <Stack.Screen name="match/[matchId]/share" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         </Stack.Protected>
         <Stack.Protected guard={needsOnboarding}>
           <Stack.Screen name="(onboarding)" />
@@ -118,6 +120,7 @@ export function RootNavigator() {
         <Stack.Screen name="match/invite/[code]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Protected guard={__DEV__ && inApp}>
           <Stack.Screen name="_dev/design-system" options={{ headerShown: true, title: 'Design System' }} />
+          <Stack.Screen name="_dev/match" options={{ headerShown: true, title: 'Design System · Match' }} />
         </Stack.Protected>
       </Stack>
 

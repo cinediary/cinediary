@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { queryClient } from '@/shared/api/queryClient';
@@ -24,7 +24,14 @@ export function useEntryCompanions(entryId: string, enabled = true) {
 /** Amigos (segue e é seguido) para escolher no "Vi com…". */
 export function useFriends(q: string) {
   const query = q.trim().replace(/^@/, '').toLowerCase();
-  return useQuery({ queryKey: companionKeys.friends(query), queryFn: () => socialApi.friends(query), staleTime: 60_000 });
+  return useQuery({
+    queryKey: companionKeys.friends(query),
+    queryFn: () => socialApi.friends(query),
+    staleTime: 60_000,
+    // A cada letra é uma busca nova: mantém os resultados anteriores até chegar a resposta, em vez de esvaziar a
+    // lista (e mostrar o carregando) a cada letra.
+    placeholderData: keepPreviousData,
+  });
 }
 
 /**

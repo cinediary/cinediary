@@ -26,6 +26,8 @@ export const social: Strings['social'] = {
   profileError: 'No pudimos abrir este perfil ahora.',
   notFound: 'Este perfil no existe o salió de CineDiary.',
   followError: 'No se pudo seguir ahora. Inténtalo de nuevo.',
+  unfollowError: 'No se pudo dejar de seguir ahora. Inténtalo de nuevo.',
+  cancelRequestError: 'No se pudo cancelar la solicitud ahora. Inténtalo de nuevo.',
   // Solicitudes (perfil privado)
   requestsTitle: 'Solicitudes para seguir',
   requestsBanner: (n: number) => (n === 1 ? '1 solicitud para seguirte' : `${n} solicitudes para seguirte`),
@@ -53,6 +55,10 @@ export const social: Strings['social'] = {
   send: 'Enviar',
   repliesEmpty: 'Nadie respondió todavía. ¿Qué tal empezar la conversación?',
   deleteReply: 'Borrar respuesta',
+  edited: 'editado',
+  editReply: 'Editar respuesta',
+  editShort: 'Editar',
+  deleteShort: 'Borrar',
   deleteReplyConfirm: '¿Borrar esta respuesta?',
   replyError: 'No se pudo enviar ahora. Inténtalo de nuevo.',
   repliesSpoiler: 'Las respuestas pueden tener spoiler · Toca para ver',
@@ -121,8 +127,6 @@ export const social: Strings['social'] = {
   },
   repliesClosed: (policy: 'ME' | 'FOLLOWING', user: string) =>
     policy === 'ME' ? `Solo @${user} puede responder este registro.` : `Solo quienes @${user} sigue pueden responder.`,
-  copyReply: 'Copiar texto',
-  copied: 'Texto copiado',
   viewProfileOf: (user: string) => `Ver el perfil de @${user}`,
   followersSubtitle: (n: number) => (n === 1 ? '1 persona' : `${n} personas`),
   requestsSubtitle: 'Solo quienes apruebes ven tu diario y tus estadísticas.',

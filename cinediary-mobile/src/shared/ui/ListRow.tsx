@@ -8,6 +8,8 @@ import { Text } from './Text';
 export interface ListRowProps {
   label: string;
   hint?: string;
+  /** Corta o hint nessas linhas (ex.: o começo da review). Sem isso, mostra inteiro. */
+  hintLines?: number;
   icon?: ReactNode;
   onPress?: () => void;
   /** Mostra um Switch nativo em vez do chevron. */
@@ -17,7 +19,7 @@ export interface ListRowProps {
 }
 
 /** Linha de configuração (Perfil): ação com chevron ou chave liga/desliga. */
-export function ListRow({ label, hint, icon, onPress, switchValue, onSwitchChange, danger }: ListRowProps) {
+export function ListRow({ label, hint, hintLines, icon, onPress, switchValue, onSwitchChange, danger }: ListRowProps) {
   const isSwitch = switchValue !== undefined;
   const content = (
     <View style={styles.row}>
@@ -27,7 +29,7 @@ export function ListRow({ label, hint, icon, onPress, switchValue, onSwitchChang
           {label}
         </Text>
         {hint ? (
-          <Text variant="caption" tone="muted">
+          <Text variant="caption" tone="muted" numberOfLines={hintLines}>
             {hint}
           </Text>
         ) : null}

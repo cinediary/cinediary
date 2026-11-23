@@ -17,9 +17,16 @@ interface ToastState extends ToastOptions {
   message: string;
 }
 
+/**
+ * Quanto tempo o toast fica na tela. Sem ação ("Salvo", "Texto copiado") é só um aviso e sai rápido: 4 s parecia
+ * lento. Com ação ("Tentar de novo") fica mais, para dar tempo de tocar.
+ */
+const DURATION_MS = 1500;
+const DURATION_WITH_ACTION_MS = 4000;
+
 const ToastContext = createContext<(message: string, options?: ToastOptions) => void>(() => {});
 
-/** Snackbar da UX-01: pílula ink900, texto creme, ação opcional, 4s. */
+/** Snackbar da UX-01: pílula ink900, texto creme, ação opcional; 1,5 s (4 s com ação). */
 export function ToastProvider({ children }: PropsWithChildren) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -30,7 +37,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
     const id = Date.now();
     setToast({ id, message, ...options });
     AccessibilityInfo.announceForAccessibility(message);
-    timer.current = setTimeout(() => setToast((t) => (t?.id === id ? null : t)), options.durationMs ?? 4000);
+    timer.current = setTimeout(() => setToast((t) => (t?.id === id ? null : t)), options.durationMs ?? (options.actionLabel ? DURATION_WITH_ACTION_MS : DURATION_MS));
   }, []);
 
   const value = useMemo(() => show, [show]);
