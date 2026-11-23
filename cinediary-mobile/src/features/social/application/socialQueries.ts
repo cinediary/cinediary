@@ -83,7 +83,7 @@ function patchRelationship(username: string, to: Relationship, from?: Relationsh
     p ? { ...p, relationship: to, followersCount: Math.max(0, p.followersCount + followersDelta(p.relationship, to)) } : p,
   );
   queryClient.setQueriesData<Person[]>({ queryKey: [...sharedKeys.social] }, (data) =>
-    Array.isArray(data) && data.length > 0 && 'relationship' in (data[0] ?? {})
+    Array.isArray(data) && typeof data[0]?.username === 'string' && 'relationship' in data[0]
       ? data.map((p) => (p.username.toLowerCase() === key ? { ...p, relationship: to } : p))
       : data,
   );
@@ -100,7 +100,10 @@ export function useToggleFollow(person: Pick<Person, 'username' | 'isPrivate'> &
     mutationFn: ({ to }: { from: Relationship; to: Relationship }) =>
       to === 'NONE' ? socialApi.unfollow(person.username) : socialApi.follow(person.username),
     onMutate: ({ from, to }) => patchRelationship(person.username, to, from),
-    onError: (_e, { from, to }) => patchRelationship(person.username, from, to),
+    onError: (_e, { from, to }) => {
+      patchRelationship(person.username, from, to);
+      void queryClient.invalidateQueries({ queryKey: sharedKeys.social });
+    },
     onSuccess: (to, { from }) => {
       patchRelationship(person.username, to);
       if (to === 'NONE') analytics.track('user_unfollowed', { was_request: from === 'REQUESTED' });

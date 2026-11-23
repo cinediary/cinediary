@@ -26,6 +26,8 @@ export const social: Strings['social'] = {
   profileError: 'Impossible d’ouvrir ce profil pour le moment.',
   notFound: 'Ce profil n’existe pas ou a quitté CineDiary.',
   followError: 'Impossible de suivre pour le moment. Réessaie.',
+  unfollowError: 'Impossible de ne plus suivre pour le moment. Réessaie.',
+  cancelRequestError: "Impossible d'annuler la demande pour le moment. Réessaie.",
   // Demandes (profil privé)
   requestsTitle: 'Demandes d’abonnement',
   requestsBanner: (n: number) => (n === 1 ? '1 demande pour te suivre' : `${n} demandes pour te suivre`),
