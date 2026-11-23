@@ -83,6 +83,7 @@ export const match = {
   story: {
     close: 'Fechar Story',
     shareThis: 'Compartilhar este',
+    shareStories: 'Compartilhar nos Stories',
     sharing: 'Preparando imagem…',
     shareUnavailable: 'Compartilhar não está disponível neste aparelho.',
     shareError: 'Não deu para gerar a imagem agora.',

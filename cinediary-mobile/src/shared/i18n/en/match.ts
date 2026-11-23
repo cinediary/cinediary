@@ -83,6 +83,7 @@ export const match: Strings['match'] = {
   story: {
     close: 'Close Story',
     shareThis: 'Share this one',
+    shareStories: 'Share to Stories',
     sharing: 'Preparing image…',
     shareUnavailable: 'Sharing is not available on this device.',
     shareError: "Couldn't create the image right now.",
