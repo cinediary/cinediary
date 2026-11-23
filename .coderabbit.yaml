@@ -1,0 +1,234 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# Review automático dos PRs pelo CodeRabbit. Referência: https://docs.coderabbit.ai/reference/configuration
+# O repo tem duas partes: o app (cinediary-mobile, Expo) e a API (cinediary-backend, Spring Boot).
+# Cada uma tem instruções próprias em `path_instructions`.
+
+language: 'pt-BR'
+
+tone_instructions: >-
+  Seja direto e didático: para cada problema, explique o PORQUÊ e o impacto
+  (bug, performance, segurança, manutenção) e sugira a correção.
+
+early_access: false
+
+reviews:
+  # "assertive" traz mais apontamentos (inclusive nitpicks), bom para aprender.
+  # Troque para "chill" se o volume de comentários ficar cansativo.
+  profile: 'assertive'
+  request_changes_workflow: false # quem mergeia é o dono do repo, depois da CI
+  high_level_summary: true
+  review_status: true
+  collapse_walkthrough: false
+  changed_files_summary: true
+  sequence_diagrams: true
+  poem: false
+  suggested_labels: false
+  suggested_reviewers: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true # revisa de novo a cada push no PR
+    base_branches: ['main']
+    ignore_title_keywords:
+      - 'WIP'
+      - '[skip review]'
+    # PRs de atualização do Dependabot não precisam de review
+    labels: ['!dependencies']
+
+  # Arquivos gerados, lockfiles e binários: só barulho no review
+  path_filters:
+    # Builds e cache
+    - '!**/build/**'
+    - '!**/.gradle/**'
+    - '!**/.expo/**'
+    - '!cinediary-backend/gradle/wrapper/**'
+    - '!cinediary-backend/gradlew*'
+    # Expo: pastas geradas pelo prebuild (CNG)
+    - '!cinediary-mobile/ios/**'
+    - '!cinediary-mobile/android/**'
+    # Lockfiles e código gerado
+    - '!**/package-lock.json'
+    - '!cinediary-mobile/src/shared/api/schema.d.ts' # gerado do openapi-v1.yaml (npm run api:types)
+    # Binários e protótipos
+    - '!**/*.{png,jpg,jpeg,gif,webp,svg,ttf,otf,mp4,lottie}'
+    - '!docs/design/prototipo/**'
+    - '!docs/images/**'
+
+  path_instructions:
+    # ── App (Expo SDK 58 / React Native / TypeScript) ──────────────────
+    - path: 'cinediary-mobile/**/*.{ts,tsx}'
+      instructions: |
+        App em Expo SDK 58 (New Architecture) + TypeScript estrito. As regras do projeto estão em cinediary-mobile/AGENTS.md.
+        Revise com foco em:
+        - Expo muda a cada SDK: desconfie de API removida, renomeada ou depreciada, e de biblioteca
+          incompatível com a New Architecture. Pacote novo deve ter vindo do `npx expo install`.
+        - Performance: re-renders desnecessários, objetos e funções inline passados a componentes
+          memoizados, useMemo/useCallback/React.memo usados certo (e sem exagero).
+        - Listas: FlatList/FlashList com keyExtractor estável, nunca ScrollView + map para lista longa.
+        - Imagens (pôsteres, fotos de perfil): `expo-image` com cache e no tamanho exibido,
+          nunca carregar a imagem maior do que aparece na tela.
+        - Hooks: regras dos hooks, dependências certas no useEffect, cleanup de listeners, timers e
+          subscriptions, e nada de efeito para calcular o que poderia ser um valor derivado.
+        - Estados de loading, erro e vazio em toda tela que busca dados. Promise sempre com tratamento de erro.
+        - Tipagem: sem `any` e sem `@ts-ignore` sem justificativa. Os tipos da API vêm de
+          `src/shared/api/schema.d.ts` (gerado do OpenAPI): não aceitar tipo de resposta escrito à mão.
+          Rotas tipadas do Expo Router.
+        - Textos visíveis ao usuário vão para o i18n (`src/shared/i18n/<idioma>/`), e a chave nova
+          precisa existir em todos os idiomas: pt, en, es e fr.
+        - Cores, espaçamentos e fontes vêm de `src/shared/theme`, nunca hardcoded.
+        - Eventos de analytics tipados em `src/shared/analytics/events.ts`.
+        - Acessibilidade: accessibilityLabel/accessibilityRole em elemento interativo (principalmente botão
+          só com ícone), área de toque mínima de ~44x44, contraste, e não travar `allowFontScaling` sem motivo.
+        - Segurança: token só no `expo-secure-store` (nunca no AsyncStorage) e nenhum segredo em código ou
+          em variável `EXPO_PUBLIC_*` (elas vão junto no app).
+        - Funcionar igual no iOS e no Android (blur, sombra, teclado e safe area costumam divergir).
+        - Organização: componentes pequenos, lógica de dados em hooks, UI separada do acesso à API.
+
+    - path: 'cinediary-mobile/src/app/**'
+      instructions: |
+        Pasta de rotas do Expo Router: cada arquivo é uma tela, e os `_layout.tsx` são os navegadores.
+        Componentes, hooks e utilitários ficam fora de `src/app/` (em `src/features/<feature>` ou `src/shared`).
+
+    - path: 'cinediary-mobile/{app.json,eas.json}'
+      instructions: |
+        Configuração Expo/EAS. Confira:
+        - permissões declaradas (só as necessárias, com texto de justificativa);
+        - ausência de segredos;
+        - perfis de build consistentes.
+        Mudança na config nativa exige um novo development build (`prebuild --clean`): avise quando for o caso.
+        `appleSignIn: false` nunca pode ser commitado (é só para build local com conta grátis da Apple).
+
+    - path: 'cinediary-mobile/package.json'
+      instructions: |
+        Pacotes do Expo, do React e do React Native precisam estar na versão que o SDK espera
+        (`npx expo install`). Aponte dependência nova que já tenha alternativa oficial do Expo.
+
+    # ── Backend (Java 25 / Spring Boot 4 / PostgreSQL / Neo4j) ─────────
+    - path: 'cinediary-backend/src/main/java/**'
+      instructions: |
+        Monólito modular em Java 25 + Spring Boot 4 (Spring Modulith + ArchUnit), com PostgreSQL
+        (dados relacionais) e Neo4j (grafo de gosto do Taste Match).
+        Revise com foco em:
+        - Módulos em `com.cinediary.api.modules.<módulo>`, com as camadas domain, application,
+          infrastructure e presentation. Um módulo só usa o pacote `api` de outro, sem ciclos.
+          O domain não depende da infrastructure nem do Spring Web.
+        - Java moderno: records para DTOs, sealed interfaces quando fizer sentido, pattern matching,
+          Optional só como retorno (nunca campo ou parâmetro), injeção por construtor.
+        - Segurança: Bean Validation (@Valid, @NotNull…) na entrada; autorização por recurso (o usuário
+          só mexe nos próprios dados, e conteúdo de perfil privado não pode vazar); nenhum segredo
+          hardcoded; logs sem dado sensível; entidade JPA nunca exposta direto na API.
+        - Erros: tudo pelo handler central (`ApiExceptionHandler`, ProblemDetail / RFC 9457), sem engolir
+          exceção e sem catch genérico sem motivo.
+        - Transações: @Transactional na camada de aplicação, readOnly em consultas.
+        - PostgreSQL e Neo4j não têm transação distribuída: o grafo é alimentado por eventos
+          (Outbox do Spring Modulith). Aponte escrita direta nos dois bancos na mesma operação.
+        - PostgreSQL/JPA: N+1, fetch LAZY por padrão, paginação em listagem, projeções/DTOs em leitura,
+          índice para os filtros mais usados.
+        - Neo4j (queries Cypher dentro do Java, pelo driver): sempre parametrizadas (nunca concatenar
+          string, risco de injection), uso de índices/constraints, nada de varrer o grafo inteiro ou de
+          caminho sem limite de profundidade (`[*]`), direção dos relacionamentos consistente.
+        - TMDB: chamada com timeout e fallback para o que já está salvo no PostgreSQL.
+        - Endpoint novo ou alterado precisa estar no `docs/architecture/openapi-v1.yaml`.
+        - Logs com SLF4J e no nível certo.
+
+    - path: 'cinediary-backend/src/test/**'
+      instructions: |
+        JUnit 5 + AssertJ. Os testes de integração usam Testcontainers para PostgreSQL e Neo4j
+        (base em `IntegrationTest.java`), e os de arquitetura ficam em `architecture/`.
+        Confira:
+        - nomes descritivos e o padrão Arrange-Act-Assert;
+        - asserções que testam algo de verdade;
+        - casos de erro e de borda (401, 403, 404, validação), não só o caminho feliz.
+
+    - path: 'cinediary-backend/src/main/resources/db/migration/**'
+      instructions: |
+        Migrations do Flyway (`V<n>__descricao.sql`). Confira:
+        - Uma migration que já existe nunca é editada: crie uma nova com o próximo número.
+        - Compatível com deploy sem downtime: coluna nova entra nullable antes de virar obrigatória.
+        - Índice com CONCURRENTLY em tabela grande.
+        - Avise sobre operação que perde dados (DROP, troca de tipo).
+        - Índice nas colunas usadas em filtro ou join.
+
+    - path: 'cinediary-backend/src/main/resources/application*.{yml,yaml,properties}'
+      instructions: |
+        Configuração do Spring. Confira:
+        - nenhuma credencial em texto puro: sempre variável de ambiente;
+        - pool de conexões e timeouts;
+        - endpoints sensíveis do Actuator não expostos publicamente.
+
+    - path: '**/{Dockerfile,docker-compose*.yml,.env.example}'
+      instructions: |
+        Confira:
+        - imagem com versão fixa (nunca `latest`);
+        - multi-stage build;
+        - execução como usuário não-root;
+        - nenhum segredo na imagem nem no `.env.example` (só placeholders).
+        Variável nova precisa aparecer no `.env.example` e no README do backend.
+
+    # ── Contrato, CI e docs ────────────────────────────────────────────
+    - path: 'docs/architecture/openapi-v1.yaml'
+      instructions: |
+        Contrato da API usado pelo app. Aponte quebra de compatibilidade (campo removido ou renomeado,
+        tipo alterado) e lembre que o `schema.d.ts` do app precisa ser regenerado (`npm run api:types`).
+
+    - path: '.github/workflows/**'
+      instructions: |
+        Os checks são obrigatórios na main. O filtro de caminhos fica no job `changes` (dorny/paths-filter),
+        nunca em `on.pull_request.paths`, senão o check obrigatório fica pendente para sempre.
+        Permissões mínimas em `permissions:`.
+
+    - path: '**/*.md'
+      instructions: |
+        Documentação em português. Comente só informação errada ou desatualizada em relação ao código, não estilo.
+
+  tools:
+    # App
+    eslint:
+      enabled: true
+    # Backend
+    pmd:
+      enabled: true
+    sqlfluff:
+      enabled: false # sem um .sqlfluff com o dialeto postgres, acusa erro em SQL válido do Flyway
+    # Segurança e dependências
+    gitleaks:
+      enabled: true
+    semgrep:
+      enabled: true
+    osvScanner:
+      enabled: true
+    # Infra e arquivos de suporte
+    hadolint:
+      enabled: true
+    checkov:
+      enabled: true
+    actionlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    github-checks:
+      enabled: true
+      timeout_ms: 300000
+    markdownlint:
+      enabled: false # os READMEs têm estilo próprio
+    languagetool:
+      enabled: false # muito ruído em português técnico
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: 'auto'
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - '**/AGENTS.md'
+      - '**/CLAUDE.md'
+      - '**/CONTRIBUTING.md'
