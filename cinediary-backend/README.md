@@ -323,9 +323,10 @@ O Testcontainers procura o Docker em `/var/run/docker.sock`. Com o **OrbStack** 
 pode não existir, e todos os testes falham com `Could not find a valid Docker environment`.
 
 O `make test` já resolve isso: se `DOCKER_HOST` estiver vazio, ele usa o socket do contexto ativo do Docker
-(`docker context inspect`) e mostra qual escolheu (`Docker: unix://...`). Ele também define
-`TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`, o caminho do socket **dentro** da VM, que o
-Testcontainers monta no container de limpeza (Ryuk). Com o Docker Desktop nada muda.
+(`docker context inspect`) e mostra qual escolheu (`Docker: unix://...`). Se esse socket for do OrbStack ou
+do Colima, ele também define `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`, o caminho do socket
+**dentro** da VM, que o Testcontainers monta no container de limpeza (Ryuk). Com o Docker Desktop ou o Docker
+rootless (`/run/user/<uid>/docker.sock`), o socket do host é usado como está.
 
 - **Confira o contexto ativo:** `docker context ls` (o marcado com `*`). Ele deve ser `orbstack` ou `colima`.
 - **Rodando o Gradle direto** (`./gradlew test` ou pela IDE), a detecção não acontece. Exporte as variáveis:
@@ -335,8 +336,11 @@ Testcontainers monta no container de limpeza (Ryuk). Com o Docker Desktop nada m
   export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
   ```
 
-- **Colima com `--network-address`:** os containers ficam num IP próprio da VM. Exporte também
-  `TESTCONTAINERS_HOST_OVERRIDE=$(colima ls -j | jq -r '.address')`.
+  Na **IDE**, os exports de outro terminal não chegam: defina as duas variáveis nas variáveis de ambiente da
+  configuração de execução dos testes, ou abra a IDE por um terminal que já tenha feito os exports.
+- **Colima com `--network-address`:** os containers ficam num IP próprio da VM. Exporte também o endereço
+  do perfil ativo (troque `default` pelo perfil, se o contexto for `colima-<perfil>`):
+  `TESTCONTAINERS_HOST_OVERRIDE=$(colima ls -j | jq -r 'select(.name == "default") | .address')`.
 - **Um teste só pelo make:** `make test ARGS="--tests '*TitleCommunity*'"`.
 
 ---

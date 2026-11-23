@@ -39,7 +39,9 @@ build: ## Compila e gera o jar
 test: ## Testes: ArchUnit + integração (Testcontainers: PostgreSQL e Neo4j + GDS; precisa do Docker)
 	@host="$${DOCKER_HOST:-$$(docker context inspect --format '{{.Endpoints.docker.Host}}' 2>/dev/null)}"; \
 	if [ -n "$$host" ]; then export DOCKER_HOST="$$host"; echo "Docker: $$host"; fi; \
-	export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE="$${TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE:-/var/run/docker.sock}"; \
+	case "$$host" in *orbstack*|*colima*) \
+		export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE="$${TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE:-/var/run/docker.sock}";; \
+	esac; \
 	./gradlew test $(ARGS)
 
 clean: ## Limpa o build
