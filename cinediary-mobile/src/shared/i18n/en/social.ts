@@ -25,6 +25,8 @@ export const social: Strings['social'] = {
   profileError: "We can't open this profile right now.",
   notFound: "This profile doesn't exist or left CineDiary.",
   followError: "Couldn't follow right now. Try again.",
+  unfollowError: "Couldn't unfollow right now. Try again.",
+  cancelRequestError: "Couldn't cancel the request right now. Try again.",
   requestsTitle: 'Follow requests',
   requestsBanner: (n: number) => (n === 1 ? '1 request to follow you' : `${n} requests to follow you`),
   requestsEmpty: 'No requests waiting.',

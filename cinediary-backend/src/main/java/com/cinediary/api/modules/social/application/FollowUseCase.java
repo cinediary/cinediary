@@ -58,6 +58,8 @@ public class FollowUseCase
         follows.delete(viewerId, person.id());
         // Desistiu do pedido: o aviso some do sino de quem ia aprovar.
         notifications.remove(person.id(), viewerId, NotificationKind.FOLLOW_REQUESTED, null);
+        notifications.remove(person.id(), viewerId, NotificationKind.FOLLOWED, null);
+        notifications.remove(viewerId, person.id(), NotificationKind.FOLLOW_APPROVED, null);
         activity.remove(viewerId, ActivityKind.FOLLOWED, person.id(), null);
         return access.relationship(viewerId, person.id());
     }
@@ -79,6 +81,7 @@ public class FollowUseCase
     {
         follows.delete(followerId, ownerId);
         notifications.remove(ownerId, followerId, NotificationKind.FOLLOW_REQUESTED, null);
+        notifications.remove(ownerId, followerId, NotificationKind.FOLLOWED, null);
         activity.remove(followerId, ActivityKind.FOLLOWED, ownerId, null);
     }
 }
