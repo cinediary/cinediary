@@ -317,6 +317,28 @@ make test         # ou: ./gradlew test
 - **Um teste só:** `./gradlew test --tests '*TitleCommunity*'`.
 - **Resultados:** ficam em `build/test-results/test/` (XML) e `build/reports/tests/test/index.html`.
 
+### OrbStack e Colima
+
+O Testcontainers procura o Docker em `/var/run/docker.sock`. Com o **OrbStack** ou o **Colima**, esse arquivo
+pode não existir, e todos os testes falham com `Could not find a valid Docker environment`.
+
+O `make test` já resolve isso: se `DOCKER_HOST` estiver vazio, ele usa o socket do contexto ativo do Docker
+(`docker context inspect`) e mostra qual escolheu (`Docker: unix://...`). Ele também define
+`TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`, o caminho do socket **dentro** da VM, que o
+Testcontainers monta no container de limpeza (Ryuk). Com o Docker Desktop nada muda.
+
+- **Confira o contexto ativo:** `docker context ls` (o marcado com `*`). Ele deve ser `orbstack` ou `colima`.
+- **Rodando o Gradle direto** (`./gradlew test` ou pela IDE), a detecção não acontece. Exporte as variáveis:
+
+  ```bash
+  export DOCKER_HOST=$(docker context inspect --format '{{.Endpoints.docker.Host}}')
+  export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
+  ```
+
+- **Colima com `--network-address`:** os containers ficam num IP próprio da VM. Exporte também
+  `TESTCONTAINERS_HOST_OVERRIDE=$(colima ls -j | jq -r '.address')`.
+- **Um teste só pelo make:** `make test ARGS="--tests '*TitleCommunity*'"`.
+
 ---
 
 ## Variáveis de ambiente (`.env`)
