@@ -74,6 +74,7 @@
 | `title_marked` | Curtir, watchlist ou favorito ligado/desligado | `action` (`liked`, `watchlist`, `favorite`), `value` (`boolean`), `tmdb_id`, `media_type` |
 | `episode_toggled` | Marcou/desmarcou episódios na lista de temporadas | `watched` (`boolean`), `count`, `whole_season` (`boolean`), `with_stills` (variante da flag `episode-stills`) |
 | `trailer_opened` | Usuário abre o trailer na página do título (conversão do teste A/B `trailer-button-placement`) | `tmdb_id`, `media_type`, `placement` (`'meta'` \| `'actions'`) |
+| `watch_provider_viewed` | A seção "Onde assistir" aparece na página do título (uma vez por abertura) | `tmdb_id`, `media_type`, `stream_count`, `rent_count`, `buy_count` |
 | `entry_opened` | Abriu a tela de uma entrada do diário (pela Início, pelo diário ou por "Seus registros") | `has_review`, `contains_spoilers` |
 | `entry_edited` | Salvou alterações numa entrada | `has_review`, `contains_spoilers` |
 | `entry_deleted` | Excluiu uma entrada do diário | (nenhuma) |

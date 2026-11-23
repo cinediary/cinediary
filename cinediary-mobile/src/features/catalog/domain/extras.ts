@@ -8,6 +8,26 @@ export interface Company {
   logoUrl: string | null;
 }
 
+/** Um serviço onde o título está (dados do JustWatch, via TMDB). */
+export interface WatchProvider {
+  id: number;
+  name: string;
+  logoUrl: string | null;
+}
+
+/** Onde assistir num país: assinatura, aluguel e compra (listas vazias quando não há). */
+export interface WatchProviders {
+  /** ISO 3166-1, ex.: "BR". */
+  region: string;
+  /** O país por extenso, ex.: "Brasil". */
+  regionName: string;
+  /** Página do TMDB com todas as opções nesse país. */
+  link: string | null;
+  stream: WatchProvider[];
+  rent: WatchProvider[];
+  buy: WatchProvider[];
+}
+
 export interface CrewMember {
   personId: number;
   name: string;
@@ -27,6 +47,8 @@ export interface TitleExtras {
   /** Outros filmes da franquia, em ordem de lançamento. */
   collection: TitleSummary[];
   similar: TitleSummary[];
+  /** Onde assistir no país do aparelho; null quando não há dados. */
+  watchProviders: WatchProviders | null;
 }
 
 export interface CompanyDetail extends Company {

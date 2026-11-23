@@ -106,11 +106,12 @@ public class CatalogController
     }
 
     @GetMapping("/{mediaType}/{tmdbId}/extras")
-    @Operation(summary = "Lançamento, país, produtoras, equipe, trailer, coleção e similares do título")
+    @Operation(summary = "Lançamento, país, produtoras, equipe, trailer, coleção, similares e onde assistir")
     public TitleExtrasResponse extras(CurrentUser user, @PathVariable MediaType mediaType, @PathVariable long tmdbId,
-                                      @RequestParam(required = false) String language)
+                                      @RequestParam(required = false) String language,
+                                      @RequestParam(required = false) String region)
     {
-        return TitleExtrasResponse.from(getTitleExtras.execute(mediaType, tmdbId, user.id(), language));
+        return TitleExtrasResponse.from(getTitleExtras.execute(mediaType, tmdbId, user.id(), language, region));
     }
 
     @GetMapping("/companies/{companyId}")

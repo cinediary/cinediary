@@ -1,9 +1,14 @@
 import { api, unwrap } from '@/shared/api/client';
-import type { CompanyDetail, SeasonEpisode, TitleExtras } from '../domain/extras';
+import type { components } from '@/shared/api/schema';
+import type { CompanyDetail, SeasonEpisode, TitleExtras, WatchProvider } from '../domain/extras';
 import type { Credit, Person } from '../domain/person';
 import type { ShowcasePoster } from '../domain/showcase';
 import type { Genre, MediaType, SearchFilter, SearchPage, TitleDetail } from '../domain/title';
 import { toTitleDetail, toTitleSummary } from './titleMapper';
+
+function toWatchProvider(p: components['schemas']['WatchProvider']): WatchProvider {
+  return { id: p.id, name: p.name, logoUrl: p.logoUrl ?? null };
+}
 
 /** Gateway HTTP do módulo catalog (TMDB centralizado no backend, pt-BR). */
 export const catalogApi = {
@@ -68,11 +73,17 @@ export const catalogApi = {
     }));
   },
 
-  /** `language`: idioma do aparelho (ex.: pt-BR), para o trailer vir nele quando houver. */
-  async extras(mediaType: MediaType, tmdbId: number, language: string | null): Promise<TitleExtras> {
+  /**
+   * `language`: idioma do aparelho (ex.: pt-BR), para o trailer vir nele quando houver.
+   * `region`: país do aparelho (ex.: BR), para os streamings.
+   */
+  async extras(mediaType: MediaType, tmdbId: number, language: string | null, region: string | null): Promise<TitleExtras> {
     const dto = await unwrap(
       api.GET('/api/v1/catalog/{mediaType}/{tmdbId}/extras', {
-        params: { path: { mediaType, tmdbId }, query: language ? { language } : {} },
+        params: {
+          path: { mediaType, tmdbId },
+          query: { ...(language ? { language } : {}), ...(region ? { region } : {}) },
+        },
       }),
     );
     return {
@@ -84,6 +95,16 @@ export const catalogApi = {
       collectionName: dto.collectionName ?? null,
       collection: dto.collection.map(toTitleSummary),
       similar: dto.similar.map(toTitleSummary),
+      watchProviders: dto.watchProviders
+        ? {
+            region: dto.watchProviders.region,
+            regionName: dto.watchProviders.regionName,
+            link: dto.watchProviders.link ?? null,
+            stream: dto.watchProviders.stream.map(toWatchProvider),
+            rent: dto.watchProviders.rent.map(toWatchProvider),
+            buy: dto.watchProviders.buy.map(toWatchProvider),
+          }
+        : null,
     };
   },
 

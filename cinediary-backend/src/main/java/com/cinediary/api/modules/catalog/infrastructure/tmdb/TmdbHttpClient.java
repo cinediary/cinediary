@@ -18,6 +18,7 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -150,8 +151,8 @@ class TmdbHttpClient implements TmdbGatewayPort
     {
         boolean movie = type == MediaType.MOVIE;
         JsonNode body = get("/" + type.tmdbPath() + "/" + tmdbId, uri -> uri
-                .queryParam("append_to_response", movie ? "videos,release_dates,credits,recommendations"
-                        : "videos,credits,recommendations")
+                .queryParam("append_to_response", movie ? "videos,release_dates,credits,recommendations,watch/providers"
+                        : "videos,credits,recommendations,watch/providers")
                 // Vídeos no idioma do aparelho, em inglês e sem idioma; o original entra abaixo se for outro.
                 .queryParam("include_video_language", language + ",en,null"));
 
@@ -205,7 +206,46 @@ class TmdbHttpClient implements TmdbGatewayPort
             }
         }
         return new TmdbExtras(movie ? releaseDate(body) : date(text(body, "first_air_date")), countries, companies, crew,
-                trailer, collectionName, collection, similar);
+                trailer, collectionName, collection, similar, watchProviders(body.path("watch/providers").path("results")));
+    }
+
+    private static final int MAX_PROVIDERS = 12;
+
+    /**
+     * Onde assistir em cada país: assinatura ({@code flatrate}), aluguel e compra, cada um na ordem de
+     * destaque do JustWatch. "Grátis" e "com anúncios" ficam de fora. País sem nenhum dos três não entra.
+     */
+    static Map<String, TmdbExtras.WatchProviders> watchProviders(JsonNode results)
+    {
+        Map<String, TmdbExtras.WatchProviders> byCountry = new HashMap<>();
+        for (Map.Entry<String, JsonNode> country : results.properties()) {
+            JsonNode c = country.getValue();
+            List<TmdbExtras.Provider> stream = providers(c.path("flatrate"));
+            List<TmdbExtras.Provider> rent = providers(c.path("rent"));
+            List<TmdbExtras.Provider> buy = providers(c.path("buy"));
+            if (!stream.isEmpty() || !rent.isEmpty() || !buy.isEmpty()) {
+                byCountry.put(country.getKey().toUpperCase(java.util.Locale.ROOT),
+                        new TmdbExtras.WatchProviders(text(c, "link"), stream, rent, buy));
+            }
+        }
+        return Map.copyOf(byCountry);
+    }
+
+    private static List<TmdbExtras.Provider> providers(JsonNode list)
+    {
+        List<JsonNode> sorted = new ArrayList<>();
+        list.forEach(sorted::add);
+        sorted.sort(Comparator.comparingInt(p -> p.path("display_priority").asInt(Integer.MAX_VALUE)));
+        List<TmdbExtras.Provider> providers = new ArrayList<>();
+        Set<Long> seen = new HashSet<>();
+        for (JsonNode p : sorted) {
+            long id = p.path("provider_id").asLong();
+            String name = text(p, "provider_name");
+            if (id > 0 && name != null && seen.add(id) && providers.size() < MAX_PROVIDERS) {
+                providers.add(new TmdbExtras.Provider(id, name, text(p, "logo_path")));
+            }
+        }
+        return List.copyOf(providers);
     }
 
     /** A última temporada (sem as "Especiais") que já tem data de estreia. */

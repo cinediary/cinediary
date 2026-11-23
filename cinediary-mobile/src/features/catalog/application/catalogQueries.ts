@@ -16,7 +16,8 @@ export const catalogKeys = {
   detail: (mediaType: MediaType, tmdbId: number) => ['catalog', 'detail', mediaType, tmdbId] as const,
   credits: (mediaType: MediaType, tmdbId: number) => ['catalog', 'credits', mediaType, tmdbId] as const,
   person: (personId: number) => ['catalog', 'person', personId] as const,
-  extras: (mediaType: MediaType, tmdbId: number, language: string | null) => ['catalog', 'extras', mediaType, tmdbId, language] as const,
+  extras: (mediaType: MediaType, tmdbId: number, language: string | null, region: string | null) =>
+    ['catalog', 'extras', mediaType, tmdbId, language, region] as const,
   company: (companyId: number) => ['catalog', 'company', companyId] as const,
   seasonEpisodes: (tmdbId: number, season: number) => ['catalog', 'season', tmdbId, season] as const,
   seasonTrailer: (tmdbId: number, season: number, language: string | null) =>
@@ -152,12 +153,12 @@ export function usePerson(personId: number) {
   });
 }
 
-/** Extras da página do título (lançamento, país, produtoras, equipe, trailer, coleção, similares). */
+/** Extras da página do título (lançamento, país, produtoras, equipe, trailer, coleção, similares, onde assistir). */
 export function useTitleExtras(mediaType: MediaType, tmdbId: number) {
-  const { language } = deviceLocale();
+  const { language, region } = deviceLocale();
   return useQuery({
-    queryKey: catalogKeys.extras(mediaType, tmdbId, language),
-    queryFn: () => catalogApi.extras(mediaType, tmdbId, language),
+    queryKey: catalogKeys.extras(mediaType, tmdbId, language, region),
+    queryFn: () => catalogApi.extras(mediaType, tmdbId, language, region),
     enabled: Number.isFinite(tmdbId) && tmdbId > 0,
     staleTime: 60 * 60_000,
   });

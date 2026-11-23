@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
- * Extras da página do título: lançamento, país, produtoras, equipe, trailer, coleção e similares.
+ * Extras da página do título: lançamento, país, produtoras, equipe, trailer, coleção, similares e onde assistir.
  * Os dados do TMDB ficam 6 h em memória por título (mudam pouco). Os títulos da coleção e dos similares
  * entram no cache do catálogo (ID interno), mas o estado de cada pessoa é montado a cada pedido.
  */
@@ -38,11 +38,14 @@ public class GetTitleExtrasUseCase
 
     public TitleExtras execute(MediaType type, long tmdbId, UUID viewerId)
     {
-        return execute(type, tmdbId, viewerId, null);
+        return execute(type, tmdbId, viewerId, null, null);
     }
 
-    /** {@code languageTag}: idioma do aparelho (ex.: pt-BR), para o trailer vir nele quando houver. */
-    public TitleExtras execute(MediaType type, long tmdbId, UUID viewerId, String languageTag)
+    /**
+     * {@code languageTag}: idioma do aparelho (ex.: pt-BR), para o trailer vir nele quando houver.
+     * {@code region}: país do aparelho (ISO 3166-1, ex.: BR), para o "onde assistir"; ausente = o país do idioma.
+     */
+    public TitleExtras execute(MediaType type, long tmdbId, UUID viewerId, String languageTag, String region)
     {
         String tag = GetShowcaseUseCase.normalizeLanguage(languageTag);
         Cached c = fresh(type, tmdbId, tag);
@@ -52,7 +55,30 @@ public class GetTitleExtrasUseCase
                 e.companies().stream().map(x -> new TitleExtras.Company(x.id(), x.name(), tmdb.logoUrl(x.logoPath()))).toList(),
                 e.crew().stream().map(x -> new TitleExtras.CrewMember(x.personId(), x.name(), x.job(), tmdb.profileUrl(x.profilePath()))).toList(),
                 e.trailerYoutubeKey(), e.collectionName(),
-                summaries(c.collectionIds(), viewerId), summaries(c.similarIds(), viewerId));
+                summaries(c.collectionIds(), viewerId), summaries(c.similarIds(), viewerId),
+                watchProviders(e, watchRegion(region, tag)));
+    }
+
+    private TitleExtras.WatchProviders watchProviders(TmdbExtras e, String region)
+    {
+        TmdbExtras.WatchProviders w = e.watchProviders().get(region);
+        return w == null ? null : new TitleExtras.WatchProviders(region, countryName(region), w.link(),
+                providers(w.stream()), providers(w.rent()), providers(w.buy()));
+    }
+
+    private List<TitleExtras.WatchProvider> providers(List<TmdbExtras.Provider> list)
+    {
+        return list.stream().map(x -> new TitleExtras.WatchProvider(x.id(), x.name(), tmdb.logoUrl(x.logoPath()))).toList();
+    }
+
+    /** O país pedido (duas letras); sem ele, o do idioma (pt-BR → BR). */
+    static String watchRegion(String region, String languageTag)
+    {
+        if (region != null && region.strip().matches("[A-Za-z]{2}")) {
+            return region.strip().toUpperCase(Locale.ROOT);
+        }
+        String[] parts = languageTag.split("-");
+        return parts.length > 1 ? parts[1].toUpperCase(Locale.ROOT) : "";
     }
 
     private Cached fresh(MediaType type, long tmdbId, String languageTag)

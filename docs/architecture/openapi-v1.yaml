@@ -810,12 +810,18 @@ paths:
   /api/v1/catalog/{mediaType}/{tmdbId}/extras:
     get:
       tags: [Catalog (TMDB)]
-      summary: "Lançamento, país, produtoras, equipe, trailer, coleção e similares do título"
+      summary: "Lançamento, país, produtoras, equipe, trailer, coleção, similares e onde assistir do título"
       parameters:
         - in: query
           name: language
           required: false
           description: "Idioma do aparelho (BCP 47, ex.: pt-BR), para escolher o trailer; ausente = pt-BR"
+          schema:
+            type: string
+        - in: query
+          name: region
+          required: false
+          description: "País do aparelho (ISO 3166-1, ex.: BR), para o onde assistir; ausente = o país do idioma"
           schema:
             type: string
         - in: path
@@ -1918,6 +1924,50 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CatalogTitleSummary'
+        watchProviders:
+          type: object
+          nullable: true
+          description: "Onde assistir no país do aparelho, dados do JustWatch (crédito obrigatório); nulo quando não há assinatura, aluguel nem compra"
+          required: [region, regionName, stream, rent, buy]
+          properties:
+            region:
+              type: string
+              description: "ISO 3166-1 (ex.: BR)"
+            regionName:
+              type: string
+              description: "O país por extenso, no idioma do conteúdo (ex.: Brasil)"
+            link:
+              type: string
+              nullable: true
+              description: "Página do TMDB com todas as opções no país"
+            stream:
+              type: array
+              description: "Assinatura, na ordem do JustWatch"
+              items:
+                $ref: '#/components/schemas/WatchProvider'
+            rent:
+              type: array
+              description: "Aluguel"
+              items:
+                $ref: '#/components/schemas/WatchProvider'
+            buy:
+              type: array
+              description: "Compra"
+              items:
+                $ref: '#/components/schemas/WatchProvider'
+
+    WatchProvider:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
 
     CompanyResponse:
       type: object
