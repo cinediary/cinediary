@@ -28,6 +28,15 @@ function useDraftCount(draft: DiaryFilters) {
 }
 
 /**
+ * A folha de filtros lendo as opções por conta própria: a folha aberta fica guardada como foi aberta, e as opções
+ * que chegam depois (abriu enquanto carregavam ou depois de uma falha) entram nela sem perder o rascunho.
+ */
+function ConnectedFilterSheet(props: { initial: DiaryFilters; onApply: (f: DiaryFilters) => void; onClose: () => void }) {
+  const options = useDiaryFilterOptions();
+  return <DiaryFilterSheet {...props} options={options.data ?? NO_OPTIONS} useCount={useDraftCount} />;
+}
+
+/**
  * O diário inteiro, por mês, com busca e filtros (#147). Carrega aos poucos (20 por vez) conforme a pessoa rola:
  * com milhares de filmes, esta tela não baixa tudo de uma vez.
  * Trocar de filtro não pisca: a lista anterior fica (um pouco apagada) até a nova chegar, e a tela volta ao topo.
@@ -53,7 +62,9 @@ export function DiaryScreen() {
   const hasDiary = options.data ? options.data.movies + options.data.series > 0 : entries.length > 0 || filtered;
 
   // Enquanto a lista do filtro novo não chega, a anterior fica apagada (sem esqueleto nem salto).
-  const changing = diary.isPlaceholderData && diary.isFetching;
+  // Pelo isPlaceholderData (e não por "buscando"): sem internet a consulta fica pausada, e a lista do filtro
+  // anterior apareceria como se fosse a do novo.
+  const changing = diary.isPlaceholderData;
   const opacity = useSharedValue(1);
   useEffect(() => {
     opacity.set(withTiming(changing ? 0.45 : 1, { duration: changing ? 160 : 220 }));
@@ -69,15 +80,7 @@ export function DiaryScreen() {
 
   const openSheet = () => {
     if (!options.data) void options.refetch();
-    overlay.show(
-      <DiaryFilterSheet
-        initial={filters}
-        options={filterOptions}
-        useCount={useDraftCount}
-        onApply={setFilters}
-        onClose={overlay.hide}
-      />,
-    );
+    overlay.show(<ConnectedFilterSheet initial={filters} onApply={setFilters} onClose={overlay.hide} />);
   };
 
   // Erro de tela inteira só no diário sem filtro: com filtro, o topo continua (dá para mudar ou limpar a busca).

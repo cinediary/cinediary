@@ -212,6 +212,8 @@ export function MonthPills({ month, onChange }: { month: number | null; onChange
             accessibilityRole="button"
             accessibilityState={{ selected }}
             onPress={() => onChange(selected ? null : i + 1)}
+            // 34 de altura + 5 em cima e embaixo: os 44 pontos de toque do iOS, sem a pílula ficar grande.
+            hitSlop={{ top: 5, bottom: 5 }}
             style={({ pressed }) => [styles.pill, selected && styles.on, pressed && styles.pressed]}
           >
             <Text variant="caption" style={[styles.pillText, selected && styles.pillTextOn]}>
@@ -250,6 +252,8 @@ export function DiaryFilterSheet({
     <OverlaySheet
       title={t.title}
       onClose={onClose}
+      // Tocar fora fecha sem aplicar: sempre há como sair, mesmo com o botão desligado (nada passa nos filtros).
+      onBackdropPress={onClose}
       footer={
         <View style={styles.sheetFooter}>
           <Button label={t.clear} variant="ghost" onPress={() => setDraft(clearSheetFilters(draft))} />

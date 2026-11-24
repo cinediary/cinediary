@@ -3,9 +3,11 @@ package com.cinediary.api.modules.diary.infrastructure.persistence;
 import com.cinediary.api.modules.diary.domain.DiaryFacets;
 import com.cinediary.api.modules.diary.domain.DiaryFilter;
 import com.cinediary.api.modules.diary.domain.DiaryFilterQueryPort;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -22,19 +24,23 @@ import org.springframework.stereotype.Component;
 class DiaryFilterSqlAdapter implements DiaryFilterQueryPort
 {
     /**
-     * Minúsculas e sem acento, sem depender da extensão unaccent: "Hereditário" e "hereditario" se acham. As
-     * maiúsculas acentuadas também estão na lista: com uma collation C, o lower() do Postgres não mexe nelas.
+     * Sem acento e em minúsculas, sem depender da extensão unaccent: separa cada letra do acento (NFD), tira as
+     * marcas e só então passa para minúscula. Vale para qualquer acento ("Hereditário", "Éramos", "Shōgun"), e o
+     * lower() já recebe só letras sem acento, que ele converte em qualquer collation.
      */
-    private static final String FOLD_FROM = "áàâãäåéèêëíìîïóòôõöúùûüçñýÁÀÂÃÄÅÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑÝ";
-    private static final String FOLD_TO = "aaaaaaeeeeiiiiooooouuuucnyaaaaaaeeeeiiiiooooouuuucny";
+    private static final String MARKS = "[\\u0300-\\u036f]";
 
     private final JdbcClient jdbc;
 
     @Override
-    public List<UUID> entryIds(UUID userId, DiaryFilter filter, int page, int size)
+    public List<UUID> entryIds(UUID userId, Long titleId, DiaryFilter filter, int page, int size)
     {
         Map<String, Object> params = new HashMap<>();
         String where = where(userId, filter, params);
+        if (titleId != null) {
+            where += " AND e.title_id = :titleId";
+            params.put("titleId", titleId);
+        }
         params.put("limit", size);
         params.put("offset", (long) page * size); // long: uma página muito alta não vira um OFFSET negativo
         return jdbc.sql("""
@@ -128,19 +134,13 @@ class DiaryFilterSqlAdapter implements DiaryFilterQueryPort
 
     private static String fold(String column)
     {
-        return "translate(lower(coalesce(" + column + ", '')), '" + FOLD_FROM + "', '" + FOLD_TO + "')";
+        return "lower(regexp_replace(normalize(coalesce(" + column + ", ''), NFD), '" + MARKS + "', '', 'g'))";
     }
 
+    /** O mesmo do {@link #fold} no texto buscado. Locale.ROOT: sem a regra de outro idioma (o i sem ponto do turco). */
     private static String foldJava(String s)
     {
-        StringBuilder out = new StringBuilder();
-        // NFC: um "é" digitado em duas partes (e + acento) vira uma letra só, a que está na lista. Locale.ROOT: sem
-        // a regra de outro idioma (ex.: o i sem ponto do turco).
-        for (char c : java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFC).toLowerCase(java.util.Locale.ROOT).toCharArray()) {
-            int i = FOLD_FROM.indexOf(c);
-            out.append(i >= 0 ? FOLD_TO.charAt(i) : c);
-        }
-        return out.toString();
+        return Normalizer.normalize(s, Normalizer.Form.NFD).replaceAll("[\\u0300-\\u036f]", "").toLowerCase(Locale.ROOT);
     }
 
     /** % e _ digitados valem como texto, não como curinga. */

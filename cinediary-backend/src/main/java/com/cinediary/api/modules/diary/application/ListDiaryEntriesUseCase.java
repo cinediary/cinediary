@@ -42,9 +42,11 @@ public class ListDiaryEntriesUseCase
     {
         int safePage = Math.max(0, page);
         int safeSize = Math.clamp(size, 1, 100);
-        List<DiaryEntryModel> entries = titleId != null
-                ? repository.listEntriesOfTitle(userId, titleId, safePage, safeSize)
-                : filter.isEmpty() ? repository.listEntries(userId, safePage, safeSize) : filteredEntries(userId, filter, safePage, safeSize);
+        // Título e filtros juntos: os filtros valem também (antes o título ganhava e os filtros eram ignorados).
+        List<DiaryEntryModel> entries = !filter.isEmpty()
+                ? filteredEntries(userId, titleId, filter, safePage, safeSize)
+                : titleId != null ? repository.listEntriesOfTitle(userId, titleId, safePage, safeSize)
+                : repository.listEntries(userId, safePage, safeSize);
         List<Long> ids = entries.stream().map(DiaryEntryModel::titleId).distinct().toList();
         Map<Long, TitleSummaryView> titles = catalog.summaries(ids, userId).stream()
                 .collect(Collectors.toMap(TitleSummaryView::id, Function.identity()));
@@ -58,9 +60,9 @@ public class ListDiaryEntriesUseCase
     }
 
     /** A consulta filtrada devolve os ids na ordem do diário; as entradas vêm depois, e a ordem é refeita. */
-    private List<DiaryEntryModel> filteredEntries(UUID userId, DiaryFilter filter, int page, int size)
+    private List<DiaryEntryModel> filteredEntries(UUID userId, Long titleId, DiaryFilter filter, int page, int size)
     {
-        List<UUID> ids = filtered.entryIds(userId, filter, page, size);
+        List<UUID> ids = filtered.entryIds(userId, titleId, filter, page, size);
         Map<UUID, DiaryEntryModel> byId = repository.findEntries(ids).stream()
                 .collect(Collectors.toMap(DiaryEntryModel::id, Function.identity()));
         return ids.stream().map(byId::get).filter(java.util.Objects::nonNull).toList();

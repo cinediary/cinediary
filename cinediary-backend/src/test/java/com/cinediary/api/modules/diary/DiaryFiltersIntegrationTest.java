@@ -53,6 +53,9 @@ class DiaryFiltersIntegrationTest extends IntegrationTest
         assertThat(titles(diary().param("withReview", "true"))).containsExactly("Hereditário");
         // Juntos: tudo precisa valer ao mesmo tempo
         assertThat(titles(diary().param("year", "2025").param("minRating", "5"))).containsExactly("Whiplash");
+        // Com o título junto, os filtros também valem
+        assertThat(titles(diary().param("titleId", String.valueOf(hereditary)))).hasSize(2);
+        assertThat(titles(diary().param("titleId", String.valueOf(hereditary)).param("year", "2026"))).containsExactly("Hereditário");
     }
 
     @Test
@@ -66,6 +69,10 @@ class DiaryFiltersIntegrationTest extends IntegrationTest
         entry(eramos, "2025-01-10", "4", null);
         assertThat(titles(diary().param("q", "eramos"))).containsExactly("Éramos Seis");
         assertThat(titles(diary().param("q", "E\u0301ramos"))).containsExactly("Éramos Seis");
+        // Qualquer acento, não só os do português
+        long shogun = TestTitles.insert(jdbc, "SERIES", "Shōgun", 10, "18:Drama");
+        entry(shogun, "2025-01-11", "5", null);
+        assertThat(titles(diary().param("q", "shogun"))).containsExactly("Shōgun");
         // Também acha pelo título guardado em outro idioma
         jdbc.sql("INSERT INTO catalog_title_translations (title_id, language, title) VALUES (?, 'en', 'Hereditary')")
                 .param(hereditary).update();
