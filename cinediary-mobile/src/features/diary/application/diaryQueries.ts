@@ -1,15 +1,20 @@
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { queryClient } from '@/shared/api/queryClient';
 import { sharedKeys } from '@/shared/api/queryKeys';
 import { seriesInProgress, type DiaryEntry, type EntryChanges } from '../domain/diary';
+import { filtersToQuery, isFiltered, NO_FILTERS, type DiaryFilters } from '../domain/diaryFilters';
 import { diaryApi } from '../infrastructure/diaryApi';
 
 const PAGE_SIZE = 20;
 
 export const diaryKeys = {
   entries: [...sharedKeys.diary, 'entries'] as const,
+  // Debaixo de "entries": registrar ou editar invalida também as listas filtradas.
+  filtered: (f: DiaryFilters) => [...sharedKeys.diary, 'entries', filtersToQuery(f)] as const,
+  count: (f: DiaryFilters) => [...sharedKeys.diary, 'count', filtersToQuery(f)] as const,
+  filterOptions: [...sharedKeys.diary, 'filters'] as const,
   // Debaixo de "diary": registrar uma data invalida o prefixo e o filme sai da lista sozinho.
   undated: [...sharedKeys.diary, 'undated'] as const,
   ofTitle: (titleId: number) => [...sharedKeys.diary, 'title', titleId] as const,
@@ -17,13 +22,34 @@ export const diaryKeys = {
   watchlist: sharedKeys.watchlist,
 };
 
-export function useDiaryEntries() {
+/**
+ * O diário, 20 por vez. Com filtros (#147), a lista filtrada no servidor; ao trocar de filtro, a lista anterior
+ * continua na tela até a nova chegar (sem piscar o esqueleto a cada toque).
+ */
+export function useDiaryEntries(filters: DiaryFilters = NO_FILTERS) {
+  const filtered = isFiltered(filters);
   return useInfiniteQuery({
-    queryKey: diaryKeys.entries,
-    queryFn: ({ pageParam }) => diaryApi.entries(pageParam, PAGE_SIZE),
+    queryKey: filtered ? diaryKeys.filtered(filters) : diaryKeys.entries,
+    queryFn: ({ pageParam }) => diaryApi.entries(pageParam, PAGE_SIZE, filters),
     initialPageParam: 0,
     getNextPageParam: (last, pages) => (last.length === PAGE_SIZE ? pages.length : undefined),
+    placeholderData: keepPreviousData,
   });
+}
+
+/** Quantos registros passam nos filtros (a contagem da lista e o "Ver N registros" da folha). */
+export function useDiaryCount(filters: DiaryFilters, enabled = true) {
+  return useQuery({
+    queryKey: diaryKeys.count(filters),
+    queryFn: () => diaryApi.count(filters),
+    enabled,
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** As opções dos filtros: muda pouco (só quando o diário ganha um ano ou um gênero novo). */
+export function useDiaryFilterOptions() {
+  return useQuery({ queryKey: diaryKeys.filterOptions, queryFn: diaryApi.filterOptions, staleTime: 5 * 60_000 });
 }
 
 /** Registros de um título (datas, notas e reviews). Sob "diary": registrar de novo atualiza sozinho. */

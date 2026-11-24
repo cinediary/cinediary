@@ -1052,8 +1052,16 @@ paths:
   /api/v1/diary/entries:
     get:
       tags: [Diary & Series]
-      summary: Lista entradas cronológicas do diário do usuário
+      summary: Lista entradas cronológicas do diário do usuário, com filtros opcionais do "Meu diário"
       parameters:
+        - $ref: '#/components/parameters/DiaryYear'
+        - $ref: '#/components/parameters/DiaryMonth'
+        - $ref: '#/components/parameters/DiaryGenreId'
+        - $ref: '#/components/parameters/DiaryMinRating'
+        - $ref: '#/components/parameters/DiaryRewatch'
+        - $ref: '#/components/parameters/DiaryWithReview'
+        - $ref: '#/components/parameters/DiaryMediaType'
+        - $ref: '#/components/parameters/DiaryQuery'
         - in: query
           name: titleId
           required: false
@@ -1096,6 +1104,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiaryEntryResponse'
+
+  /api/v1/diary/entries/count:
+    get:
+      tags: [Diary & Series]
+      summary: Quantos registros do diário passam nos filtros
+      parameters:
+        - $ref: '#/components/parameters/DiaryYear'
+        - $ref: '#/components/parameters/DiaryMonth'
+        - $ref: '#/components/parameters/DiaryGenreId'
+        - $ref: '#/components/parameters/DiaryMinRating'
+        - $ref: '#/components/parameters/DiaryRewatch'
+        - $ref: '#/components/parameters/DiaryWithReview'
+        - $ref: '#/components/parameters/DiaryMediaType'
+        - $ref: '#/components/parameters/DiaryQuery'
+      responses:
+        '200':
+          description: Total de registros com esses filtros
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryCountResponse'
+
+  /api/v1/diary/filters:
+    get:
+      tags: [Diary & Series]
+      summary: Opções dos filtros do diário (só o que existe nele) — anos, gêneros com quantos registros e tipos
+      responses:
+        '200':
+          description: Anos com registro (do mais recente), gêneros (dos mais registrados) e totais de filmes e séries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryFiltersResponse'
 
   /api/v1/diary/entries/{entryId}:
     parameters:
@@ -1425,6 +1466,55 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
+  parameters:
+    DiaryYear:
+      in: query
+      name: year
+      required: false
+      description: Ano em que assistiu
+      schema: { type: integer }
+    DiaryMonth:
+      in: query
+      name: month
+      required: false
+      description: Mês (1–12), só junto com o ano
+      schema: { type: integer, minimum: 1, maximum: 12 }
+    DiaryGenreId:
+      in: query
+      name: genreId
+      required: false
+      description: Gênero do TMDB do título
+      schema: { type: integer }
+    DiaryMinRating:
+      in: query
+      name: minRating
+      required: false
+      description: Nota a partir de (0,5–5)
+      schema: { type: number, minimum: 0.5, maximum: 5 }
+    DiaryRewatch:
+      in: query
+      name: rewatch
+      required: false
+      description: Só revistos
+      schema: { type: boolean, default: false }
+    DiaryWithReview:
+      in: query
+      name: withReview
+      required: false
+      description: Só com review
+      schema: { type: boolean, default: false }
+    DiaryMediaType:
+      in: query
+      name: mediaType
+      required: false
+      description: MOVIE ou SERIES (sem o parâmetro, os dois)
+      schema: { type: string, enum: [MOVIE, SERIES] }
+    DiaryQuery:
+      in: query
+      name: q
+      required: false
+      description: Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres)
+      schema: { type: string, maxLength: 100 }
   schemas:
     ActivityResponse:
       type: object
@@ -2223,6 +2313,29 @@ components:
         containsSpoilers:
           type: boolean
 
+    DiaryCountResponse:
+      type: object
+      required: [total]
+      properties:
+        total: { type: integer, format: int64 }
+    DiaryFiltersResponse:
+      type: object
+      required: [years, genres, moviesCount, seriesCount]
+      properties:
+        years:
+          type: array
+          items: { type: integer }
+        genres:
+          type: array
+          items:
+            type: object
+            required: [id, name, entriesCount]
+            properties:
+              id: { type: integer }
+              name: { type: string }
+              entriesCount: { type: integer, format: int64 }
+        moviesCount: { type: integer, format: int64 }
+        seriesCount: { type: integer, format: int64 }
     DiaryEntryResponse:
       type: object
       required: [id, userId, title, watchedDate, liked, isRewatch, createdAt]

@@ -2355,10 +2355,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lista entradas cronológicas do diário do usuário */
+        /** Lista entradas cronológicas do diário do usuário, com filtros opcionais do "Meu diário" */
         get: {
             parameters: {
                 query?: {
+                    /** @description Ano em que assistiu */
+                    year?: components["parameters"]["DiaryYear"];
+                    /** @description Mês (1–12), só junto com o ano */
+                    month?: components["parameters"]["DiaryMonth"];
+                    /** @description Gênero do TMDB do título */
+                    genreId?: components["parameters"]["DiaryGenreId"];
+                    /** @description Nota a partir de (0,5–5) */
+                    minRating?: components["parameters"]["DiaryMinRating"];
+                    /** @description Só revistos */
+                    rewatch?: components["parameters"]["DiaryRewatch"];
+                    /** @description Só com review */
+                    withReview?: components["parameters"]["DiaryWithReview"];
+                    /** @description MOVIE ou SERIES (sem o parâmetro, os dois) */
+                    mediaType?: components["parameters"]["DiaryMediaType"];
+                    /** @description Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres) */
+                    q?: components["parameters"]["DiaryQuery"];
                     /** @description Só as entradas deste título (página do filme) */
                     titleId?: number;
                     page?: number;
@@ -2407,6 +2423,95 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/diary/entries/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quantos registros do diário passam nos filtros */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Ano em que assistiu */
+                    year?: components["parameters"]["DiaryYear"];
+                    /** @description Mês (1–12), só junto com o ano */
+                    month?: components["parameters"]["DiaryMonth"];
+                    /** @description Gênero do TMDB do título */
+                    genreId?: components["parameters"]["DiaryGenreId"];
+                    /** @description Nota a partir de (0,5–5) */
+                    minRating?: components["parameters"]["DiaryMinRating"];
+                    /** @description Só revistos */
+                    rewatch?: components["parameters"]["DiaryRewatch"];
+                    /** @description Só com review */
+                    withReview?: components["parameters"]["DiaryWithReview"];
+                    /** @description MOVIE ou SERIES (sem o parâmetro, os dois) */
+                    mediaType?: components["parameters"]["DiaryMediaType"];
+                    /** @description Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres) */
+                    q?: components["parameters"]["DiaryQuery"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Total de registros com esses filtros */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DiaryCountResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/diary/filters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Opções dos filtros do diário (só o que existe nele) — anos, gêneros com quantos registros e tipos */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Anos com registro (do mais recente), gêneros (dos mais registrados) e totais de filmes e séries */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DiaryFiltersResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3526,6 +3631,23 @@ export interface components {
             reviewText?: string | null;
             containsSpoilers?: boolean;
         };
+        DiaryCountResponse: {
+            /** Format: int64 */
+            total: number;
+        };
+        DiaryFiltersResponse: {
+            years: number[];
+            genres: {
+                id: number;
+                name: string;
+                /** Format: int64 */
+                entriesCount: number;
+            }[];
+            /** Format: int64 */
+            moviesCount: number;
+            /** Format: int64 */
+            seriesCount: number;
+        };
         DiaryEntryResponse: {
             /** @description Desta entrada; ausente = segue o padrão da conta */
             replyPolicy?: components["schemas"]["ReplyPolicy"] | null;
@@ -3686,7 +3808,24 @@ export interface components {
         };
     };
     responses: never;
-    parameters: never;
+    parameters: {
+        /** @description Ano em que assistiu */
+        DiaryYear: number;
+        /** @description Mês (1–12), só junto com o ano */
+        DiaryMonth: number;
+        /** @description Gênero do TMDB do título */
+        DiaryGenreId: number;
+        /** @description Nota a partir de (0,5–5) */
+        DiaryMinRating: number;
+        /** @description Só revistos */
+        DiaryRewatch: boolean;
+        /** @description Só com review */
+        DiaryWithReview: boolean;
+        /** @description MOVIE ou SERIES (sem o parâmetro, os dois) */
+        DiaryMediaType: "MOVIE" | "SERIES";
+        /** @description Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres) */
+        DiaryQuery: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
