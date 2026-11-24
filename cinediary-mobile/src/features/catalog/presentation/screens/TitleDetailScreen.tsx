@@ -20,6 +20,9 @@ import { TitleHeader } from '../components/TitleHeader';
 import { TrailerPlayer } from '../components/TrailerPlayer';
 import { YourEntries } from '../components/YourEntries';
 import { TitleCommunitySection, TitleRatingSummary } from '@/features/social/presentation/components/TitleCommunitySection';
+import { AddToListRow } from '@/features/lists/presentation/components/AddToListRow';
+import { AddToListSheet } from '@/features/lists/presentation/components/AddToListSheet';
+import { useOverlay } from '@/shared/ui/BottomSheet';
 import { openQuickLog } from '../navigation';
 import { useTrailerPlacement, type TrailerSlot } from '../trailerPlacement';
 
@@ -34,6 +37,7 @@ export function TitleDetailScreen() {
   const tmdbId = Number(params.tmdbId);
   const detail = useTitleDetail(mediaType, tmdbId);
   const extras = useTitleExtras(mediaType, tmdbId);
+  const overlay = useOverlay();
   // A página aparece de uma vez quando o essencial chega (ver useTitlePageGate). Até lá, a estrela girando,
   // por pelo menos uma volta (sem piscar quando a internet é rápida).
   const gate = useTitlePageGate({
@@ -106,6 +110,7 @@ export function TitleDetailScreen() {
         <View style={styles.body}>
           <TitleActions title={title} trailer={placement === 'actions' ? { status: trailerStatus, onPress: openTrailer } : undefined} />
           <Button label={title.state.watched ? t.logAgain : t.log} onPress={() => openQuickLog(title, { from: 'title_page' })} />
+          <AddToListRow title={title} onPress={() => overlay.show(<AddToListSheet title={title} onClose={overlay.hide} />)} />
           {/* Nota única (TMDB + CineDiary) logo abaixo das ações. */}
           <TitleRatingSummary titleId={title.id} myRating={title.state.rating} />
           {isSeries ? (
@@ -136,6 +141,8 @@ export function TitleDetailScreen() {
       </Animated.ScrollView>
       <FloatingBackButton />
       {trailerKey ? <TrailerPlayer youtubeKey={trailerKey} visible={trailerOpen} onClose={() => setTrailerOpen(false)} /> : null}
+      {/* A folha "Adicionar à lista" na raiz da página, por cima de tudo. */}
+      {overlay.node}
     </Animated.View>
   );
 }

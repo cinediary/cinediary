@@ -45,4 +45,24 @@ export const listsApi = {
   update: async (listId: string, changes: ListChanges): Promise<ListDetail> =>
     toDetail(await unwrap(api.PATCH('/api/v1/lists/{listId}', { params: { path: { listId } }, body: changes }))),
   remove: (listId: string) => unwrapVoid(api.DELETE('/api/v1/lists/{listId}', { params: { path: { listId } } })),
+
+  // Títulos de uma lista (#19/#22)
+  /** As suas listas, cada uma dizendo se tem o título. */
+  mine: async (titleId: number): Promise<{ list: UserList; containsTitle: boolean }[]> =>
+    (await unwrap(api.GET('/api/v1/titles/{titleId}/my-lists', { params: { path: { titleId } } }))).map((m) => ({
+      list: toList(m.list),
+      containsTitle: m.containsTitle,
+    })),
+  addItem: async (listId: string, titleId: number, note?: string): Promise<ListDetail> =>
+    toDetail(await unwrap(api.POST('/api/v1/lists/{listId}/items', { params: { path: { listId } }, body: { titleId, note } }))),
+  removeItem: async (listId: string, titleId: number): Promise<ListDetail> =>
+    toDetail(await unwrap(api.DELETE('/api/v1/lists/{listId}/items/{titleId}', { params: { path: { listId, titleId } } }))),
+  reorder: async (listId: string, titleIds: number[]): Promise<ListDetail> =>
+    toDetail(await unwrap(api.PUT('/api/v1/lists/{listId}/items/order', { params: { path: { listId } }, body: { titleIds } }))),
+  setNote: async (listId: string, titleId: number, note: string): Promise<ListDetail> =>
+    toDetail(
+      await unwrap(
+        api.PATCH('/api/v1/lists/{listId}/items/{titleId}', { params: { path: { listId, titleId } }, body: { note } }),
+      ),
+    ),
 };
