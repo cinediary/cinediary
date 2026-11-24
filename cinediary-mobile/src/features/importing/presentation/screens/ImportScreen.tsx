@@ -1,7 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
 import { ArrowSquareOut, CheckCircle, FilmReel, LockSimple, WarningCircle } from 'phosphor-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
@@ -35,6 +35,10 @@ export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } =
   const flow = useImportFlow();
   const job = flow.job;
   const [favoritesMode, setFavoritesMode] = useState<FavoritesMode>('REPLACE');
+  // A falha ao confirmar também é lida no iOS: o accessibilityLiveRegion do texto só vale no Android.
+  useEffect(() => {
+    if (flow.confirmError) AccessibilityInfo.announceForAccessibility(t.confirmFailed);
+  }, [flow.confirmError, t.confirmFailed]);
 
   const goTo = (path: '/(tabs)' | '/(tabs)/together') => {
     void flow.reset();

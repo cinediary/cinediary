@@ -205,6 +205,11 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
         mvc.perform(post("/api/v1/imports/{id}/confirm", job).with(user(keeper))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"favoritesMode\":\"KEEP\"}"))
                 .andExpect(status().isOk());
+        // Confirmar de novo (com outro modo) enquanto grava não troca a escolha: só a primeira dispara a gravação
+        mvc.perform(post("/api/v1/imports/{id}/confirm", job).with(user(keeper))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"favoritesMode\":\"REPLACE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(org.hamcrest.Matchers.oneOf("APPLYING", "COMPLETED")));
         awaitStatus(user(keeper), job, "COMPLETED");
         mvc.perform(get("/api/v1/me").with(user(keeper)))
                 .andExpect(jsonPath("$.favorites.length()").value(1))
