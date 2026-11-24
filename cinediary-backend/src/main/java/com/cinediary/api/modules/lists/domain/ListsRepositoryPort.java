@@ -30,4 +30,27 @@ public interface ListsRepositoryPort
 
     /** Os primeiros títulos de cada lista (na ordem), para a capa. */
     Map<UUID, List<Long>> coverTitles(Collection<UUID> listIds, int perList);
+
+    /** Trava a lista até o fim da transação: duas mudanças nos itens ao mesmo tempo não disputam as posições. */
+    void lock(UUID listId);
+
+    boolean contains(UUID listId, long titleId);
+
+    /** Põe o título no fim da lista; devolve a posição. */
+    int append(UUID listId, long titleId, String note);
+
+    /** Tira o título e fecha o buraco nas posições; false se ele não estava na lista. */
+    boolean remove(UUID listId, long titleId);
+
+    /** A ordem nova: {@code titleIds} na ordem, a partir da posição 1. */
+    void reorder(UUID listId, List<Long> titleIds);
+
+    /** false se o título não estava na lista. */
+    boolean updateNote(UUID listId, long titleId, String note);
+
+    /** A lista mudou: sobe no perfil (as listas vão das atualizadas por último). */
+    void touch(UUID listId);
+
+    /** Ids das listas de alguém que têm o título. */
+    java.util.Set<UUID> listsContaining(UUID ownerId, long titleId);
 }

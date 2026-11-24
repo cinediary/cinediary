@@ -138,6 +138,77 @@ class ListsJdbcAdapter implements ListsRepositoryPort
         return out;
     }
 
+    @Override
+    public void lock(UUID listId)
+    {
+        jdbc.sql("SELECT id FROM lists WHERE id = :id FOR UPDATE").param("id", listId).query(UUID.class).optional();
+    }
+
+    @Override
+    public boolean contains(UUID listId, long titleId)
+    {
+        return jdbc.sql("SELECT EXISTS (SELECT 1 FROM list_items WHERE list_id = :l AND title_id = :t)")
+                .param("l", listId).param("t", titleId).query(Boolean.class).single();
+    }
+
+    @Override
+    public int append(UUID listId, long titleId, String note)
+    {
+        return jdbc.sql("""
+                        INSERT INTO list_items (list_id, title_id, position, note)
+                        SELECT :l, :t, COALESCE(MAX(position), 0) + 1, :note FROM list_items WHERE list_id = :l
+                        RETURNING position""")
+                .param("l", listId).param("t", titleId).param("note", note)
+                .query(Integer.class).single();
+    }
+
+    @Override
+    public boolean remove(UUID listId, long titleId)
+    {
+        Integer position = jdbc.sql("DELETE FROM list_items WHERE list_id = :l AND title_id = :t RETURNING position")
+                .param("l", listId).param("t", titleId).query(Integer.class).optional().orElse(null);
+        if (position == null) {
+            return false;
+        }
+        jdbc.sql("UPDATE list_items SET position = position - 1 WHERE list_id = :l AND position > :p")
+                .param("l", listId).param("p", position).update();
+        return true;
+    }
+
+    @Override
+    public void reorder(UUID listId, List<Long> titleIds)
+    {
+        // Uma passada só: o título na posição i do pedido recebe a posição i + 1.
+        jdbc.sql("""
+                        UPDATE list_items li SET position = o.pos
+                          FROM unnest(CAST(:ids AS bigint[])) WITH ORDINALITY AS o(title_id, pos)
+                         WHERE li.list_id = :l AND li.title_id = o.title_id""")
+                .param("l", listId).param("ids", titleIds.toArray(Long[]::new))
+                .update();
+    }
+
+    @Override
+    public boolean updateNote(UUID listId, long titleId, String note)
+    {
+        return jdbc.sql("UPDATE list_items SET note = :note WHERE list_id = :l AND title_id = :t")
+                .param("l", listId).param("t", titleId).param("note", note).update() == 1;
+    }
+
+    @Override
+    public void touch(UUID listId)
+    {
+        jdbc.sql("UPDATE lists SET updated_at = NOW() WHERE id = :id").param("id", listId).update();
+    }
+
+    @Override
+    public java.util.Set<UUID> listsContaining(UUID ownerId, long titleId)
+    {
+        return new java.util.HashSet<>(jdbc.sql("""
+                        SELECT l.id FROM lists l JOIN list_items li ON li.list_id = l.id
+                         WHERE l.user_id = :u AND li.title_id = :t""")
+                .param("u", ownerId).param("t", titleId).query(UUID.class).list());
+    }
+
     private static UserList toList(ResultSet rs, int n) throws SQLException
     {
         return new UserList(rs.getObject("id", UUID.class), rs.getObject("user_id", UUID.class), rs.getString("name"),
