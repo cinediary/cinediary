@@ -8,9 +8,10 @@ import { importing } from './importing';
 import { match } from './match';
 import { social } from './social';
 import { stats } from './stats';
+import { lists } from './lists';
 
 /**
  * Español neutro (sirve para Latinoamérica y España): mismos archivos y claves de ../pt. Tipado como `Strings`,
  * así que si falta un texto, el tsc da error.
  */
-export const es: Strings = { tabs, common, auth, onboarding, catalog, diary, importing, stats, match, account, social };
+export const es: Strings = { tabs, common, auth, onboarding, catalog, diary, importing, stats, match, account, social, lists };

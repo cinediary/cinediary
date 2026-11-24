@@ -137,6 +137,10 @@ export interface AnalyticsEvents {
   trailer_opened: { tmdb_id: number; media_type: MediaType; placement: 'meta' | 'actions' };
   /** A seção "Onde assistir" apareceu (uma vez por abertura da página). Quantos serviços em cada fileira. */
   watch_provider_viewed: { tmdb_id: number; media_type: MediaType; stream_count: number; rent_count: number; buy_count: number };
+  /** Listas (#17): criou uma lista; pôs um título numa lista (`from`: de onde); curtiu uma lista. */
+  list_created: { ranked: boolean; visibility: 'PUBLIC' | 'PRIVATE' };
+  list_item_added: { from: 'title' | 'list'; media_type: MediaType };
+  list_liked: { own_list: boolean; liked: boolean };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;

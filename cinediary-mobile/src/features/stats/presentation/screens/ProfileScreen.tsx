@@ -3,6 +3,7 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { openTitle } from '@/features/catalog/presentation/navigation';
+import { ProfileListsSection } from '@/features/lists/presentation/components/ProfileListsSection';
 import { useDiaryEntries } from '@/features/diary/application/diaryQueries';
 import { usePublicProfile } from '@/features/social/application/socialQueries';
 import { OwnProfileActions } from '@/features/social/presentation/components/ProfileActions';
@@ -180,6 +181,9 @@ export function ProfileScreen() {
           </View>
         </>
       )}
+
+      {/* Coleções (opção C do Design System): por enquanto, as listas; marcados e tags entram depois. */}
+      <ProfileListsSection username={profile.username} mine />
     </Screen>
   );
 }
