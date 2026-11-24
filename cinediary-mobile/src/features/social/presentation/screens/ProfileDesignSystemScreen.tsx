@@ -38,7 +38,7 @@ export function ProfileDesignSystemScreen() {
                   name="Edu Dantas"
                   username="edu"
                   avatarUrl={null}
-                  headerUrl={`https://image.tmdb.org/t/p/w1280${c.path}`}
+                  headerUrl={`https://image.tmdb.org/t/p/w780${c.path}`}
                   coverBleedTop={BLEED}
                   pronouns="he"
                   bio="Cinéfilo de fim de semana. Terror, drama e tudo que a Greta Gerwig fizer."

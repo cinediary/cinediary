@@ -56,6 +56,8 @@ export const semantic = {
   background: palette.bg,
   card: palette.surface,
   textPrimary: palette.ink900,
+  /** Contorno fino por cima de uma foto (ink900 a 12%): marca a borda sem esconder a imagem. */
+  imageOutline: 'rgba(42,33,28,0.12)',
   textSecondary: palette.ink700,
   textMuted: palette.ink500,
   iconInactive: palette.ink400,

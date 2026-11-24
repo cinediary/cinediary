@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(42,33,28,0.12)',
+    borderColor: semantic.imageOutline,
   },
   coverEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.xs, paddingHorizontal: space.xl },
   coverHint: { textAlign: 'center', marginTop: 2 },

@@ -6,7 +6,7 @@ import { usePublicProfile } from '@/features/social/application/socialQueries';
 import { ProfileHeader } from '@/features/social/presentation/components/ProfileHeader';
 import { strings } from '@/shared/i18n';
 import { semantic, space } from '@/shared/theme';
-import { Button, Text, useToast } from '@/shared/ui';
+import { Button, ErrorState, Skeleton, Text, useToast } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useMe } from '../../application/profileQueries';
 import { useProfileHeader } from '../../application/profileHeader';
@@ -59,13 +59,18 @@ export function ProfileHeaderPreviewScreen() {
             canOpenLists={false}
             actions={null}
           />
-        ) : null}
+        ) : me.isError ? (
+          <ErrorState onRetry={() => me.refetch()} />
+        ) : (
+          <Skeleton width="100%" height={320} radius={0} />
+        )}
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
         <Text variant="caption" tone="muted" style={styles.hint}>
           {a.coverPreviewHint}
         </Text>
-        <Button label={a.coverUseThis} loading={set.isPending} onPress={use} />
+        {/* Só depois de ver a prévia: sem o perfil carregado, não dá para salvar. */}
+        <Button label={a.coverUseThis} loading={set.isPending} disabled={!profile} onPress={use} />
         <Button label={a.coverOtherScene} variant="ghost" disabled={set.isPending} onPress={() => nav.back()} />
       </View>
     </View>

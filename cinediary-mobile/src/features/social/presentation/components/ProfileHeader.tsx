@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { LockSimple } from 'phosphor-react-native';
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
 import { formatNumber, strings } from '@/shared/i18n';
@@ -176,9 +176,16 @@ export function ProfileHeader(p: ProfileHeaderProps) {
  * tela. Sem capa (ou com uma que não carregou), sempre a padrão.
  */
 export function useCoverStatusBar(headerUrl: string | null | undefined) {
-  const hasCover = !!useWorkingImageUrl(headerUrl);
+  const cover = useWorkingImageUrl(headerUrl);
+  const hasCover = !!cover;
   const overCover = useRef(true);
   const apply = useCallback(() => setStatusBarStyle(hasCover && overCover.current ? 'light' : 'auto'), [hasCover]);
+  // Capa nova: a tela recria a rolagem no topo (ver ProfileScreen), então a capa volta a estar atrás da barra.
+  // Sem isto, valia a última rolagem da capa anterior, e a barra podia ficar escura por cima da capa nova. A
+  // barra em si é aplicada ao voltar para o perfil (useFocusEffect): a troca acontece com outra tela na frente.
+  useEffect(() => {
+    overCover.current = true;
+  }, [cover]);
   useFocusEffect(
     useCallback(() => {
       apply();
