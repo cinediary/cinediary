@@ -38,7 +38,18 @@ public class ListAccess
 
     public UserList owned(UUID userId, UUID listId)
     {
-        UserList list = lists.find(listId).orElseThrow(() -> new NotFoundException("Lista não encontrada"));
+        return requireOwner(userId, lists.find(listId));
+    }
+
+    /** Como {@link #owned}, com a lista travada até o fim da transação (para editar sem perder uma mudança). */
+    public UserList ownedForUpdate(UUID userId, UUID listId)
+    {
+        return requireOwner(userId, lists.findForUpdate(listId));
+    }
+
+    private static UserList requireOwner(UUID userId, java.util.Optional<UserList> found)
+    {
+        UserList list = found.orElseThrow(() -> new NotFoundException("Lista não encontrada"));
         if (!list.isOwnedBy(userId)) {
             throw new ForbiddenException("Só quem criou a lista pode mudar ela");
         }

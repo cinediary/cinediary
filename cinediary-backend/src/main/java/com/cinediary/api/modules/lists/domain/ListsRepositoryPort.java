@@ -16,6 +16,9 @@ public interface ListsRepositoryPort
 
     Optional<UserList> find(UUID listId);
 
+    /** Lê e trava a lista até o fim da transação. */
+    Optional<UserList> findForUpdate(UUID listId);
+
     /** As listas de alguém, das atualizadas por último; {@code includePrivate} só para o próprio dono. */
     List<UserList> listsOf(UUID ownerId, boolean includePrivate);
 

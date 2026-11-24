@@ -7,6 +7,7 @@ import com.cinediary.api.modules.lists.presentation.dto.ListSummaryResponse;
 import com.cinediary.api.shared.domain.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,7 @@ public class ListsController
     @PostMapping("/lists")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Cria uma lista (nome obrigatório; ranking e visibilidade opcionais)")
-    public ListDetailResponse create(CurrentUser user, @RequestBody ListRequest request)
+    public ListDetailResponse create(CurrentUser user, @Valid @RequestBody ListRequest request)
     {
         return ListDetailResponse.from(lists.create(user.id(), request.name(), request.description(),
                 Boolean.TRUE.equals(request.ranked()), request.visibilityOrNull()));
@@ -54,7 +55,7 @@ public class ListsController
 
     @PatchMapping("/lists/{listId}")
     @Operation(summary = "Edita uma lista (só o dono; os campos que não vierem ficam como estão)")
-    public ListDetailResponse update(CurrentUser user, @PathVariable UUID listId, @RequestBody ListRequest request)
+    public ListDetailResponse update(CurrentUser user, @PathVariable UUID listId, @Valid @RequestBody ListRequest request)
     {
         return ListDetailResponse.from(lists.update(user.id(), listId, request.name(), request.description(), request.ranked(),
                 request.visibilityOrNull()));

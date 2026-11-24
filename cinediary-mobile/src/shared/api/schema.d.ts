@@ -2850,7 +2850,9 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["ListRequest"];
+                    "application/json": components["schemas"]["ListRequest"] & {
+                        name: string;
+                    };
                 };
             };
             responses: {

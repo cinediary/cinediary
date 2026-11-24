@@ -76,6 +76,15 @@ class ListsJdbcAdapter implements ListsRepositoryPort
     }
 
     @Override
+    public Optional<UserList> findForUpdate(UUID listId)
+    {
+        return jdbc.sql("SELECT " + COLUMNS + " FROM lists WHERE id = :id FOR UPDATE")
+                .param("id", listId)
+                .query(ListsJdbcAdapter::toList)
+                .optional();
+    }
+
+    @Override
     public List<UserList> listsOf(UUID ownerId, boolean includePrivate)
     {
         return jdbc.sql("SELECT " + COLUMNS + " FROM lists WHERE user_id = :u"

@@ -46,7 +46,9 @@ public class ManageListsUseCase
     public ListResults.Detail update(UUID userId, UUID listId, String name, String description, Boolean ranked,
                                      ListVisibility visibility)
     {
-        UserList updated = lists.update(access.owned(userId, listId).with(name, description, ranked, visibility));
+        // Lê com a lista travada: dois PATCH ao mesmo tempo (ex.: renomear e deixar privada) não gravam um estado
+        // antigo por cima do outro (a visibilidade voltaria a pública sem a pessoa querer).
+        UserList updated = lists.update(access.ownedForUpdate(userId, listId).with(name, description, ranked, visibility));
         return assembler.detail(updated, userId);
     }
 

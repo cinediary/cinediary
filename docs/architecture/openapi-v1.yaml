@@ -1311,7 +1311,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ListRequest'
+              allOf:
+                - $ref: '#/components/schemas/ListRequest'
+                - type: object
+                  required: [name]
+                  properties:
+                    name: { type: string, maxLength: 100 }
       responses:
         '201':
           description: Lista criada (sem títulos)
