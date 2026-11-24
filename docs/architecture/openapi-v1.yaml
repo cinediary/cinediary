@@ -1251,7 +1251,11 @@ paths:
   /api/v1/imports/{jobId}/confirm:
     post:
       tags: [Importing (Letterboxd)]
-      summary: Confirma a importação e persiste os registros de forma idempotente
+      summary: Confirma a importação e grava os registros em segundo plano, de forma idempotente
+      description: >
+        Responde na hora com o job em APPLYING; a gravação no diário roda em segundo plano e o job termina em
+        COMPLETED (ou FAILED). Acompanhe por GET /api/v1/imports/{jobId}. Confirmar de novo um job em APPLYING
+        ou COMPLETED devolve o job como está, sem duplicar nada.
       parameters:
         - in: path
           name: jobId
@@ -1267,7 +1271,7 @@ paths:
               $ref: '#/components/schemas/ConfirmImportRequest'
       responses:
         '200':
-          description: Importação aplicada sem duplicidades e projetada no Neo4j
+          description: Importação confirmada (APPLYING), ou o job como está se já estava em gravação ou concluído
           content:
             application/json:
               schema:

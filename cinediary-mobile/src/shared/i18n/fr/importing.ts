@@ -50,6 +50,7 @@ export const importing: Strings['importing'] = {
   unmatchedHint: 'Pour l’instant, ils ne sont pas importés.',
   nothingNew: 'Tout était déjà là ; rien de nouveau à importer.',
   confirm: 'Importer dans mon journal',
+  confirmFailed: 'Impossible d’importer pour le moment. Vérifie ta connexion et réessaie.',
   ok: 'OK',
   applying: 'Import dans ton journal…',
   doneTitle: (n: number) => title('C’est fait ! Ton journal compte maintenant ', n === 1 ? '1 titre' : `${n} titres`, '.'),
