@@ -10,7 +10,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.cinediary.api.IntegrationTest;
 import com.cinediary.api.TestTitles;
+import com.jayway.jsonpath.JsonPath;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -240,6 +244,45 @@ class DiaryIntegrationTest extends IntegrationTest
         // Mexer no texto e continuar acima do limite é recusado; encurtar até 1.200 salva
         update(me, id, edit.formatted("b".repeat(2999))).andExpect(status().isBadRequest());
         update(me, id, edit.formatted("b".repeat(1200))).andExpect(status().isOk());
+    }
+
+    @Test
+    void entriesWithTheSameDateAndCreationTimeArePagedWithoutRepeatsOrGaps() throws Exception
+    {
+        // A importação grava milhares de entradas no mesmo instante e muitas no mesmo dia: a ordem precisa de um
+        // desempate único (o id), senão a mesma entrada aparecia em duas páginas e outra em nenhuma (#144).
+        String clerkId = "user_" + UUID.randomUUID();
+        RequestPostProcessor me = user(clerkId);
+        long title = TestTitles.movie(jdbc, "Empate", 10, "18:Drama");
+        for (int i = 0; i < 12; i++) {
+            long t = i % 2 == 0 ? title : TestTitles.movie(jdbc, "Empate " + i, 10, "18:Drama");
+            entry(me, "{\"titleId\":%d,\"watchedDate\":\"2025-12-01\"}".formatted(t)).andExpect(status().isCreated());
+        }
+        jdbc.sql("""
+                UPDATE diary_entries SET created_at = TIMESTAMPTZ '2026-11-24 13:06:13+00'
+                 WHERE user_id = (SELECT id FROM users WHERE clerk_id = :clerk)
+                """).param("clerk", clerkId).update();
+
+        assertPagedInIdOrder(me, null, 12);
+        assertPagedInIdOrder(me, title, 6);
+    }
+
+    /**
+     * Lê todas as páginas (de 5) e confere: nenhuma entrada repetida, nenhuma faltando, do maior id para o menor
+     * (texto do UUID: a mesma ordem do Postgres).
+     */
+    private void assertPagedInIdOrder(RequestPostProcessor me, Long titleId, int total) throws Exception
+    {
+        List<String> ids = new ArrayList<>();
+        for (int page = 0; page * 5 < total; page++) {
+            var request = get("/api/v1/diary/entries").param("page", String.valueOf(page)).param("size", "5").with(me);
+            if (titleId != null) {
+                request = request.param("titleId", String.valueOf(titleId));
+            }
+            String body = mvc.perform(request).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            ids.addAll(JsonPath.<List<String>>read(body, "$[*].id"));
+        }
+        assertThat(ids).hasSize(total).doesNotHaveDuplicates().isSortedAccordingTo(Comparator.reverseOrder());
     }
 
     private ResultActions update(RequestPostProcessor me, String id, String body) throws Exception

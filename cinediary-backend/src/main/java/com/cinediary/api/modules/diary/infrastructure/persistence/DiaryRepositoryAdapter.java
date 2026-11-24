@@ -148,7 +148,7 @@ class DiaryRepositoryAdapter implements DiaryRepositoryPort
     @Override
     public List<DiaryEntryModel> listEntries(UUID userId, int page, int size)
     {
-        return entries.findByUserIdOrderByWatchedDateDescCreatedAtDesc(userId, PageRequest.of(page, size)).stream()
+        return entries.findByUserIdOrderByWatchedDateDescCreatedAtDescIdDesc(userId, PageRequest.of(page, size)).stream()
                 .map(DiaryRepositoryAdapter::toModel).toList();
     }
 
@@ -193,7 +193,7 @@ class DiaryRepositoryAdapter implements DiaryRepositoryPort
     @Override
     public List<DiaryEntryModel> listEntriesOfTitle(UUID userId, long titleId, int page, int size)
     {
-        return entries.findByUserIdAndTitleIdOrderByWatchedDateDescCreatedAtDesc(userId, titleId, PageRequest.of(page, size))
+        return entries.findByUserIdAndTitleIdOrderByWatchedDateDescCreatedAtDescIdDesc(userId, titleId, PageRequest.of(page, size))
                 .stream().map(DiaryRepositoryAdapter::toModel).toList();
     }
 
