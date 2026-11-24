@@ -57,6 +57,7 @@ export function DesignSystemScreen() {
         />
         {/* O Match tem o próprio Design System (o shared/ não pode importar das features). */}
         <Button label="Abrir o Design System do Match" variant="secondary" onPress={() => nav.push('/_dev/match')} />
+        <Button label="Abrir o Design System do Perfil" variant="secondary" onPress={() => nav.push('/_dev/profile')} />
         {tab === 'screens' ? (
           <>
             <SplashSection />

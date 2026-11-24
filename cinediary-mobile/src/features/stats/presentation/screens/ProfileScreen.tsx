@@ -70,6 +70,10 @@ export function ProfileScreen() {
 
   return (
     <Screen
+      // Uma tela nova quando a capa muda (pôs, trocou ou tirou): com e sem capa o recuo do topo é outro, e o iOS
+      // não reaplicava o recuo no ScrollView que já existia. Ao voltar de trocar a capa, o perfil aparecia
+      // deslocado para baixo, e era preciso rolar até o topo na mão.
+      key={headerUrl ?? 'no-cover'}
       scroll
       onRefresh={refreshProfile}
       edges={headerUrl ? [] : undefined}

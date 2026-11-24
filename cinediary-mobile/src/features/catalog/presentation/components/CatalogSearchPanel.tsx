@@ -34,6 +34,8 @@ export interface CatalogSearchPanelProps {
    * Ex.: "titles.<userId>". Sem isso (Registrar, lista do Match) não guarda nada.
    */
   recentsScope?: string | null;
+  /** Conteúdo antes dos populares, com o campo vazio (ex.: os seus favoritos ao escolher a capa). */
+  idleHeader?: ReactNode;
 }
 
 /**
@@ -53,6 +55,7 @@ export function CatalogSearchPanel({
   onCancel,
   context,
   recentsScope = null,
+  idleHeader,
 }: CatalogSearchPanelProps) {
   const t = strings.catalog;
   const [query, setQuery] = useState('');
@@ -177,6 +180,7 @@ export function CatalogSearchPanel({
         )
       ) : showDiscovery ? (
         <>
+          {genre === null ? idleHeader : null}
           {genre === null ? (
             <RecentList
               items={recents.items.map((t) => ({

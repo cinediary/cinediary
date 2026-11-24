@@ -93,6 +93,10 @@ export function RootNavigator() {
           <Stack.Screen name="diary" />
           <Stack.Screen name="profile/favorites" />
           <Stack.Screen name="profile/edit" />
+          {/* Escolher a capa: busca → cenas → prévia (folha por cima, arrastar para baixo volta às cenas). */}
+          <Stack.Screen name="profile/header/index" />
+          <Stack.Screen name="profile/header/[mediaType]/[tmdbId]" />
+          <Stack.Screen name="profile/header/preview" options={{ presentation: 'modal' }} />
           <Stack.Screen name="settings" />
           {/* Social: perfil de outra pessoa, listas, entrada dela (só leitura) e pedidos para seguir. */}
           <Stack.Screen name="u/[username]/index" />
@@ -137,6 +141,7 @@ export function RootNavigator() {
         <Stack.Protected guard={__DEV__ && inApp}>
           <Stack.Screen name="_dev/design-system" options={{ headerShown: true, title: 'Design System' }} />
           <Stack.Screen name="_dev/match" options={{ headerShown: true, title: 'Design System · Match' }} />
+          <Stack.Screen name="_dev/profile" options={{ headerShown: true, title: 'Design System · Perfil' }} />
         </Stack.Protected>
       </Stack>
 
