@@ -12,7 +12,11 @@ import org.springframework.data.repository.query.Param;
 
 interface SpringDataDiaryEntryRepository extends JpaRepository<DiaryEntryJpaEntity, UUID>
 {
-    List<DiaryEntryJpaEntity> findByUserIdOrderByWatchedDateDescCreatedAtDesc(UUID userId, Pageable pageable);
+    /**
+     * Diário paginado. O id desempata: a importação grava milhares de entradas no mesmo instante e no mesmo dia, e
+     * sem um critério único o Postgres podia mudar a ordem entre uma página e outra, repetindo e pulando entradas.
+     */
+    List<DiaryEntryJpaEntity> findByUserIdOrderByWatchedDateDescCreatedAtDescIdDesc(UUID userId, Pageable pageable);
 
     /** Página do título: registros com review (inclusive importados), mais recentes primeiro. */
     @Query(value = """
@@ -45,7 +49,8 @@ interface SpringDataDiaryEntryRepository extends JpaRepository<DiaryEntryJpaEnti
     List<DiaryEntryJpaEntity> recentOf(@Param("userIds") java.util.Collection<UUID> userIds,
                                        @Param("before") java.time.Instant before, @Param("limit") int limit);
 
-    List<DiaryEntryJpaEntity> findByUserIdAndTitleIdOrderByWatchedDateDescCreatedAtDesc(UUID userId, Long titleId, Pageable pageable);
+    /** Registros de um título, paginados; o id desempata como no diário. */
+    List<DiaryEntryJpaEntity> findByUserIdAndTitleIdOrderByWatchedDateDescCreatedAtDescIdDesc(UUID userId, Long titleId, Pageable pageable);
 
     @Modifying
     @Query(value = """
