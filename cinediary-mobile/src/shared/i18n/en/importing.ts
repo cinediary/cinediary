@@ -50,6 +50,7 @@ export const importing: Strings['importing'] = {
   unmatchedHint: "In the MVP they aren't imported.",
   nothingNew: 'Everything was already here; nothing new to import.',
   confirm: 'Import to my diary',
+  confirmFailed: "Couldn't import right now. Check your connection and try again.",
   ok: 'Ok',
   applying: 'Importing into your diary…',
   doneTitle: (n: number) => title('Done! Your diary now has ', n === 1 ? '1 title' : `${n} titles`, '.'),

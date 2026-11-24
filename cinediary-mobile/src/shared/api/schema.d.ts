@@ -2638,7 +2638,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Confirma a importação e persiste os registros de forma idempotente */
+        /**
+         * Confirma a importação e grava os registros em segundo plano, de forma idempotente
+         * @description Responde na hora com o job em APPLYING; a gravação no diário roda em segundo plano e o job termina em COMPLETED (ou FAILED). Acompanhe por GET /api/v1/imports/{jobId}. Confirmar de novo um job em APPLYING ou COMPLETED devolve o job como está, sem duplicar nada.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -2654,7 +2657,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Importação aplicada sem duplicidades e projetada no Neo4j */
+                /** @description Importação confirmada (APPLYING), ou o job como está se já estava em gravação ou concluído */
                 200: {
                     headers: {
                         [name: string]: unknown;

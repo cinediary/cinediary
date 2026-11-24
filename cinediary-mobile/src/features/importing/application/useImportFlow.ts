@@ -44,11 +44,43 @@ export function useActiveImport() {
   const status = job.data?.status;
   const done = status === 'COMPLETED' || status === 'FAILED' || job.isError;
   useEffect(() => {
+    // A pessoa saiu da importação enquanto gravava ("Continuar usando o app"): a Início é quem vê o fim.
+    if (status === 'COMPLETED' && job.data && active.data) onImportApplied(job.data, active.data.startedAt);
     if (done && active.data) {
       void activeImportStorage.clear().then(() => queryClient.invalidateQueries({ queryKey: importKeys.active }));
     }
-  }, [done, active.data]);
+  }, [done, status, job.data, active.data]);
   return { active: active.data ?? null, job: done ? undefined : job.data };
+}
+
+/** Importações cujo fim já foi tratado nesta sessão (a tela e a Início podem ver o mesmo fim). */
+const applied = new Set<string>();
+
+/**
+ * A importação terminou de gravar no diário: registra uma vez e recarrega o que ela mudou. me: favoritos do
+ * perfil do Letterboxd; recommendations: o que foi importado sai das sugestões e passa a pesar no "Para você";
+ * catalog: selos de visto/nota nas listas.
+ */
+function onImportApplied(job: ImportJob, startedAt: number | null) {
+  if (applied.has(job.jobId)) return;
+  applied.add(job.jobId);
+  analytics.track('import_completed', {
+    job_id: job.jobId,
+    matched_count: job.matchedCount,
+    unmatched_count: job.unmatchedCount,
+    duration_ms: startedAt ? Date.now() - startedAt : 0,
+  });
+  for (const key of [
+    sharedKeys.diary,
+    sharedKeys.stats,
+    sharedKeys.watchlist,
+    sharedKeys.matches,
+    sharedKeys.me,
+    sharedKeys.recommendations,
+    sharedKeys.catalog,
+  ]) {
+    void queryClient.invalidateQueries({ queryKey: key });
+  }
 }
 
 export type ImportStep = 'intro' | 'uploading' | 'job';
@@ -135,31 +167,20 @@ export function useImportFlow() {
     },
   });
 
+  // Confirmar responde na hora com o job em APPLYING (#145): a tela mostra "Importando…" e acompanha o job até
+  // COMPLETED (ver onImportApplied). Antes a gravação inteira acontecia dentro da requisição e, com milhares de
+  // filmes, passava do tempo limite: o botão voltava sem aviso.
   const confirm = useMutation({
     mutationFn: ({ jobId, favoritesMode }: { jobId: string; favoritesMode: FavoritesMode }) => importApi.confirm(jobId, favoritesMode),
     onSuccess: (updated) => {
       queryClient.setQueryData<ImportJob>(importKeys.job(updated.jobId), updated);
-      analytics.track('import_completed', {
-        job_id: updated.jobId,
-        matched_count: updated.matchedCount,
-        unmatched_count: updated.unmatchedCount,
-        duration_ms: current ? Date.now() - current.startedAt : 0,
-      });
-      // me: favoritos do perfil do Letterboxd; recommendations: o que foi importado sai das sugestões e
-      // passa a pesar no "Para você"; catalog: selos de visto/nota nas listas.
-      for (const key of [
-        sharedKeys.diary,
-        sharedKeys.stats,
-        sharedKeys.watchlist,
-        sharedKeys.matches,
-        sharedKeys.me,
-        sharedKeys.recommendations,
-        sharedKeys.catalog,
-      ]) {
-        void queryClient.invalidateQueries({ queryKey: key });
-      }
     },
   });
+  const completed = job.data?.status === 'COMPLETED' ? job.data : null;
+  const startedAt = current?.startedAt ?? null;
+  useEffect(() => {
+    if (completed) onImportApplied(completed, startedAt);
+  }, [completed, startedAt]);
 
   async function pickAndUpload() {
     setValidationError(null);
@@ -208,6 +229,7 @@ export function useImportFlow() {
     pickAndUpload,
     confirm: (favoritesMode: FavoritesMode) => current && confirm.mutate({ jobId: current.jobId, favoritesMode }),
     confirming: confirm.isPending,
+    confirmError: confirm.isError,
     reset,
   };
 }

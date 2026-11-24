@@ -73,9 +73,12 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
         // Nada é gravado antes de confirmar
         assertThat(count("SELECT COUNT(*) FROM diary_entries d JOIN users u ON u.id = d.user_id WHERE u.clerk_id = ?", clerkId)).isZero();
 
+        // Confirmar responde na hora (APPLYING) e grava em segundo plano (#145)
         mvc.perform(post("/api/v1/imports/{id}/confirm", jobId).with(me))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.status").value("APPLYING"));
+        awaitStatus(me, jobId, "COMPLETED");
+        mvc.perform(get("/api/v1/imports/{id}", jobId).with(me))
                 .andExpect(jsonPath("$.diaryEntriesCreated").value(3))
                 .andExpect(jsonPath("$.diaryEntriesSkipped").value(0));
         // Confirmar de novo não duplica
@@ -103,7 +106,9 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
         // Reenviar o mesmo ZIP: nenhuma entrada nova no diário
         String second = upload(me, zip(EXPORT));
         awaitStatus(me, second, "AWAITING_CONFIRMATION");
-        mvc.perform(post("/api/v1/imports/{id}/confirm", second).with(me))
+        mvc.perform(post("/api/v1/imports/{id}/confirm", second).with(me)).andExpect(status().isOk());
+        awaitStatus(me, second, "COMPLETED");
+        mvc.perform(get("/api/v1/imports/{id}", second).with(me))
                 .andExpect(jsonPath("$.diaryEntriesCreated").value(0))
                 .andExpect(jsonPath("$.diaryEntriesSkipped").value(3));
         assertThat(count("SELECT COUNT(*) FROM diary_entries d JOIN users u ON u.id = d.user_id WHERE u.clerk_id = ?", clerkId)).isEqualTo(3);
@@ -151,6 +156,7 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
                 .andExpect(jsonPath("$.diaryEntriesCount").value(1))
                 .andExpect(jsonPath("$.reviewsCount").value(1));
         mvc.perform(post("/api/v1/imports/{id}/confirm", jobId).with(me)).andExpect(status().isOk());
+        awaitStatus(me, jobId, "COMPLETED");
 
         // Parasita, Matrix e O Expresso Polar: a mesma ordem do perfil do Letterboxd
         mvc.perform(get("/api/v1/me").with(me))
@@ -199,6 +205,12 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
         mvc.perform(post("/api/v1/imports/{id}/confirm", job).with(user(keeper))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"favoritesMode\":\"KEEP\"}"))
                 .andExpect(status().isOk());
+        // Confirmar de novo (com outro modo) enquanto grava não troca a escolha: só a primeira dispara a gravação
+        mvc.perform(post("/api/v1/imports/{id}/confirm", job).with(user(keeper))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"favoritesMode\":\"REPLACE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(org.hamcrest.Matchers.oneOf("APPLYING", "COMPLETED")));
+        awaitStatus(user(keeper), job, "COMPLETED");
         mvc.perform(get("/api/v1/me").with(user(keeper)))
                 .andExpect(jsonPath("$.favorites.length()").value(1))
                 .andExpect(jsonPath("$.favorites[0].id").value(mine));
@@ -212,6 +224,7 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
                         .contentType(MediaType.APPLICATION_JSON).content("{\"favoritesMode\":\"MERGE\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.favoritesInApp.length()").value(0)); // fora da revisão, sem extras
+        awaitStatus(user(merger), job2, "COMPLETED");
         mvc.perform(get("/api/v1/me").with(user(merger)))
                 .andExpect(jsonPath("$.favorites.length()").value(2))
                 .andExpect(jsonPath("$.favorites[0].id").value(mine))

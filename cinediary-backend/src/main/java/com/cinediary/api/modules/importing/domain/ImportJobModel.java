@@ -24,6 +24,13 @@ public record ImportJobModel(UUID id, UUID userId, String provider, ImportJobSta
                 staged.size(), unmatched, preview, staged, null, createdAt, null);
     }
 
+    /** Confirmada: a gravação no diário roda em segundo plano (ver ImportJobApplier). */
+    public ImportJobModel applying()
+    {
+        return new ImportJobModel(id, userId, provider, ImportJobStatus.APPLYING, totalItemsRead, matchedItemsCount,
+                unmatchedItemsCount, preview, stagedItems, null, createdAt, null);
+    }
+
     public ImportJobModel failed(String message)
     {
         return new ImportJobModel(id, userId, provider, ImportJobStatus.FAILED, totalItemsRead, matchedItemsCount,

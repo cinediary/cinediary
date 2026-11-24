@@ -49,6 +49,7 @@ export const importing = {
   unmatchedHint: 'No MVP eles não são importados.',
   nothingNew: 'Tudo já estava aqui; nada novo para importar.',
   confirm: 'Importar para meu diário',
+  confirmFailed: 'Não deu para importar agora. Confira a internet e tente de novo.',
   ok: 'Ok',
   applying: 'Importando para o seu diário…',
   doneTitle: (n: number) => title('Pronto! Seu diário agora tem ', n === 1 ? '1 título' : `${n} títulos`, '.'),
