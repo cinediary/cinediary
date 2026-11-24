@@ -129,7 +129,7 @@ export interface AnalyticsEvents {
   friends_feed_opened: Record<string, never>;
   notifications_opened: { unseen: number };
   notification_opened: {
-    kind: 'FOLLOWED' | 'FOLLOW_REQUESTED' | 'FOLLOW_APPROVED' | 'ENTRY_LIKED' | 'ENTRY_REPLIED' | 'ENTRY_COMPANION';
+    kind: 'FOLLOWED' | 'FOLLOW_REQUESTED' | 'FOLLOW_APPROVED' | 'ENTRY_LIKED' | 'ENTRY_REPLIED' | 'ENTRY_COMPANION' | 'LIST_LIKED';
   };
   /** "Vi com…": a pessoa marcada aceitou, recusou ou tirou a marcação. */
   entry_companion_responded: { response: 'accept' | 'decline' | 'remove' };

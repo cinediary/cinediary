@@ -144,3 +144,32 @@ export function useCreateListWithTitle(titleId: number, mediaType: MediaType) {
     },
   });
 }
+
+/** Curtir a lista (#23): o coração e o contador mudam na hora; voltam se o servidor recusar. */
+export function useLikeList(listId: string) {
+  const key = listsKeys.detail(listId);
+  return useMutation({
+    mutationFn: ({ liked }: { liked: boolean; own: boolean }) => listsApi.like(listId, liked),
+    onMutate: async ({ liked }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<ListDetail>(key);
+      if (previous && previous.likedByMe !== liked) {
+        queryClient.setQueryData<ListDetail>(key, {
+          ...previous,
+          likedByMe: liked,
+          likesCount: Math.max(0, previous.likesCount + (liked ? 1 : -1)),
+        });
+      }
+      return { previous };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+    },
+    onSuccess: (state, { liked, own }) => {
+      const current = queryClient.getQueryData<ListDetail>(key);
+      if (current) queryClient.setQueryData<ListDetail>(key, { ...current, likedByMe: state.liked, likesCount: state.likesCount });
+      analytics.track('list_liked', { own_list: own, liked });
+      void queryClient.invalidateQueries({ queryKey: [...sharedKeys.lists, 'user'] });
+    },
+  });
+}

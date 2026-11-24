@@ -9,10 +9,10 @@ import { useMe } from '@/features/auth/application/profileQueries';
 import { openProfile } from '@/features/social/presentation/navigation';
 import { strings } from '@/shared/i18n';
 import { palette, semantic, space } from '@/shared/theme';
-import { Button, ErrorState, Skeleton, SkeletonRows, Text, TextEditSheet, Title, useToast } from '@/shared/ui';
+import { Button, ErrorState, LikeButton, Skeleton, SkeletonRows, Text, TextEditSheet, Title, useToast } from '@/shared/ui';
 import { useOverlay } from '@/shared/ui/BottomSheet';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
-import { useEditListItems, useList } from '../../application/listsQueries';
+import { useEditListItems, useLikeList, useList } from '../../application/listsQueries';
 import { useListLayout } from '../../application/useListLayout';
 import type { ListItem } from '../../domain/list';
 import { ListGridCell, ListHeader, ListRow } from '../components/ListViews';
@@ -39,6 +39,7 @@ export function ListScreen() {
   const cell = (width - space.screenX * 2 - space.md * (COLUMNS - 1)) / COLUMNS;
   const [organizing, setOrganizing] = useState(false);
   const edit = useEditListItems(listId);
+  const like = useLikeList(listId);
   const overlay = useOverlay();
   const toast = useToast();
 
@@ -120,29 +121,37 @@ export function ListScreen() {
   const header = (
     <View style={[styles.header, { paddingTop: backInset }]}>
       <ListHeader list={data} onOwner={mine ? undefined : () => openProfile(data.owner.username, 'list')} />
-      {data.items.length ? (
-        <View style={styles.tools}>
-          {mine ? (
-            <>
-              <Tool label={t.organize} onPress={() => setOrganizing(true)}>
-                <ArrowsDownUp size={18} color={palette.ink700} />
-              </Tool>
-              <Tool label={t.edit} onPress={() => openEditList(data.id)}>
-                <PencilSimple size={18} color={palette.ink700} />
-              </Tool>
-            </>
+      {/* Curtir à esquerda; as ferramentas (organizar, editar, linhas ou grade) à direita. */}
+      <View style={styles.bar}>
+        <View style={styles.like}>
+          <LikeButton
+            liked={data.likedByMe}
+            onToggle={() => like.mutate({ liked: !data.likedByMe, own: mine }, { onError: failed })}
+          />
+          {data.likesCount > 0 ? (
+            <Text variant="caption" tone="secondary" accessibilityLabel={t.likes(data.likesCount)}>
+              {data.likesCount}
+            </Text>
           ) : null}
-          <Tool label={grid ? t.showRows : t.showGrid} onPress={toggle}>
-            {grid ? <Rows size={18} color={palette.ink700} /> : <SquaresFour size={18} color={palette.ink700} />}
-          </Tool>
         </View>
-      ) : mine ? (
         <View style={styles.tools}>
-          <Tool label={t.edit} onPress={() => openEditList(data.id)}>
-            <PencilSimple size={18} color={palette.ink700} />
-          </Tool>
+          {mine && data.items.length > 1 ? (
+            <Tool label={t.organize} onPress={() => setOrganizing(true)}>
+              <ArrowsDownUp size={18} color={palette.ink700} />
+            </Tool>
+          ) : null}
+          {mine ? (
+            <Tool label={t.edit} onPress={() => openEditList(data.id)}>
+              <PencilSimple size={18} color={palette.ink700} />
+            </Tool>
+          ) : null}
+          {data.items.length ? (
+            <Tool label={grid ? t.showRows : t.showGrid} onPress={toggle}>
+              {grid ? <Rows size={18} color={palette.ink700} /> : <SquaresFour size={18} color={palette.ink700} />}
+            </Tool>
+          ) : null}
         </View>
-      ) : null}
+      </View>
     </View>
   );
 
@@ -205,6 +214,8 @@ const styles = StyleSheet.create({
   centerText: { textAlign: 'center' },
   content: { paddingHorizontal: space.screenX },
   header: { gap: space.lg, paddingBottom: space.lg },
+  bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  like: { flexDirection: 'row', alignItems: 'center', marginLeft: -space.sm },
   tools: { flexDirection: 'row', justifyContent: 'flex-end', gap: space.sm },
   tool: {
     width: 38,

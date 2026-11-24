@@ -85,6 +85,7 @@ export const social = {
     ENTRY_LIKED: (title: string, many: boolean) => `${many ? 'curtiram' : 'curtiu'} seu registro de ${title}`,
     ENTRY_REPLIED: (title: string) => `respondeu seu registro de ${title}`,
     ENTRY_COMPANION: (title: string) => `marcou você no registro de ${title}`,
+    LIST_LIKED: (name: string, many: boolean) => `${many ? 'curtiram' : 'curtiu'} sua lista ${name}`,
   },
   seeRequests: 'Ver',
   tabFriends: 'Amigos',
@@ -122,6 +123,8 @@ export const social = {
     followed: 'começou a seguir',
     liked: (owner: string, title: string) => `curtiu a review de ${owner} sobre ${title}`,
     replied: (owner: string, title: string) => `respondeu a review de ${owner} sobre ${title}`,
+    likedList: (owner: string, name: string) => `curtiu a lista ${name}, de ${owner}`,
+    likedYourList: (name: string) => `curtiu sua lista ${name}`,
   },
   repliesClosed: (policy: 'ME' | 'FOLLOWING', user: string) =>
     policy === 'ME' ? `Só @${user} pode responder este registro.` : `Só quem @${user} segue pode responder.`,

@@ -46,6 +46,14 @@ export const listsApi = {
     toDetail(await unwrap(api.PATCH('/api/v1/lists/{listId}', { params: { path: { listId } }, body: changes }))),
   remove: (listId: string) => unwrapVoid(api.DELETE('/api/v1/lists/{listId}', { params: { path: { listId } } })),
 
+  /** Curtir ou descurtir (#23): devolve o estado e o total, para acertar o contador. */
+  like: async (listId: string, liked: boolean): Promise<{ liked: boolean; likesCount: number }> =>
+    unwrap(
+      liked
+        ? api.PUT('/api/v1/lists/{listId}/like', { params: { path: { listId } } })
+        : api.DELETE('/api/v1/lists/{listId}/like', { params: { path: { listId } } }),
+    ),
+
   // Títulos de uma lista (#19/#22)
   /** As suas listas, cada uma dizendo se tem o título. */
   mine: async (titleId: number): Promise<{ list: UserList; containsTitle: boolean }[]> =>
