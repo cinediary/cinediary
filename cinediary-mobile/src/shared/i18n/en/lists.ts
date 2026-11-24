@@ -14,7 +14,7 @@ export const lists = {
   emptyMineText: 'Group movies and shows your way: best horror, Christmas watches…',
   emptyOther: 'No lists yet.',
   emptyList: 'This list is still empty.',
-  emptyListMine: 'Add titles from each movie or show page.',
+  emptyListMine: 'Search right here, or add from each movie or show page.',
   loadError: "We couldn't load the lists.",
   showRows: 'Show as rows',
   showGrid: 'Show as grid',
@@ -64,4 +64,9 @@ export const lists = {
   notePlaceholder: 'Why is this title on the list?',
   addNote: 'Write a note',
   reorderA11y: 'Hold and drag to change the order',
+  addTitles: 'Add titles',
+  addTitlesTo: (name: string) => title('Add to ', name, ''),
+  addSearch: 'Search for a movie or show',
+  addOne: (name: string) => `Add ${name}`,
+  removeOne: (name: string) => `Remove ${name} from the list`,
 };

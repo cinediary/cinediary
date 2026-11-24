@@ -2,6 +2,7 @@ import { ArrowCounterClockwise, Bell, Heart, UsersThree } from 'phosphor-react-n
 import { useEffect, useRef, useState } from 'react';
 import { SectionList, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { openList } from '@/features/lists/presentation/navigation';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { openTitle } from '@/features/catalog/presentation/navigation';
@@ -195,6 +196,15 @@ function FriendActivityRow({ a }: { a: ActivityItem }) {
       </>
     );
     onPress = () => openProfile(target.username, 'link');
+  } else if (a.kind === 'LIKED_LIST' && a.target && a.list) {
+    const list = a.list;
+    sentence = (
+      <>
+        <Bold>{name(a.actor)}</Bold>{' '}
+        {a.target.id === meId ? s.act.likedYourList(list.name) : s.act.likedList(name(a.target), list.name)}
+      </>
+    );
+    onPress = () => openList(list.id);
   } else if (a.target && entry) {
     const owner = a.target.id === meId ? s.yourReview : name(a.target);
     sentence = (
@@ -258,13 +268,16 @@ function NotificationItemRow({ n }: { n: AppNotification }) {
         ? s.notif.ENTRY_REPLIED(title)
         : n.kind === 'ENTRY_COMPANION'
           ? s.notif.ENTRY_COMPANION(title)
-          : s.notif[n.kind];
+          : n.kind === 'LIST_LIKED'
+            ? s.notif.LIST_LIKED(n.list?.name ?? '', others > 0)
+            : s.notif[n.kind];
 
   const open = () => {
     analytics.track('notification_opened', { kind: n.kind });
     // Marcado num registro: o registro é de quem marcou (abre como entrada de outra pessoa).
     if (n.kind === 'ENTRY_COMPANION' && n.entry) openPersonEntry(first.username, n.entry as unknown as DiaryEntry);
     else if (n.entry) nav.push({ pathname: '/entry/[entryId]', params: { entryId: n.entry.id } });
+    else if (n.kind === 'LIST_LIKED' && n.list) openList(n.list.id);
     else if (n.kind === 'FOLLOW_REQUESTED') openFollowRequests();
     else openProfile(first.username, 'link');
   };

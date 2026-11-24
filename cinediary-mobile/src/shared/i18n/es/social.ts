@@ -87,6 +87,7 @@ export const social: Strings['social'] = {
     ENTRY_LIKED: (title: string, many: boolean) => `${many ? 'dieron' : 'dio'} me gusta a tu registro de ${title}`,
     ENTRY_REPLIED: (title: string) => `respondió a tu registro de ${title}`,
     ENTRY_COMPANION: (title: string) => `te etiquetó en su registro de ${title}`,
+    LIST_LIKED: (name: string, many: boolean) => `${many ? 'les gustó' : 'le gustó'} tu lista ${name}`,
   },
   seeRequests: 'Ver',
   tabFriends: 'Amigos',
@@ -124,6 +125,8 @@ export const social: Strings['social'] = {
     followed: 'empezó a seguir a',
     liked: (owner: string, title: string) => `le dio me gusta a la reseña de ${owner} sobre ${title}`,
     replied: (owner: string, title: string) => `respondió a la reseña de ${owner} sobre ${title}`,
+    likedList: (owner: string, name: string) => `le gustó la lista ${name}, de ${owner}`,
+    likedYourList: (name: string) => `le gustó tu lista ${name}`,
   },
   repliesClosed: (policy: 'ME' | 'FOLLOWING', user: string) =>
     policy === 'ME' ? `Solo @${user} puede responder este registro.` : `Solo quienes @${user} sigue pueden responder.`,

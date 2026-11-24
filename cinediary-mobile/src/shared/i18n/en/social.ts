@@ -80,6 +80,7 @@ export const social: Strings['social'] = {
     ENTRY_LIKED: (title: string) => `liked your entry for ${title}`,
     ENTRY_REPLIED: (title: string) => `replied to your entry for ${title}`,
     ENTRY_COMPANION: (title: string) => `tagged you in their entry for ${title}`,
+    LIST_LIKED: (name: string, many: boolean) => `${many ? 'like' : 'liked'} your list ${name}`,
   },
   seeRequests: 'View',
   tabFriends: 'Friends',
@@ -116,6 +117,8 @@ export const social: Strings['social'] = {
     followed: 'started following',
     liked: (owner: string, title: string) => `liked ${owner === 'your review' ? owner : `${owner}'s review`} of ${title}`,
     replied: (owner: string, title: string) => `replied to ${owner === 'your review' ? owner : `${owner}'s review`} of ${title}`,
+    likedList: (owner: string, name: string) => `liked ${owner}'s list ${name}`,
+    likedYourList: (name: string) => `liked your list ${name}`,
   },
   repliesClosed: (policy: 'ME' | 'FOLLOWING', user: string) =>
     policy === 'ME' ? `Only @${user} can reply to this entry.` : `Only people @${user} follows can reply.`,

@@ -15,7 +15,7 @@ export const lists = {
   emptyMineText: 'Junte filmes e séries do seu jeito: os melhores do terror, para ver no Natal…',
   emptyOther: 'Nenhuma lista por enquanto.',
   emptyList: 'Esta lista ainda está vazia.',
-  emptyListMine: 'Adicione títulos pela página de cada filme ou série.',
+  emptyListMine: 'Busque aqui mesmo ou adicione pela página de cada filme ou série.',
   loadError: 'Não conseguimos carregar as listas.',
   showRows: 'Ver em linhas',
   showGrid: 'Ver em grade',
@@ -67,4 +67,9 @@ export const lists = {
   notePlaceholder: 'Por que este título está na lista?',
   addNote: 'Escrever nota',
   reorderA11y: 'Segure e arraste para mudar a ordem',
+  addTitles: 'Adicionar títulos',
+  addTitlesTo: (name: string) => title('Adicionar a ', name, ''),
+  addSearch: 'Buscar um filme ou série',
+  addOne: (name: string) => `Adicionar ${name}`,
+  removeOne: (name: string) => `Tirar ${name} da lista`,
 };

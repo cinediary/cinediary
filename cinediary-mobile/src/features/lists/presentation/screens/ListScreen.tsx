@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { ArrowsDownUp, PencilSimple, Rows, SquaresFour } from 'phosphor-react-native';
+import { ArrowsDownUp, PencilSimple, Plus, Rows, SquaresFour } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Alert, FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, FadeIn } from 'react-native-reanimated';
@@ -9,15 +9,15 @@ import { useMe } from '@/features/auth/application/profileQueries';
 import { openProfile } from '@/features/social/presentation/navigation';
 import { strings } from '@/shared/i18n';
 import { palette, semantic, space } from '@/shared/theme';
-import { Button, ErrorState, Skeleton, SkeletonRows, Text, TextEditSheet, Title, useToast } from '@/shared/ui';
+import { Button, ErrorState, LikeButton, Skeleton, SkeletonRows, Text, TextEditSheet, Title, useToast } from '@/shared/ui';
 import { useOverlay } from '@/shared/ui/BottomSheet';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
-import { useEditListItems, useList } from '../../application/listsQueries';
+import { useEditListItems, useLikeList, useList } from '../../application/listsQueries';
 import { useListLayout } from '../../application/useListLayout';
 import type { ListItem } from '../../domain/list';
 import { ListGridCell, ListHeader, ListRow } from '../components/ListViews';
 import { SortableListRows } from '../components/SortableListRows';
-import { openEditList } from '../navigation';
+import { openAddTitles, openEditList } from '../navigation';
 
 const COLUMNS = 3;
 const enter = FadeIn.duration(200).easing(Easing.bezier(0.25, 0.1, 0.25, 1));
@@ -39,6 +39,7 @@ export function ListScreen() {
   const cell = (width - space.screenX * 2 - space.md * (COLUMNS - 1)) / COLUMNS;
   const [organizing, setOrganizing] = useState(false);
   const edit = useEditListItems(listId);
+  const like = useLikeList(listId);
   const overlay = useOverlay();
   const toast = useToast();
 
@@ -120,29 +121,42 @@ export function ListScreen() {
   const header = (
     <View style={[styles.header, { paddingTop: backInset }]}>
       <ListHeader list={data} onOwner={mine ? undefined : () => openProfile(data.owner.username, 'list')} />
-      {data.items.length ? (
-        <View style={styles.tools}>
-          {mine ? (
-            <>
-              <Tool label={t.organize} onPress={() => setOrganizing(true)}>
-                <ArrowsDownUp size={18} color={palette.ink700} />
-              </Tool>
-              <Tool label={t.edit} onPress={() => openEditList(data.id)}>
-                <PencilSimple size={18} color={palette.ink700} />
-              </Tool>
-            </>
+      {/* Curtir à esquerda; as ferramentas (organizar, editar, linhas ou grade) à direita. */}
+      <View style={styles.bar}>
+        <View style={styles.like}>
+          <LikeButton
+            liked={data.likedByMe}
+            onToggle={() => like.mutate({ liked: !data.likedByMe, own: mine }, { onError: failed })}
+          />
+          {data.likesCount > 0 ? (
+            <Text variant="caption" tone="secondary" accessibilityLabel={t.likes(data.likesCount)}>
+              {data.likesCount}
+            </Text>
           ) : null}
-          <Tool label={grid ? t.showRows : t.showGrid} onPress={toggle}>
-            {grid ? <Rows size={18} color={palette.ink700} /> : <SquaresFour size={18} color={palette.ink700} />}
-          </Tool>
         </View>
-      ) : mine ? (
         <View style={styles.tools}>
-          <Tool label={t.edit} onPress={() => openEditList(data.id)}>
-            <PencilSimple size={18} color={palette.ink700} />
-          </Tool>
+          {mine && data.items.length ? (
+            <Tool label={t.addTitles} onPress={() => openAddTitles(data.id)}>
+              <Plus size={18} weight="bold" color={palette.ink700} />
+            </Tool>
+          ) : null}
+          {mine && data.items.length > 1 ? (
+            <Tool label={t.organize} onPress={() => setOrganizing(true)}>
+              <ArrowsDownUp size={18} color={palette.ink700} />
+            </Tool>
+          ) : null}
+          {mine ? (
+            <Tool label={t.edit} onPress={() => openEditList(data.id)}>
+              <PencilSimple size={18} color={palette.ink700} />
+            </Tool>
+          ) : null}
+          {data.items.length ? (
+            <Tool label={grid ? t.showRows : t.showGrid} onPress={toggle}>
+              {grid ? <Rows size={18} color={palette.ink700} /> : <SquaresFour size={18} color={palette.ink700} />}
+            </Tool>
+          ) : null}
         </View>
-      ) : null}
+      </View>
     </View>
   );
 
@@ -162,9 +176,19 @@ export function ListScreen() {
                 {t.emptyList}
               </Text>
               {mine ? (
-                <Text variant="caption" tone="muted" style={styles.centerText}>
-                  {t.emptyListMine}
-                </Text>
+                <>
+                  <Text variant="caption" tone="muted" style={styles.centerText}>
+                    {t.emptyListMine}
+                  </Text>
+                  <View style={styles.emptyAction}>
+                    <Button
+                      label={t.addTitles}
+                      size="sm"
+                      icon={<Plus size={16} weight="bold" color={semantic.onPrimary} />}
+                      onPress={() => openAddTitles(data.id)}
+                    />
+                  </View>
+                </>
               ) : null}
             </View>
           }
@@ -205,6 +229,8 @@ const styles = StyleSheet.create({
   centerText: { textAlign: 'center' },
   content: { paddingHorizontal: space.screenX },
   header: { gap: space.lg, paddingBottom: space.lg },
+  bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  like: { flexDirection: 'row', alignItems: 'center', marginLeft: -space.sm },
   tools: { flexDirection: 'row', justifyContent: 'flex-end', gap: space.sm },
   tool: {
     width: 38,
@@ -220,6 +246,7 @@ const styles = StyleSheet.create({
   gridRow: { gap: space.md, marginBottom: space.md },
   rowGap: { height: space.lg },
   empty: { alignItems: 'center', gap: space.xs, paddingVertical: space['3xl'] },
+  emptyAction: { marginTop: space.md },
   organize: { gap: space.lg },
   organizeTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
 });

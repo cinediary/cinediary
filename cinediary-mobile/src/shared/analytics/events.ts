@@ -24,7 +24,7 @@ export type QuickLogEntryPoint =
 export type LogScope = 'title' | 'season' | 'episode';
 export type RecommendationSection = 'for_you' | 'trending_week' | 'because_you_liked' | 'collection' | 'similar';
 /** Onde a busca do catálogo está sendo usada. */
-export type SearchContext = 'search_tab' | 'log_tab' | 'shared_watchlist' | 'favorites' | 'profile_header';
+export type SearchContext = 'search_tab' | 'log_tab' | 'shared_watchlist' | 'favorites' | 'profile_header' | 'list_add';
 
 export interface AnalyticsEvents {
   user_signed_up: { auth_provider: AuthProvider; from_invite: boolean };
@@ -129,7 +129,7 @@ export interface AnalyticsEvents {
   friends_feed_opened: Record<string, never>;
   notifications_opened: { unseen: number };
   notification_opened: {
-    kind: 'FOLLOWED' | 'FOLLOW_REQUESTED' | 'FOLLOW_APPROVED' | 'ENTRY_LIKED' | 'ENTRY_REPLIED' | 'ENTRY_COMPANION';
+    kind: 'FOLLOWED' | 'FOLLOW_REQUESTED' | 'FOLLOW_APPROVED' | 'ENTRY_LIKED' | 'ENTRY_REPLIED' | 'ENTRY_COMPANION' | 'LIST_LIKED';
   };
   /** "Vi com…": a pessoa marcada aceitou, recusou ou tirou a marcação. */
   entry_companion_responded: { response: 'accept' | 'decline' | 'remove' };

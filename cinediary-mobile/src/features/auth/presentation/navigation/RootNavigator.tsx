@@ -109,6 +109,8 @@ export function RootNavigator() {
           {/* Listas (#17): a lista, criar e editar. */}
           <Stack.Screen name="lists/[listId]/index" />
           <Stack.Screen name="lists/[listId]/edit" />
+          {/* Adicionar títulos de dentro da lista: folha por cima dela. */}
+          <Stack.Screen name="lists/[listId]/add" options={{ presentation: 'modal' }} />
           <Stack.Screen name="lists/new" />
           {/* Feed de amigos ("Ver tudo") e o sino. */}
           <Stack.Screen name="friends" />

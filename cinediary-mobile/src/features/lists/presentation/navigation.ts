@@ -5,3 +5,4 @@ export const openList = (listId: string) => nav.push({ pathname: '/lists/[listId
 export const openUserLists = (username: string) => nav.push({ pathname: '/u/[username]/lists', params: { username } });
 export const openNewList = () => nav.push('/lists/new');
 export const openEditList = (listId: string) => nav.push({ pathname: '/lists/[listId]/edit', params: { listId } });
+export const openAddTitles = (listId: string) => nav.push({ pathname: '/lists/[listId]/add', params: { listId } });
