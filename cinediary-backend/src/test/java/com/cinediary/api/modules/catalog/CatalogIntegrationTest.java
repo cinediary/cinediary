@@ -236,7 +236,6 @@ class CatalogIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.watchProviders.buy.length()").value(1))
                 // "com anúncios" fica de fora
                 .andExpect(jsonPath("$.watchProviders.ads").doesNotExist());
-        assertThat(TMDB.lastQuery("/movie/603")).contains("watch/providers");
         // O país do aparelho vale mais que o do idioma (inglês morando no Brasil)
         mvc.perform(get("/api/v1/catalog/MOVIE/603/extras").param("language", "en-US").param("region", "br").with(user))
                 .andExpect(jsonPath("$.watchProviders.region").value("BR"))

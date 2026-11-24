@@ -1,13 +1,13 @@
 import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import { CaretRight } from 'phosphor-react-native';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { formatFullDate, parseIsoDate, strings } from '@/shared/i18n';
 import { palette, radius, space } from '@/shared/theme';
-import { Avatar, Rail, SectionHeader, Text, useRailItemWidth } from '@/shared/ui';
+import { Avatar, Rail, SectionHeader, Text, useRailItemWidth, useToast } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import type { TitleExtras } from '../../domain/extras';
 import type { MediaType } from '../../domain/title';
@@ -34,9 +34,14 @@ export function WatchProvidersSection({
   tmdbId: number;
 }) {
   const t = strings.catalog;
+  const toast = useToast();
   const watch = extras.watchProviders;
+  // Uma vez por título aberto: uma nova busca dos extras (ex.: voltar ao app depois de 1 h) não conta de novo.
+  const tracked = useRef<string | null>(null);
   useEffect(() => {
-    if (watch) {
+    const key = `${mediaType}:${tmdbId}`;
+    if (watch && tracked.current !== key) {
+      tracked.current = key;
       analytics.track('watch_provider_viewed', {
         tmdb_id: tmdbId,
         media_type: mediaType,
@@ -60,7 +65,9 @@ export function WatchProvidersSection({
         accessibilityLabel={label}
         accessibilityHint={link ? t.watchOpen : undefined}
         disabled={!link}
-        onPress={() => link && void WebBrowser.openBrowserAsync(link)}
+        onPress={() => {
+          if (link) WebBrowser.openBrowserAsync(link).catch(() => toast(strings.common.genericError));
+        }}
         style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       >
         {rows.map((kind) => (
