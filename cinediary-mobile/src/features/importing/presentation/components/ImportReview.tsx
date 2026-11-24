@@ -1,4 +1,4 @@
-import { CaretDown, CaretUp, CheckCircle } from 'phosphor-react-native';
+import { CaretDown, CaretUp, CheckCircle, LockSimple } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -30,6 +30,7 @@ export function ImportReview({
       [t.statLiked, job.likedCount],
       [t.statReviews, job.reviewsCount],
       [t.statWatchlist, job.watchlistCount],
+      [t.statLists, job.listsCount],
     ] as [string, number][]
   ).filter(([, n]) => n > 0);
 
@@ -67,6 +68,14 @@ export function ImportReview({
           {t.noDuplicates}
         </Text>
       </View>
+      {job.listsCount > 0 ? (
+        <View style={styles.note}>
+          <LockSimple size={18} color={palette.ink700} weight="fill" />
+          <Text variant="caption" tone="secondary" style={styles.flex}>
+            {t.listsPrivate}
+          </Text>
+        </View>
+      ) : null}
 
       <Favorites job={job} mode={favoritesMode} onMode={onFavoritesMode} />
       <Unmatched job={job} />

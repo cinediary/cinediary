@@ -118,6 +118,72 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
     }
 
     @Test
+    void listsAreImportedPrivateInOrderAndNotDuplicated() throws Exception
+    {
+        String clerkId = "user_" + UUID.randomUUID();
+        RequestPostProcessor me = user(clerkId);
+        java.util.Map<String, String> export = new java.util.HashMap<>(EXPORT);
+        // Um título dos outros CSVs, um só da lista e um que não existe
+        export.put("letterboxd-cinefilo-2026/lists/para-o-natal.csv", """
+                Letterboxd list export v7
+                Date,Name,Tags,URL,Description
+                2026-11-17,Para ver no Natal,,https://boxd.it/L1,"Os de sempre, no sofá"
+
+                Position,Name,Year,URL,Description
+                1,The Matrix,1999,https://boxd.it/a,Tradição de família
+                2,The Polar Express,2004,https://boxd.it/p,
+                3,Filme Fantasma,1990,https://boxd.it/z,
+                """);
+        export.put("letterboxd-cinefilo-2026/lists/favoritos-da-vida.csv", """
+                Letterboxd list export v7
+                Date,Name,Tags,URL,Description
+                2026-11-17,Favoritos da vida,,https://boxd.it/L2,
+
+                Position,Name,Year,URL,Description
+                ,Parasite,2019,https://boxd.it/b,
+                """);
+
+        String jobId = upload(me, zip(export));
+        awaitStatus(me, jobId, "AWAITING_CONFIRMATION");
+        mvc.perform(get("/api/v1/imports/{id}", jobId).with(me))
+                .andExpect(jsonPath("$.listsCount").value(2))
+                .andExpect(jsonPath("$.unmatchedTitlesSample[?(@ == 'Filme Fantasma (1990)')]").exists());
+        mvc.perform(post("/api/v1/imports/{id}/confirm", jobId).with(me)).andExpect(status().isOk());
+        awaitStatus(me, jobId, "COMPLETED");
+
+        String username = JsonPath.read(mvc.perform(get("/api/v1/me").with(me)).andReturn().getResponse().getContentAsString(),
+                "$.username");
+        String lists = mvc.perform(get("/api/v1/users/{u}/lists", username).with(me))
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[*].visibility", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("PRIVATE"))))
+                .andReturn().getResponse().getContentAsString();
+        String natal = JsonPath.<java.util.List<String>>read(lists, "$[?(@.name == 'Para ver no Natal')].id").getFirst();
+        mvc.perform(get("/api/v1/lists/{id}", natal).with(me))
+                // A exportação não diz se a lista tem ranking: entra sem, na ordem do Letterboxd
+                .andExpect(jsonPath("$.ranked").value(false))
+                .andExpect(jsonPath("$.description").value("Os de sempre, no sofá"))
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].title.tmdbId").value(603))
+                .andExpect(jsonPath("$.items[0].note").value("Tradição de família"))
+                .andExpect(jsonPath("$.items[1].title.tmdbId").value(5255));
+        mvc.perform(get("/api/v1/users/{u}/lists", username).with(me))
+                .andExpect(jsonPath("$[?(@.name == 'Favoritos da vida')].ranked").value(false));
+
+        // A pessoa liga o ranking no app; reimportar o mesmo ZIP: as mesmas 2 listas, sem duplicar, e o ranking fica
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/v1/lists/{id}", natal)
+                .with(me).contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("{\"ranked\":true}"))
+                .andExpect(status().isOk());
+        String second = upload(me, zip(export));
+        awaitStatus(me, second, "AWAITING_CONFIRMATION");
+        mvc.perform(post("/api/v1/imports/{id}/confirm", second).with(me)).andExpect(status().isOk());
+        awaitStatus(me, second, "COMPLETED");
+        mvc.perform(get("/api/v1/users/{u}/lists", username).with(me)).andExpect(jsonPath("$.length()").value(2));
+        mvc.perform(get("/api/v1/lists/{id}", natal).with(me))
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.ranked").value(true));
+    }
+
+    @Test
     void favoritesFromProfileAndFestivalYearAreImported() throws Exception
     {
         String clerkId = "user_" + UUID.randomUUID();

@@ -67,7 +67,7 @@ cinediary:
   importing:
     max-zip-bytes: 20971520
     max-uncompressed-bytes: 104857600
-    max-entries: 50
+    max-entries: 1000 # cada lista do Letterboxd é um arquivo no ZIP (#55)
     max-items: 20000
     tmdb-parallelism: 8
     short-link-base-url: https://boxd.it

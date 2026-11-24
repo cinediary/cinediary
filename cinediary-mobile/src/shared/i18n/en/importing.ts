@@ -28,6 +28,8 @@ export const importing: Strings['importing'] = {
   statLiked: 'Liked',
   statReviews: 'Reviews',
   statWatchlist: 'In watchlist',
+  statLists: 'Lists',
+  listsPrivate: 'Your Letterboxd lists come in private: only you see them, and you can make them public anytime.',
   previewTitle: 'Some from your Letterboxd',
   favoritesTitle: 'Your favorites',
   favoritesInApp: 'In the app today',

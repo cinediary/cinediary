@@ -52,6 +52,10 @@ class ImportJobJpaEntity
     @Column(name = "staged_payload_json", nullable = false)
     private String stagedPayloadJson;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "staged_lists_json", nullable = false)
+    private String stagedListsJson = "[]";
+
     @Column(name = "error_message")
     private String errorMessage;
 

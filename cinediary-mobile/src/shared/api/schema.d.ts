@@ -4271,6 +4271,8 @@ export interface components {
             unmatchedTitlesSample?: string[];
             watchlistCount?: number;
             reviewsCount?: number;
+            /** @description As listas do Letterboxd que entram com a importação (novas nascem privadas; reimportar atualiza) */
+            listsCount?: number;
             diaryEntriesCount?: number;
             diaryEntriesCreated?: number | null;
             diaryEntriesSkipped?: number | null;

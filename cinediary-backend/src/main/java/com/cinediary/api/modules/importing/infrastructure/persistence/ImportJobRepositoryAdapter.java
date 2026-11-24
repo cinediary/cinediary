@@ -5,6 +5,7 @@ import com.cinediary.api.modules.importing.domain.ImportJobRepositoryPort;
 import com.cinediary.api.modules.importing.domain.ImportJobStatus;
 import com.cinediary.api.modules.importing.domain.ImportPreview;
 import com.cinediary.api.modules.importing.domain.StagedImportItem;
+import com.cinediary.api.modules.importing.domain.StagedList;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import tools.jackson.databind.ObjectMapper;
 class ImportJobRepositoryAdapter implements ImportJobRepositoryPort
 {
     private static final TypeReference<List<StagedImportItem>> STAGED = new TypeReference<>() {};
+    private static final TypeReference<List<StagedList>> STAGED_LISTS = new TypeReference<>() {};
 
     private final SpringDataImportJobRepository repository;
     private final ObjectMapper objectMapper;
@@ -62,6 +64,7 @@ class ImportJobRepositoryAdapter implements ImportJobRepositoryPort
         e.setUnmatchedItemsCount(job.unmatchedItemsCount());
         e.setPreviewSummaryJson(objectMapper.writeValueAsString(job.preview()));
         e.setStagedPayloadJson(objectMapper.writeValueAsString(job.stagedItems()));
+        e.setStagedListsJson(objectMapper.writeValueAsString(job.stagedLists()));
         e.setErrorMessage(job.errorMessage());
         e.setCompletedAt(job.completedAt());
     }
@@ -72,6 +75,7 @@ class ImportJobRepositoryAdapter implements ImportJobRepositoryPort
                 e.getTotalItemsRead(), e.getMatchedItemsCount(), e.getUnmatchedItemsCount(),
                 objectMapper.readValue(e.getPreviewSummaryJson(), ImportPreview.class),
                 objectMapper.readValue(e.getStagedPayloadJson(), STAGED),
+                e.getStagedListsJson() == null ? List.of() : objectMapper.readValue(e.getStagedListsJson(), STAGED_LISTS),
                 e.getErrorMessage(), e.getCreatedAt(), e.getCompletedAt());
     }
 }

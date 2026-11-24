@@ -11,6 +11,8 @@ export interface ImportJob {
   unmatchedSample: string[];
   watchlistCount: number;
   reviewsCount: number;
+  /** As listas do Letterboxd que entram com a importação (#55). */
+  listsCount: number;
   diaryEntriesCount: number;
   /** Depois de confirmar: entradas criadas agora (as que já existiam não contam). */
   diaryEntriesCreated: number | null;
