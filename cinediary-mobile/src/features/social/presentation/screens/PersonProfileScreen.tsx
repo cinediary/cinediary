@@ -3,6 +3,7 @@ import { LockSimple } from 'phosphor-react-native';
 import { useEffect, useRef } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ProfileListsSection } from '@/features/lists/presentation/components/ProfileListsSection';
 
 import { openTitle } from '@/features/catalog/presentation/navigation';
 import { EntryRow } from '@/features/diary/presentation/components/DiaryTimeline';
@@ -167,6 +168,9 @@ export function PersonProfileScreen() {
                 </View>
               )}
             </View>
+
+            {/* Coleções (opção C do Design System): por enquanto, as listas; marcados e tags entram depois. */}
+            <ProfileListsSection username={p.username} mine={p.relationship === 'SELF'} />
           </>
         )}
       </ScrollView>

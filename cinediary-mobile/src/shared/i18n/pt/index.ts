@@ -8,12 +8,13 @@ import { importing } from './importing';
 import { match } from './match';
 import { social } from './social';
 import { stats } from './stats';
+import { lists } from './lists';
 
 /**
  * Fonte da verdade dos textos (PT-BR). Todo texto novo nasce aqui, no namespace da feature, e ganha
  * a tradução no mesmo arquivo de ../en (o tsc avisa se faltar).
  */
-export const pt = { tabs, common, auth, onboarding, catalog, diary, importing, stats, match, account, social };
+export const pt = { tabs, common, auth, onboarding, catalog, diary, importing, stats, match, account, social, lists };
 
 /** Formato de qualquer dicionário (pt, en): as mesmas chaves, com qualquer texto. */
 export type Strings = Widen<typeof pt>;

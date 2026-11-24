@@ -104,7 +104,12 @@ export function RootNavigator() {
           <Stack.Screen name="u/[username]/following" />
           <Stack.Screen name="u/[username]/diary" />
           <Stack.Screen name="u/[username]/entry/[entryId]" />
+          <Stack.Screen name="u/[username]/lists" />
           <Stack.Screen name="follow-requests" />
+          {/* Listas (#17): a lista, criar e editar. */}
+          <Stack.Screen name="lists/[listId]/index" />
+          <Stack.Screen name="lists/[listId]/edit" />
+          <Stack.Screen name="lists/new" />
           {/* Feed de amigos ("Ver tudo") e o sino. */}
           <Stack.Screen name="friends" />
           <Stack.Screen name="notifications" />

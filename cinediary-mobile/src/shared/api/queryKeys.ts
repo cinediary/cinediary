@@ -11,4 +11,5 @@ export const sharedKeys = {
   catalog: ['catalog'] as const,
   recommendations: ['recommendations'] as const,
   social: ['social'] as const,
+  lists: ['lists'] as const,
 };
