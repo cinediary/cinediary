@@ -1,10 +1,14 @@
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from 'expo-router';
+import { setStatusBarStyle } from 'expo-status-bar';
 import { LockSimple } from 'phosphor-react-native';
-import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
 import { formatNumber, strings } from '@/shared/i18n';
 import { fonts, palette, radius, shadow, space } from '@/shared/theme';
-import { Avatar, Text } from '@/shared/ui';
+import { Avatar, markImageBroken, Text, useWorkingImageUrl } from '@/shared/ui';
 import type { FollowList } from '../../domain/social';
 import { openFollowList } from '../navigation';
 
@@ -12,6 +16,13 @@ export interface ProfileHeaderProps {
   name: string;
   username: string;
   avatarUrl: string | null;
+  /** Capa (um backdrop do TMDB); null = sem capa, o topo fica como antes. */
+  headerUrl?: string | null;
+  /**
+   * Quanto a capa sobe para encostar no topo da tela (o espaço que a tela deixa acima do perfil). Sem isso,
+   * ela começaria abaixo desse espaço, com uma faixa vazia em cima.
+   */
+  coverBleedTop?: number;
   pronouns: string | null;
   bio: string | null;
   isPrivate: boolean;
@@ -27,6 +38,21 @@ export interface ProfileHeaderProps {
 }
 
 const BIO_LINES = 4;
+const COVER_HEIGHT = 200;
+const AVATAR = 96;
+/** Quanto as cores da capa descem (reflexo desfocado) por trás da foto, do nome e da bio. */
+const GLOW_HEIGHT = 170;
+/** Onde a capa nítida vira desfocada (parte de baixo dela), em faixas cada vez mais fortes. */
+const BLUR_FADE = 110;
+const BLUR_STEPS = 12;
+const BLUR = 28;
+/** Sombra no topo da capa (barra de status clara por cima). */
+const SCRIM = 0.38;
+/** O fundo do tema (palette.bg, "#rrggbb") com transparência, para o reflexo clarear aos poucos. */
+const BG_RGB = [1, 3, 5].map((i) => parseInt(palette.bg.slice(i, i + 2), 16)).join(',');
+const bg = (alpha: number) => `rgba(${BG_RGB},${alpha})`;
+/** Quanto de fundo claro já tem no começo do reflexo (e no fim da capa, para emendar). */
+const VEIL_START = 0.4;
 
 /**
  * Topo do perfil, igual para o seu e para o de outra pessoa, todo centralizado num eixo só:
@@ -37,8 +63,12 @@ const BIO_LINES = 4;
  * - os botões, na largura toda.
  * Antes a foto ficava à esquerda com os números ao lado e o resto da tela seguia outro alinhamento: a tela
  * parecia "torta".
+ * Com capa, ela ocupa a largura toda e encosta no topo da tela (barra de status clara por cima de uma sombra
+ * leve), e a foto sobe para cima da parte de baixo dela. Abaixo, um reflexo desfocado da capa continua as
+ * cores dela por trás da foto, do nome e da bio, clareando até o fundo (ver Cover).
  */
 export function ProfileHeader(p: ProfileHeaderProps) {
+  const headerUrl = useWorkingImageUrl(p.headerUrl);
   const s = strings.social;
   const [bioOpen, setBioOpen] = useState(false);
   // O perfil guarda o código (ex.: "she"); aqui vira o texto do idioma de quem vê ("ela/dela", "she/her").
@@ -71,8 +101,9 @@ export function ProfileHeader(p: ProfileHeaderProps) {
 
   return (
     <View style={styles.root}>
-      <View style={styles.ring}>
-        <Avatar name={p.name || p.username} imageUrl={p.avatarUrl} size={96} />
+      {headerUrl ? <Cover url={headerUrl} bleedTop={p.coverBleedTop ?? 0} /> : null}
+      <View style={[styles.ring, headerUrl ? styles.ringOnCover : null]}>
+        <Avatar name={p.name || p.username} imageUrl={p.avatarUrl} size={AVATAR} />
       </View>
 
       <View style={styles.identity}>
@@ -128,8 +159,98 @@ export function ProfileHeader(p: ProfileHeaderProps) {
   );
 }
 
+/**
+ * Barra de status de quem mostra o ProfileHeader: clara enquanto a capa está atrás dela, e a padrão quando
+ * a pessoa rola e a capa sai (senão os ícones claros ficariam sobre o fundo claro). Devolve o onScroll da
+ * tela. Sem capa (ou com uma que não carregou), sempre a padrão.
+ */
+export function useCoverStatusBar(headerUrl: string | null | undefined) {
+  const hasCover = !!useWorkingImageUrl(headerUrl);
+  const overCover = useRef(true);
+  const apply = useCallback(() => setStatusBarStyle(hasCover && overCover.current ? 'light' : 'auto'), [hasCover]);
+  useFocusEffect(
+    useCallback(() => {
+      apply();
+      return () => setStatusBarStyle('auto');
+    }, [apply]),
+  );
+  return useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentInset } = e.nativeEvent;
+      // Rolagem a partir do topo da tela (no iOS o conteúdo começa abaixo do recuo automático).
+      const over = contentOffset.y + (contentInset?.top ?? 0) < COVER_HEIGHT;
+      if (over !== overCover.current) {
+        overCover.current = over;
+        apply();
+      }
+    },
+    [apply],
+  );
+}
+
+/**
+ * Capa no topo + um reflexo dela, espelhado e desfocado, que continua as cores para fora:
+ * - abaixo, por trás da foto, do nome e da bio, com um véu claro que vai até o fundo. Espelhado porque
+ *   assim a primeira linha do reflexo é a última da capa;
+ * - na parte de baixo da própria capa, a versão desfocada entra em faixas cada vez mais opacas (o RN não
+ *   tem máscara de transparência), então a capa passa de nítida a desfocada aos poucos;
+ * - acima da capa (só ao puxar a tela para baixo), o reflexo da parte de cima, com a sombra do topo.
+ * O reflexo é desenhado antes, então fica atrás da foto e do nome.
+ */
+function Cover({ url, bleedTop }: { url: string; bleedTop: number }) {
+  const height = COVER_HEIGHT + bleedTop;
+  const hidden = { pointerEvents: 'none', accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' } as const;
+  return (
+    <>
+      {/* Acima da capa, do mesmo tamanho dela: cobre a distância de um puxar para atualizar. */}
+      <View {...hidden} style={[styles.glow, { top: -bleedTop - height, height }]}>
+        <Image source={{ uri: url }} style={[styles.mirrorUp, { height }]} contentFit="cover" blurRadius={BLUR} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: `rgba(0,0,0,${SCRIM})` }]} />
+      </View>
+      <View {...hidden} style={[styles.glow, { top: COVER_HEIGHT, height: GLOW_HEIGHT }]}>
+        <Image source={{ uri: url }} style={[styles.mirror, { height }]} contentFit="cover" blurRadius={BLUR} />
+        <LinearGradient colors={[bg(VEIL_START), bg(0.96), bg(1)]} locations={[0, 0.3, 1]} style={StyleSheet.absoluteFill} />
+      </View>
+      <View {...hidden} style={[styles.cover, { marginTop: -bleedTop, height }]}>
+        <Image
+          source={{ uri: url }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={200}
+          onError={() => markImageBroken(url)}
+        />
+        {Array.from({ length: BLUR_STEPS }, (_, i) => {
+          // Faixas encostadas em pixels inteiros, sem sobrepor: onde duas se sobrepunham (ou sobrava fresta)
+          // aparecia uma linha.
+          const start = height - BLUR_FADE;
+          const top = Math.round(start + (i * BLUR_FADE) / BLUR_STEPS);
+          const bottom = Math.round(start + ((i + 1) * BLUR_FADE) / BLUR_STEPS);
+          return (
+            <View key={i} style={[styles.band, { top, height: bottom - top, opacity: (i + 1) / BLUR_STEPS }]}>
+              <Image source={{ uri: url }} style={[styles.bandImage, { top: -top, height }]} contentFit="cover" blurRadius={BLUR} />
+            </View>
+          );
+        })}
+        <LinearGradient colors={[`rgba(0,0,0,${SCRIM})`, 'rgba(0,0,0,0)']} style={[styles.scrim, { height: bleedTop + 48 }]} />
+        {/* O fim da capa já no tom do começo do reflexo. */}
+        <LinearGradient colors={[bg(0), bg(VEIL_START)]} style={styles.coverFade} />
+      </View>
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { alignItems: 'center', gap: space.lg },
+  cover: { alignSelf: 'stretch', marginHorizontal: -space.screenX, overflow: 'hidden', backgroundColor: palette.surfaceSunken },
+  scrim: { position: 'absolute', top: 0, left: 0, right: 0 },
+  coverFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 56 },
+  band: { position: 'absolute', left: 0, right: 0, overflow: 'hidden' },
+  bandImage: { position: 'absolute', left: 0, right: 0 },
+  mirror: { position: 'absolute', top: 0, left: 0, right: 0, transform: [{ scaleY: -1 }] },
+  mirrorUp: { position: 'absolute', bottom: 0, left: 0, right: 0, transform: [{ scaleY: -1 }] },
+  glow: { position: 'absolute', left: -space.screenX, right: -space.screenX, overflow: 'hidden' },
+  // A foto sobe para cima da parte de baixo da capa (desconta o espaço entre os blocos).
+  ringOnCover: { marginTop: -(AVATAR * 0.8 + space.lg) },
   ring: {
     padding: 4,
     borderRadius: 999,

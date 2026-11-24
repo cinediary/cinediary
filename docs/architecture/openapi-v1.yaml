@@ -91,6 +91,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserProfileResponse'
 
+  /api/v1/me/header:
+    put:
+      tags: [Users & Onboarding]
+      summary: "Define a capa do perfil: um backdrop do TMDB de um título (sem upload)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHeaderRequest'
+      responses:
+        '200':
+          description: Perfil com a capa nova
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '400':
+          description: "A imagem não é um dos backdrops do título"
+        '404':
+          description: "Título não encontrado no catálogo"
+    delete:
+      tags: [Users & Onboarding]
+      summary: Remove a capa do perfil
+      responses:
+        '200':
+          description: Perfil sem capa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+
   /api/v1/me/onboarding:
     post:
       tags: [Users & Onboarding]
@@ -806,6 +838,30 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TitleCreditDto'
+
+  /api/v1/catalog/{mediaType}/{tmdbId}/backdrops:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: "Backdrops sem texto do título, para escolher a capa do perfil (cache de 6 h)"
+      parameters:
+        - in: path
+          name: mediaType
+          required: true
+          schema:
+            $ref: '#/components/schemas/MediaType'
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: "Lista vazia quando o TMDB não tem imagens sem texto"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitleBackdropsResponse'
 
   /api/v1/catalog/{mediaType}/{tmdbId}/extras:
     get:
@@ -1550,6 +1606,7 @@ components:
         pendingRequestsCount: { type: integer, format: int64, description: "Só no seu perfil" }
         bio: { type: string, nullable: true }
         pronouns: { type: string, nullable: true }
+        headerUrl: { type: string, nullable: true, description: "Capa do perfil (backdrop do TMDB); nulo = sem capa. Pública, como a foto" }
     SocialPersonResponse:
       type: object
       required: [id, username, displayName, isPrivate, relationship]
@@ -1635,6 +1692,26 @@ components:
         lastName: { type: string, nullable: true, description: "Só no /me (espelho do Clerk)" }
         showSpoilers: { type: boolean, description: "Só no /me. Preferência: reviews dos outros sem desfoque" }
         approveCompanions: { type: boolean, description: "Só no /me. \"Aprovar marcações\": true = você aceita ou recusa quando te marcam; false = já entra aceita" }
+        headerUrl: { type: string, nullable: true, description: "Capa do perfil (backdrop do TMDB); nulo = sem capa" }
+    UpdateHeaderRequest:
+      type: object
+      required: [titleId, backdropPath]
+      properties:
+        titleId: { type: integer, format: int64, description: "ID interno do título no catálogo" }
+        backdropPath: { type: string, maxLength: 100, description: "Um dos `path` de /catalog/{mediaType}/{tmdbId}/backdrops" }
+    TitleBackdropsResponse:
+      type: object
+      required: [backdrops]
+      properties:
+        backdrops:
+          type: array
+          description: "Sem texto (sem o nome do título escrito), os mais votados primeiro; até 30"
+          items:
+            type: object
+            required: [path, url]
+            properties:
+              path: { type: string, description: "O que se manda em PUT /me/header (ex.: /abc.jpg)" }
+              url: { type: string, description: "A imagem pronta (1280 px)" }
 
     UpdateProfileRequest:
       type: object

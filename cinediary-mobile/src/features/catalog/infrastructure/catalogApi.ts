@@ -1,6 +1,6 @@
 import { api, unwrap } from '@/shared/api/client';
 import type { components } from '@/shared/api/schema';
-import type { CompanyDetail, SeasonEpisode, TitleExtras, WatchProvider } from '../domain/extras';
+import type { CompanyDetail, SeasonEpisode, TitleBackdrop, TitleExtras, WatchProvider } from '../domain/extras';
 import type { Credit, Person } from '../domain/person';
 import type { ShowcasePoster } from '../domain/showcase';
 import type { Genre, MediaType, SearchFilter, SearchPage, TitleDetail } from '../domain/title';
@@ -106,6 +106,12 @@ export const catalogApi = {
           }
         : null,
     };
+  },
+
+  /** Cenas sem texto do título (capa do perfil), as mais votadas primeiro. */
+  async backdrops(mediaType: MediaType, tmdbId: number): Promise<TitleBackdrop[]> {
+    const dto = await unwrap(api.GET('/api/v1/catalog/{mediaType}/{tmdbId}/backdrops', { params: { path: { mediaType, tmdbId } } }));
+    return dto.backdrops.map((b) => ({ path: b.path, url: b.url }));
   },
 
   async seasonEpisodes(tmdbId: number, seasonNumber: number): Promise<SeasonEpisode[]> {

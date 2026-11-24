@@ -63,6 +63,9 @@ public interface TmdbGatewayPort
     /** Pessoa com filmografia (atuação e direção). */
     TmdbPerson person(long personId);
 
+    /** Backdrops sem texto do título (capa do perfil), os mais votados primeiro; só os caminhos (ex.: /abc.jpg). */
+    List<String> backdrops(MediaType type, long tmdbId);
+
     String posterUrl(String path);
 
     String backdropUrl(String path);

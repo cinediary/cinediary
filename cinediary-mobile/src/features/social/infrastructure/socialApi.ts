@@ -44,6 +44,7 @@ const toProfile = (dto: Schemas['PublicProfileResponse']): PublicProfile => ({
   totalMoviesWatched: dto.totalMoviesWatched,
   totalSeriesWatched: dto.totalSeriesWatched,
   favorites: dto.favorites.map(toTitleSummary),
+  headerUrl: dto.headerUrl ?? null,
   followersCount: dto.followersCount,
   followingCount: dto.followingCount,
   followsYou: dto.followsYou,

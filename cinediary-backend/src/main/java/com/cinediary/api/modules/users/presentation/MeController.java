@@ -4,18 +4,22 @@ import com.cinediary.api.modules.users.api.UserProfileView;
 import com.cinediary.api.modules.users.application.CompleteOnboardingUseCase;
 import com.cinediary.api.modules.users.application.GetCurrentUserUseCase;
 import com.cinediary.api.modules.users.application.OnboardingResult;
+import com.cinediary.api.modules.users.application.UpdateProfileHeaderUseCase;
 import com.cinediary.api.modules.users.application.UpdateUserProfileUseCase;
 import com.cinediary.api.modules.users.presentation.dto.OnboardingRequest;
 import com.cinediary.api.modules.users.presentation.dto.OnboardingResponse;
+import com.cinediary.api.modules.users.presentation.dto.UpdateHeaderRequest;
 import com.cinediary.api.modules.users.presentation.dto.UpdateProfileRequest;
 import com.cinediary.api.shared.domain.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,6 +33,7 @@ public class MeController
     private final GetCurrentUserUseCase getCurrentUser;
     private final UpdateUserProfileUseCase updateUserProfile;
     private final CompleteOnboardingUseCase completeOnboarding;
+    private final UpdateProfileHeaderUseCase updateHeader;
 
     @GetMapping
     @Operation(summary = "Perfil do usuário autenticado")
@@ -42,6 +47,20 @@ public class MeController
     public UserProfileView update(CurrentUser user, @Valid @RequestBody UpdateProfileRequest request)
     {
         return updateUserProfile.execute(user.id(), request.toCommand());
+    }
+
+    @PutMapping("/header")
+    @Operation(summary = "Define a capa do perfil: um backdrop do TMDB de um título")
+    public UserProfileView setHeader(CurrentUser user, @Valid @RequestBody UpdateHeaderRequest request)
+    {
+        return updateHeader.set(user.id(), request.titleId(), request.backdropPath());
+    }
+
+    @DeleteMapping("/header")
+    @Operation(summary = "Remove a capa do perfil")
+    public UserProfileView removeHeader(CurrentUser user)
+    {
+        return updateHeader.remove(user.id());
     }
 
     @PostMapping("/onboarding")

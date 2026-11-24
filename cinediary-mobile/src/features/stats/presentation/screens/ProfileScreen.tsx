@@ -1,11 +1,12 @@
 import { CaretRight, UserPlus } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { openTitle } from '@/features/catalog/presentation/navigation';
 import { useDiaryEntries } from '@/features/diary/application/diaryQueries';
 import { usePublicProfile } from '@/features/social/application/socialQueries';
 import { OwnProfileActions } from '@/features/social/presentation/components/ProfileActions';
-import { ProfileHeader } from '@/features/social/presentation/components/ProfileHeader';
+import { ProfileHeader, useCoverStatusBar } from '@/features/social/presentation/components/ProfileHeader';
 import { openFollowRequests } from '@/features/social/presentation/navigation';
 import { formatYearMonthShort, strings } from '@/shared/i18n';
 import { palette, radius, space } from '@/shared/theme';
@@ -21,6 +22,7 @@ import {
   Text,
   Title,
   useGridItemWidth,
+  useWorkingImageUrl,
   VerticalBars,
 } from '@/shared/ui';
 import { refreshProfile, useMyStats } from '../../application/useMyStats';
@@ -37,6 +39,10 @@ export function ProfileScreen() {
   // Contadores de seguidores/seguindo e pedidos pendentes vêm do perfil público (o mesmo que os outros veem).
   const social = usePublicProfile(me.data?.username ?? '');
   const diary = useDiaryEntries();
+  const insets = useSafeAreaInsets();
+  // A capa que vale para o layout: sem capa, ou com uma que não carregou, o topo fica como antes.
+  const headerUrl = useWorkingImageUrl(me.data?.headerUrl);
+  const onScrollCover = useCoverStatusBar(me.data?.headerUrl);
   const favWidth = useGridItemWidth(4);
   const profile = me.data;
 
@@ -56,13 +62,26 @@ export function ProfileScreen() {
 
   const recent = (diary.data?.pages.flat() ?? []).slice(0, 4);
   const s = stats.data;
+  // Com capa, a tela não reserva o topo (relógio) e a capa sobe até a borda da tela. No iOS o ScrollView
+  // continua recuando o conteúdo sozinho (em cima e embaixo, para a barra de abas); no Android o recuo de
+  // cima fica por conta do padding.
+  const coverTop = insets.top + space.lg;
+  const coverPadding = Platform.OS === 'ios' ? null : { paddingTop: coverTop };
 
   return (
-    <Screen scroll onRefresh={refreshProfile} contentStyle={styles.page}>
+    <Screen
+      scroll
+      onRefresh={refreshProfile}
+      edges={headerUrl ? [] : undefined}
+      onScroll={onScrollCover}
+      contentStyle={[styles.page, headerUrl ? coverPadding : null]}
+    >
       <ProfileHeader
         name={profile.displayName || profile.username}
         username={profile.username}
         avatarUrl={profile.avatarUrl}
+        headerUrl={headerUrl}
+        coverBleedTop={coverTop}
         pronouns={profile.pronouns}
         bio={profile.bio}
         isPrivate={profile.isPrivate}

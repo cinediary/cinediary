@@ -18,7 +18,7 @@ import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation
 import { usePersonDiary, usePublicProfile } from '../../application/socialQueries';
 import { FollowButton } from '../components/FollowButton';
 import { OwnProfileActions } from '../components/ProfileActions';
-import { ProfileHeader } from '../components/ProfileHeader';
+import { ProfileHeader, useCoverStatusBar } from '../components/ProfileHeader';
 import { openPersonDiary, openPersonEntry } from '../navigation';
 
 /** Quantos registros o perfil mostra antes do "Ver diário completo". */
@@ -53,6 +53,7 @@ export function PersonProfileScreen() {
     Promise.all([profile.refetch(), canSee ? diary.refetch() : null, canSee ? stats.refetch() : null]),
   );
   const top = useFloatingBackInset();
+  const onScrollCover = useCoverStatusBar(p?.headerUrl);
 
   if (!p) {
     return (
@@ -83,12 +84,16 @@ export function PersonProfileScreen() {
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: top, paddingBottom: insets.bottom + space.xl }]}
         showsVerticalScrollIndicator={false}
+        onScroll={onScrollCover}
+        scrollEventThrottle={32}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={semantic.primary} />}
       >
         <ProfileHeader
           name={p.displayName || p.username}
           username={p.username}
           avatarUrl={p.avatarUrl}
+          headerUrl={p.headerUrl}
+          coverBleedTop={top}
           pronouns={p.pronouns}
           bio={p.bio}
           isPrivate={p.isPrivate}

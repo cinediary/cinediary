@@ -36,6 +36,20 @@ interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, UUID>
     List<UserJpaEntity> search(@Param("q") String q, @Param("prefix") String prefix, @Param("contains") String contains,
                                @Param("limit") int limit);
 
+    /**
+     * Capa do perfil, só em conta ativa: um UPDATE só destas colunas (e não um save da entidade inteira),
+     * para não regravar o deleted_at lido antes se a conta for excluída no meio do caminho.
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Transactional
+    @Query(value = """
+            UPDATE users
+               SET header_title_id = :titleId, header_backdrop_path = :backdropPath, updated_at = NOW()
+             WHERE id = :id AND deleted_at IS NULL
+            """, nativeQuery = true)
+    int updateHeaderIfActive(@Param("id") UUID id, @Param("titleId") Long titleId,
+                             @Param("backdropPath") String backdropPath);
+
     @Modifying
     @Transactional
     @Query(value = "UPDATE users SET username = :username, updated_at = NOW() WHERE id = :id", nativeQuery = true)
@@ -94,6 +108,8 @@ interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, UUID>
                SET deleted_at = :deletedAt,
                    -- Conta excluída libera o @username (alguém, ou a mesma pessoa numa conta nova, pode usá-lo)
                    username = 'excluido_' || substr(replace(id::text, '-', ''), 1, 12),
+                   header_title_id = NULL,
+                   header_backdrop_path = NULL,
                    clerk_event_timestamp = :eventTimestamp,
                    updated_at = NOW()
              WHERE clerk_id = :clerkId

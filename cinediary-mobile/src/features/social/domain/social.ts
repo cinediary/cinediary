@@ -16,6 +16,8 @@ export interface PublicProfile extends Person {
   totalMoviesWatched: number;
   totalSeriesWatched: number;
   favorites: TitleSummary[];
+  /** Capa do perfil (um backdrop do TMDB); null = sem capa. */
+  headerUrl: string | null;
   followersCount: number;
   followingCount: number;
   followsYou: boolean;

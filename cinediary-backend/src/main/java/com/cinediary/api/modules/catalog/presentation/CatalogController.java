@@ -7,6 +7,7 @@ import com.cinediary.api.modules.catalog.application.GetPersonUseCase;
 import com.cinediary.api.modules.catalog.application.GetSeasonUseCase;
 import com.cinediary.api.modules.catalog.application.GetPopularTitlesUseCase;
 import com.cinediary.api.modules.catalog.application.GetTitleCreditsUseCase;
+import com.cinediary.api.modules.catalog.application.GetTitleBackdropsUseCase;
 import com.cinediary.api.modules.catalog.application.GetTitleExtrasUseCase;
 import com.cinediary.api.modules.catalog.application.GetTrendingTitlesUseCase;
 import com.cinediary.api.modules.catalog.application.SearchCatalogUseCase;
@@ -19,6 +20,7 @@ import com.cinediary.api.modules.catalog.presentation.dto.PersonResponse;
 import com.cinediary.api.modules.catalog.presentation.dto.SeasonResponse;
 import com.cinediary.api.modules.catalog.presentation.dto.TrailerResponse;
 import com.cinediary.api.modules.catalog.presentation.dto.TitleCreditDto;
+import com.cinediary.api.modules.catalog.presentation.dto.TitleBackdropsResponse;
 import com.cinediary.api.modules.catalog.presentation.dto.TitleExtrasResponse;
 import com.cinediary.api.shared.domain.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,6 +47,7 @@ public class CatalogController
     private final GetPersonUseCase getPerson;
     private final GetTrendingTitlesUseCase getTrending;
     private final GetTitleExtrasUseCase getTitleExtras;
+    private final GetTitleBackdropsUseCase getTitleBackdrops;
     private final GetCompanyUseCase getCompany;
     private final GetSeasonUseCase getSeason;
 
@@ -112,6 +115,13 @@ public class CatalogController
                                       @RequestParam(required = false) String region)
     {
         return TitleExtrasResponse.from(getTitleExtras.execute(mediaType, tmdbId, user.id(), language, region));
+    }
+
+    @GetMapping("/{mediaType}/{tmdbId}/backdrops")
+    @Operation(summary = "Backdrops sem texto do título, para escolher a capa do perfil")
+    public TitleBackdropsResponse backdrops(@PathVariable MediaType mediaType, @PathVariable long tmdbId)
+    {
+        return new TitleBackdropsResponse(getTitleBackdrops.execute(mediaType, tmdbId));
     }
 
     @GetMapping("/companies/{companyId}")

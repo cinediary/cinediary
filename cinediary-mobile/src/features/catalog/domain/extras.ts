@@ -51,6 +51,12 @@ export interface TitleExtras {
   watchProviders: WatchProviders | null;
 }
 
+/** Um backdrop do TMDB (cena sem texto): `path` é o que se salva; `url`, a imagem. */
+export interface TitleBackdrop {
+  path: string;
+  url: string;
+}
+
 export interface CompanyDetail extends Company {
   originCountry: string | null;
   titles: TitleSummary[];

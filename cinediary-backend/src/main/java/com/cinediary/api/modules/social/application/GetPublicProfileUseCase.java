@@ -30,7 +30,7 @@ public class GetPublicProfileUseCase
         UserProfileView full = users.profile(person.id(), viewerId);
         UserProfileView shown = canSee ? full
                 : new UserProfileView(full.id(), full.username(), full.displayName(), full.avatarUrl(), full.isPrivate(),
-                        full.onboardingCompleted(), 0, 0, List.of(), full.bio(), full.pronouns(), null, null, false, null, true);
+                        full.onboardingCompleted(), 0, 0, List.of(), full.bio(), full.pronouns(), null, null, false, null, true, full.headerUrl());
         boolean followsYou = relationship != Relationship.SELF && follows.find(person.id(), viewerId)
                 .filter(f -> f.status() == FollowStatus.ACCEPTED).isPresent();
         long pending = relationship == Relationship.SELF ? follows.countPending(person.id()) : 0;

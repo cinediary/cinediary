@@ -18,6 +18,7 @@ export const catalogKeys = {
   person: (personId: number) => ['catalog', 'person', personId] as const,
   extras: (mediaType: MediaType, tmdbId: number, language: string | null, region: string | null) =>
     ['catalog', 'extras', mediaType, tmdbId, language, region] as const,
+  backdrops: (mediaType: MediaType, tmdbId: number) => ['catalog', 'backdrops', mediaType, tmdbId] as const,
   company: (companyId: number) => ['catalog', 'company', companyId] as const,
   seasonEpisodes: (tmdbId: number, season: number) => ['catalog', 'season', tmdbId, season] as const,
   seasonTrailer: (tmdbId: number, season: number, language: string | null) =>
@@ -160,6 +161,16 @@ export function useTitleExtras(mediaType: MediaType, tmdbId: number) {
     queryKey: catalogKeys.extras(mediaType, tmdbId, language, region),
     queryFn: () => catalogApi.extras(mediaType, tmdbId, language, region),
     enabled: Number.isFinite(tmdbId) && tmdbId > 0,
+    staleTime: 60 * 60_000,
+  });
+}
+
+/** Cenas sem texto de um título, para escolher a capa do perfil. Sem título (null), não busca. */
+export function useTitleBackdrops(title: { mediaType: MediaType; tmdbId: number } | null) {
+  return useQuery({
+    queryKey: catalogKeys.backdrops(title?.mediaType ?? 'MOVIE', title?.tmdbId ?? 0),
+    queryFn: () => catalogApi.backdrops(title!.mediaType, title!.tmdbId),
+    enabled: !!title,
     staleTime: 60 * 60_000,
   });
 }
