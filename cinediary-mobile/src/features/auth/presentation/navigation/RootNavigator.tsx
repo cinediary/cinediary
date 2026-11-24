@@ -63,9 +63,11 @@ export function RootNavigator() {
     const entered = inApp && !wasInApp.current;
     wasInApp.current = inApp;
     if (!entered) return;
-    void pendingImport.exists().then((yes) => {
-      if (yes) nav.push('/import');
-    });
+    // Falhou a leitura: segue sem abrir; o arquivo continua pendente e a importação o pega quando abrir.
+    void pendingImport
+      .exists()
+      .then((yes) => yes && nav.push('/import'))
+      .catch(() => {});
   }, [inApp]);
 
   // Depois do commit, com o guard de (tabs) já liberado: abre o Story do Match ativado no onboarding.

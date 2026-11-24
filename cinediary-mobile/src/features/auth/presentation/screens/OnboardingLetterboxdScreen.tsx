@@ -26,9 +26,11 @@ export function OnboardingLetterboxdScreen() {
 
   // A pessoa chegou abrindo o ZIP pelo "Abrir com…" antes de ter conta (#111): já escolheu importar.
   useEffect(() => {
-    void pendingImport.exists().then((yes) => {
-      if (yes) nav.push('/(onboarding)/letterboxd-import');
-    });
+    // Falhou a leitura: fica na pergunta; o arquivo continua pendente e a importação o pega se a pessoa escolher.
+    void pendingImport
+      .exists()
+      .then((yes) => yes && nav.push('/(onboarding)/letterboxd-import'))
+      .catch(() => {});
   }, []);
 
   // Um pouco acima do rodapé padrão: sem nada no meio da tela, os botões colados embaixo ficavam longe demais.

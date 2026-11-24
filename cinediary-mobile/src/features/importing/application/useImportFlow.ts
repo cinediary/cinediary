@@ -1,7 +1,8 @@
 import { useIsMutating, useMutation, useMutationState, useQuery } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
-import { useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { ApiError, isNetworkError } from '@/shared/api/client';
@@ -71,22 +72,33 @@ export function useImportFlow() {
   if (active.data && active.data.jobId !== current?.jobId) setCurrent(active.data);
 
   // Um ZIP aberto pelo "Abrir com…" (#111) começa sozinho, sem passar pelo seletor de arquivo: tanto o que já
-  // estava pendente quando a tela abriu quanto o que chega com ela aberta.
+  // estava pendente quando a tela abriu quanto o que chega com ela aberta. Só enquanto a tela está em foco: uma
+  // importação escondida atrás de outra tela não pega o arquivo, e o link abre uma importação visível.
   const startRef = useRef<(file: PickedFile, pendingUri: string | null) => void>(() => {});
-  useEffect(() => {
-    const takeIncoming = async () => {
-      const incoming = await pendingImport.claim();
-      const saved = await activeImportStorage.get();
-      if (saved || queryClient.isMutating({ mutationKey: importKeys.upload }) > 0) {
-        // Já tem uma importação andando: o arquivo novo não entra por cima dela.
-        if (incoming) void pendingImport.clear(incoming);
-        return;
-      }
-      if (incoming) startRef.current(incomingFile(incoming), incoming);
-    };
-    void takeIncoming();
-    return pendingImport.subscribe(() => void takeIncoming());
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const takeIncoming = async () => {
+        const incoming = await pendingImport.claim();
+        if (!incoming) return;
+        try {
+          const saved = await activeImportStorage.get();
+          if (saved || queryClient.isMutating({ mutationKey: importKeys.upload }) > 0) {
+            // Já tem uma importação andando: o arquivo novo não entra por cima dela.
+            await pendingImport.clear(incoming);
+            return;
+          }
+        } catch {
+          // Não deu para ler o job salvo: o arquivo continua pendente para a próxima vez que a tela abrir.
+          pendingImport.release(incoming);
+          return;
+        }
+        startRef.current(incomingFile(incoming), incoming);
+      };
+      const take = () => void takeIncoming().catch(() => {});
+      take();
+      return pendingImport.subscribe(take);
+    }, []),
+  );
 
   const job = useImportJob(current?.jobId ?? null);
 

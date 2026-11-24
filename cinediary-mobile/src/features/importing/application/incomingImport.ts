@@ -6,19 +6,22 @@ import { pendingImportFile } from '../infrastructure/pendingImportFile';
  */
 export const isIncomingFile = (path: string) => /^(file|content):\/\//i.test(path);
 
+/** Telas de importação visíveis agora (ver useImportFlow: só enquanto estão em foco). */
 const listeners = new Set<() => void>();
 /** O arquivo que uma tela já pegou para enviar (a importação pode estar montada duas vezes). */
 let claimed: string | null = null;
 
 /**
  * Guarda o arquivo (ver pendingImportFile) e diz para onde ir.
- * - Importação já aberta (a pessoa baixou o ZIP pelo link dela, no app ou no onboarding): ela é avisada e começa
+ * - Importação visível (a pessoa baixou o ZIP pelo link dela, no app ou no onboarding): ela é avisada e começa
  *   ali mesmo; devolve `null`, que faz o app não navegar. Navegar abria uma segunda importação por cima, vazia,
  *   enquanto a de baixo enviava o arquivo.
  * - Senão: a rota da importação, que começa sozinha ao abrir.
  */
 export async function receiveIncomingImport(path: string): Promise<'/import' | null> {
-  await pendingImportFile.receive(path);
+  const { previous } = await pendingImportFile.receive(path);
+  // O pendente anterior ninguém pegou (a pessoa abriu dois ZIPs antes de entrar): a cópia dele sobraria.
+  if (previous && previous !== claimed) pendingImportFile.deleteCopy(previous);
   if (listeners.size === 0) return '/import';
   listeners.forEach((listener) => listener());
   return null;
@@ -36,6 +39,10 @@ export const pendingImport = {
     if (!uri || uri === claimed) return null;
     claimed = uri;
     return uri;
+  },
+  /** Devolve um arquivo pego e não enviado (ex.: falhou antes do envio): ele continua pendente. */
+  release(uri: string) {
+    if (claimed === uri) claimed = null;
   },
   async clear(uri?: string) {
     if (!uri || uri === claimed) claimed = null;

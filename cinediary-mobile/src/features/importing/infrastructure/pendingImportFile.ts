@@ -11,31 +11,54 @@ import * as SecureStore from 'expo-secure-store';
 const KEY = 'cinediary.pendingImportFile';
 const PREFIX = 'letterboxd-import-';
 
+/**
+ * Receber e limpar rodam um de cada vez: limpar lê a chave, compara e apaga; um arquivo novo gravado no meio
+ * seria apagado junto, e a importação dele se perderia.
+ */
+let queue: Promise<unknown> = Promise.resolve();
+function serial<T>(task: () => Promise<T>): Promise<T> {
+  const run = queue.then(task, task);
+  queue = run.catch(() => {});
+  return run;
+}
+
+/** Apaga uma cópia feita por receive (nunca o arquivo original de outro app). */
+function deleteCopy(uri: string) {
+  try {
+    const file = new File(uri);
+    if (file.name.startsWith(PREFIX) && file.exists) file.delete();
+  } catch {
+    // Arquivo já apagado: nada a fazer.
+  }
+}
+
 export const pendingImportFile = {
-  /** Copia o arquivo recebido para o app e guarda; devolve o caminho que a importação vai usar. */
-  async receive(uri: string): Promise<string> {
-    let saved = uri;
-    try {
-      const dest = new File(Paths.document, `${PREFIX}${Date.now()}.zip`);
-      new File(uri).copy(dest);
-      saved = dest.uri;
-    } catch {
-      // Sem a cópia, tenta com o link original (vale enquanto o app estiver aberto).
-    }
-    await SecureStore.setItemAsync(KEY, saved);
-    return saved;
-  },
+  /**
+   * Copia o arquivo recebido para o app e guarda. Devolve o caminho que a importação vai usar e o pendente que
+   * ele substituiu (quem chama decide se a cópia antiga pode ser apagada: ela pode estar sendo enviada).
+   */
+  receive: (uri: string) =>
+    serial(async () => {
+      let saved = uri;
+      try {
+        const dest = new File(Paths.document, `${PREFIX}${Date.now()}.zip`);
+        await new File(uri).copy(dest);
+        saved = dest.uri;
+      } catch {
+        // Sem a cópia, tenta com o link original (vale enquanto o app estiver aberto).
+      }
+      const previous = await SecureStore.getItemAsync(KEY);
+      await SecureStore.setItemAsync(KEY, saved);
+      return { saved, previous: previous !== saved ? previous : null };
+    }),
   get: () => SecureStore.getItemAsync(KEY),
   /** Apaga a cópia `uri` (ou a pendente) e esquece a pendente se for ela. */
-  async clear(uri?: string) {
-    const stored = await SecureStore.getItemAsync(KEY);
-    const target = uri ?? stored;
-    if (stored === target) await SecureStore.deleteItemAsync(KEY);
-    try {
-      const file = target ? new File(target) : null;
-      if (file && file.name.startsWith(PREFIX) && file.exists) file.delete();
-    } catch {
-      // Arquivo já apagado: nada a fazer.
-    }
-  },
+  clear: (uri?: string) =>
+    serial(async () => {
+      const stored = await SecureStore.getItemAsync(KEY);
+      const target = uri ?? stored;
+      if (stored === target) await SecureStore.deleteItemAsync(KEY);
+      if (target) deleteCopy(target);
+    }),
+  deleteCopy,
 };
