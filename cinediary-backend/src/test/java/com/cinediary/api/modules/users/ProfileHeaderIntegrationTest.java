@@ -20,6 +20,9 @@ class ProfileHeaderIntegrationTest extends IntegrationTest
 {
     private static final String BEST = "https://image.tmdb.org/t/p/w1280/bg-best.jpg";
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.cinediary.api.modules.users.domain.UserRepositoryPort userRepository;
+
     private record Person(String username, RequestPostProcessor auth)
     {
     }
@@ -135,6 +138,11 @@ class ProfileHeaderIntegrationTest extends IntegrationTest
                         .header("svix-signature", new com.svix.Webhook(WEBHOOK_SECRET).sign(svixId, ts, payload))
                         .content(payload))
                 .andExpect(status().isOk());
+        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ? AND deleted_at IS NOT NULL", clerkId)).isEqualTo(1);
+
+        // Uma gravação de capa que chega depois da exclusão (corrida) não muda nada e não reativa a conta
+        java.util.UUID id = jdbc.sql("SELECT id FROM users WHERE clerk_id = ?").param(clerkId).query(java.util.UUID.class).single();
+        assertThat(userRepository.updateHeader(id, matrix, "/bg-best.jpg")).isFalse();
         assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ? AND deleted_at IS NOT NULL", clerkId)).isEqualTo(1);
         assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ? AND (header_title_id IS NOT NULL OR header_backdrop_path IS NOT NULL)",
                 clerkId)).isZero();

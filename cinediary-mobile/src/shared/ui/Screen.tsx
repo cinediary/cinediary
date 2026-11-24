@@ -6,6 +6,8 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   type ScrollViewInstance,
   type StyleProp,
   type ViewStyle,
@@ -28,11 +30,8 @@ export interface ScreenProps extends PropsWithChildren {
   /** Conteúdo fixo abaixo da rolagem (ex.: rodapé do onboarding). */
   footer?: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
-  /**
-   * iOS: o ScrollView recua o conteúdo sozinho abaixo do relógio ('automatic'). 'never' para telas que
-   * desenham até o topo e cuidam do recuo elas mesmas (ex.: perfil com capa, com edges={[]}).
-   */
-  insetAdjustment?: 'automatic' | 'never';
+  /** Rolagem (com scroll): ex.: o perfil com capa troca a cor da barra de status quando a capa sai. */
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   /**
    * Com teclado aberto, a tela rola até este elemento ficar inteiro acima dele (ex.: o botão de
    * enviar do formulário). Sem isso, só a linha do cursor fica visível.
@@ -52,7 +51,7 @@ export function Screen({
   footer,
   contentStyle,
   keyboardTarget,
-  insetAdjustment = 'automatic',
+  onScroll,
 }: ScreenProps) {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const keyboard = useKeepAboveKeyboard(scrollRef, keyboardTarget);
@@ -70,13 +69,16 @@ export function Screen({
           // Sem a barrinha lateral de rolagem em todo o app (padrão em apps nativos; parecia web).
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.content, contentStyle]}
-          contentInsetAdjustmentBehavior={insetAdjustment}
+          contentInsetAdjustmentBehavior="automatic"
           // Teclado: a área de rolagem encolhe e o campo focado sobe (iOS); tocar fora de um campo ou
           // arrastar a tela para baixo fecha o teclado.
           automaticallyAdjustKeyboardInsets
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
-          onScroll={keyboard.onScroll}
+          onScroll={(e) => {
+            keyboard.onScroll(e);
+            onScroll?.(e);
+          }}
           scrollEventThrottle={32}
           refreshControl={
             onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={semantic.primary} /> : undefined

@@ -3,8 +3,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { LockSimple } from 'phosphor-react-native';
-import { useCallback, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
 import { formatNumber, strings } from '@/shared/i18n';
 import { fonts, palette, radius, shadow, space } from '@/shared/theme';
@@ -48,8 +48,9 @@ const BLUR_STEPS = 12;
 const BLUR = 28;
 /** Sombra no topo da capa (barra de status clara por cima). */
 const SCRIM = 0.38;
-/** O fundo (palette.bg) com transparência, para o reflexo clarear aos poucos. */
-const bg = (alpha: number) => `rgba(250,246,240,${alpha})`;
+/** O fundo do tema (palette.bg, "#rrggbb") com transparência, para o reflexo clarear aos poucos. */
+const BG_RGB = [1, 3, 5].map((i) => parseInt(palette.bg.slice(i, i + 2), 16)).join(',');
+const bg = (alpha: number) => `rgba(${BG_RGB},${alpha})`;
 /** Quanto de fundo claro já tem no começo do reflexo (e no fim da capa, para emendar). */
 const VEIL_START = 0.4;
 
@@ -158,6 +159,34 @@ export function ProfileHeader(p: ProfileHeaderProps) {
 }
 
 /**
+ * Barra de status de quem mostra o ProfileHeader: clara enquanto a capa está atrás dela, e a padrão quando
+ * a pessoa rola e a capa sai (senão os ícones claros ficariam sobre o fundo claro). Devolve o onScroll da
+ * tela. Sem capa, sempre a padrão.
+ */
+export function useCoverStatusBar(hasCover: boolean) {
+  const overCover = useRef(true);
+  const apply = useCallback(() => setStatusBarStyle(hasCover && overCover.current ? 'light' : 'auto'), [hasCover]);
+  useFocusEffect(
+    useCallback(() => {
+      apply();
+      return () => setStatusBarStyle('auto');
+    }, [apply]),
+  );
+  return useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentInset } = e.nativeEvent;
+      // Rolagem a partir do topo da tela (no iOS o conteúdo começa abaixo do recuo automático).
+      const over = contentOffset.y + (contentInset?.top ?? 0) < COVER_HEIGHT;
+      if (over !== overCover.current) {
+        overCover.current = over;
+        apply();
+      }
+    },
+    [apply],
+  );
+}
+
+/**
  * Capa no topo + um reflexo dela, espelhado e desfocado, que continua as cores para fora:
  * - abaixo, por trás da foto, do nome e da bio, com um véu claro que vai até o fundo. Espelhado porque
  *   assim a primeira linha do reflexo é a última da capa;
@@ -168,13 +197,6 @@ export function ProfileHeader(p: ProfileHeaderProps) {
  */
 function Cover({ url, bleedTop }: { url: string; bleedTop: number }) {
   const height = COVER_HEIGHT + bleedTop;
-  // Barra de status clara sobre a capa enquanto este perfil está na tela.
-  useFocusEffect(
-    useCallback(() => {
-      setStatusBarStyle('light');
-      return () => setStatusBarStyle('auto');
-    }, []),
-  );
   const hidden = { pointerEvents: 'none', accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' } as const;
   return (
     <>

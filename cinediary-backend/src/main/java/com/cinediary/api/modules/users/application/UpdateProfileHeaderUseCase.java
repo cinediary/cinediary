@@ -32,7 +32,9 @@ public class UpdateProfileHeaderUseCase
         if (!catalog.backdropPaths(titleId).contains(path)) {
             throw new DomainValidationException("Escolha uma das imagens deste título");
         }
-        users.updateHeader(userId, titleId, path);
+        if (!users.updateHeader(userId, titleId, path)) {
+            throw new NotFoundException("Usuário não encontrado");
+        }
         return facade.profile(userId, userId);
     }
 
@@ -40,7 +42,9 @@ public class UpdateProfileHeaderUseCase
     public UserProfileView remove(UUID userId)
     {
         users.findById(userId).filter(u -> !u.deleted()).orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
-        users.updateHeader(userId, null, null);
+        if (!users.updateHeader(userId, null, null)) {
+            throw new NotFoundException("Usuário não encontrado");
+        }
         return facade.profile(userId, userId);
     }
 }

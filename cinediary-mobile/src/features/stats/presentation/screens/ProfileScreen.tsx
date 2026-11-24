@@ -1,12 +1,12 @@
 import { CaretRight, UserPlus } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { openTitle } from '@/features/catalog/presentation/navigation';
 import { useDiaryEntries } from '@/features/diary/application/diaryQueries';
 import { usePublicProfile } from '@/features/social/application/socialQueries';
 import { OwnProfileActions } from '@/features/social/presentation/components/ProfileActions';
-import { ProfileHeader } from '@/features/social/presentation/components/ProfileHeader';
+import { ProfileHeader, useCoverStatusBar } from '@/features/social/presentation/components/ProfileHeader';
 import { openFollowRequests } from '@/features/social/presentation/navigation';
 import { formatYearMonthShort, strings } from '@/shared/i18n';
 import { palette, radius, space } from '@/shared/theme';
@@ -39,6 +39,7 @@ export function ProfileScreen() {
   const social = usePublicProfile(me.data?.username ?? '');
   const diary = useDiaryEntries();
   const insets = useSafeAreaInsets();
+  const onScrollCover = useCoverStatusBar(!!me.data?.headerUrl);
   const favWidth = useGridItemWidth(4);
   const profile = me.data;
 
@@ -58,16 +59,19 @@ export function ProfileScreen() {
 
   const recent = (diary.data?.pages.flat() ?? []).slice(0, 4);
   const s = stats.data;
-  // Com capa, a tela não reserva o topo (relógio): a capa sobe até lá e o conteúdo desce o mesmo tanto.
+  // Com capa, a tela não reserva o topo (relógio) e a capa sobe até a borda da tela. No iOS o ScrollView
+  // continua recuando o conteúdo sozinho (em cima e embaixo, para a barra de abas); no Android o recuo de
+  // cima fica por conta do padding.
   const coverTop = insets.top + space.lg;
+  const coverPadding = Platform.OS === 'ios' ? null : { paddingTop: coverTop };
 
   return (
     <Screen
       scroll
       onRefresh={refreshProfile}
       edges={profile.headerUrl ? [] : undefined}
-      insetAdjustment={profile.headerUrl ? 'never' : 'automatic'}
-      contentStyle={[styles.page, profile.headerUrl ? { paddingTop: coverTop } : null]}
+      onScroll={onScrollCover}
+      contentStyle={[styles.page, profile.headerUrl ? coverPadding : null]}
     >
       <ProfileHeader
         name={profile.displayName || profile.username}

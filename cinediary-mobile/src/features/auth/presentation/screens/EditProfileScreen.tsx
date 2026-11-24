@@ -315,6 +315,8 @@ function CoverSection({ profile }: { profile: UserProfile }) {
         accessibilityRole="button"
         accessibilityLabel={profile.headerUrl ? a.coverChange : a.coverChoose}
         onPress={open}
+        // Enquanto a remoção não termina, não abre o seletor (uma capa nova poderia ser sobrescrita por ela).
+        disabled={remove.isPending}
         style={({ pressed }) => [styles.cover, pressed && styles.selectPressed]}
       >
         {profile.headerUrl ? (
@@ -330,7 +332,13 @@ function CoverSection({ profile }: { profile: UserProfile }) {
       </Pressable>
       <View style={styles.coverActions}>
         <View style={styles.flex}>
-          <Button label={profile.headerUrl ? a.coverChange : a.coverChoose} size="sm" variant="secondary" onPress={open} />
+          <Button
+            label={profile.headerUrl ? a.coverChange : a.coverChoose}
+            size="sm"
+            variant="secondary"
+            disabled={remove.isPending}
+            onPress={open}
+          />
         </View>
         {profile.headerUrl ? (
           <View style={styles.flex}>

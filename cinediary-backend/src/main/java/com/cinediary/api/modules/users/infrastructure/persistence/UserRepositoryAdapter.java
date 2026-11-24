@@ -121,13 +121,9 @@ class UserRepositoryAdapter implements UserRepositoryPort
     }
 
     @Override
-    public void updateHeader(UUID id, Long titleId, String backdropPath)
+    public boolean updateHeader(UUID id, Long titleId, String backdropPath)
     {
-        UserJpaEntity e = repository.findById(id).orElseThrow();
-        e.setHeaderTitleId(titleId);
-        e.setHeaderBackdropPath(backdropPath);
-        e.setUpdatedAt(Instant.now());
-        repository.save(e);
+        return repository.updateHeaderIfActive(id, titleId, backdropPath) > 0;
     }
 
     @Override
