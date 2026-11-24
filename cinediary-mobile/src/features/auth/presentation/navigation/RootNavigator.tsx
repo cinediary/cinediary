@@ -142,6 +142,7 @@ export function RootNavigator() {
           <Stack.Screen name="_dev/design-system" options={{ headerShown: true, title: 'Design System' }} />
           <Stack.Screen name="_dev/match" options={{ headerShown: true, title: 'Design System · Match' }} />
           <Stack.Screen name="_dev/profile" options={{ headerShown: true, title: 'Design System · Perfil' }} />
+          <Stack.Screen name="_dev/diary" options={{ headerShown: true, title: 'Design System · Filtros do diário' }} />
         </Stack.Protected>
       </Stack>
 

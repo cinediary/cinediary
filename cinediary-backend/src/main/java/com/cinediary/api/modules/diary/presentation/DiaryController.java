@@ -3,13 +3,17 @@ package com.cinediary.api.modules.diary.presentation;
 import com.cinediary.api.modules.catalog.api.TitleSummaryView;
 import com.cinediary.api.modules.catalog.api.TitleStateView;
 import com.cinediary.api.modules.diary.application.CreateDiaryEntryUseCase;
+import com.cinediary.api.modules.diary.application.GetDiaryFiltersUseCase;
 import com.cinediary.api.modules.diary.application.ListDiaryEntriesUseCase;
 import com.cinediary.api.modules.diary.application.ListUndatedWatchedUseCase;
 import com.cinediary.api.modules.diary.application.ManageDiaryEntryUseCase;
 import com.cinediary.api.modules.diary.application.ListWatchlistUseCase;
 import com.cinediary.api.modules.diary.application.UpdateSeriesEpisodesUseCase;
 import com.cinediary.api.modules.diary.application.UpdateTitleStateUseCase;
+import com.cinediary.api.modules.diary.domain.DiaryFilter;
 import com.cinediary.api.modules.diary.presentation.dto.CreateDiaryEntryRequest;
+import com.cinediary.api.modules.diary.presentation.dto.DiaryCountResponse;
+import com.cinediary.api.modules.diary.presentation.dto.DiaryFiltersResponse;
 import com.cinediary.api.modules.diary.presentation.dto.UpdateDiaryEntryRequest;
 import com.cinediary.api.modules.diary.presentation.dto.DiaryEntryResponse;
 import com.cinediary.api.modules.diary.presentation.dto.SeriesEpisodeProgressRequest;
@@ -19,6 +23,7 @@ import com.cinediary.api.shared.domain.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +48,7 @@ public class DiaryController
     private final UpdateTitleStateUseCase updateTitleState;
     private final CreateDiaryEntryUseCase createDiaryEntry;
     private final ListDiaryEntriesUseCase listDiaryEntries;
+    private final GetDiaryFiltersUseCase diaryFilters;
     private final ListWatchlistUseCase listWatchlist;
     private final ListUndatedWatchedUseCase listUndatedWatched;
     private final ManageDiaryEntryUseCase manageEntry;
@@ -71,13 +77,45 @@ public class DiaryController
     }
 
     @GetMapping("/diary/entries")
-    @Operation(summary = "Entradas do diário, mais recentes primeiro")
+    @Operation(summary = "Entradas do diário, mais recentes primeiro (com filtros opcionais do \"Meu diário\")")
     public List<DiaryEntryResponse> entries(CurrentUser user,
                                             @RequestParam(defaultValue = "0") int page,
                                             @RequestParam(defaultValue = "20") int size,
-                                            @RequestParam(required = false) Long titleId)
+                                            @RequestParam(required = false) Long titleId,
+                                            @RequestParam(required = false) Integer year,
+                                            @RequestParam(required = false) Integer month,
+                                            @RequestParam(required = false) Integer genreId,
+                                            @RequestParam(required = false) BigDecimal minRating,
+                                            @RequestParam(defaultValue = "false") boolean rewatch,
+                                            @RequestParam(defaultValue = "false") boolean withReview,
+                                            @RequestParam(required = false) String mediaType,
+                                            @RequestParam(required = false) String q)
     {
-        return listDiaryEntries.execute(user.id(), page, size, titleId).stream().map(DiaryEntryResponse::from).toList();
+        DiaryFilter filter = new DiaryFilter(year, month, genreId, minRating, rewatch, withReview, mediaType, q);
+        return listDiaryEntries.execute(user.id(), page, size, titleId, filter).stream().map(DiaryEntryResponse::from).toList();
+    }
+
+    @GetMapping("/diary/entries/count")
+    @Operation(summary = "Quantos registros do diário passam nos filtros")
+    public DiaryCountResponse countEntries(CurrentUser user,
+                                           @RequestParam(required = false) Integer year,
+                                           @RequestParam(required = false) Integer month,
+                                           @RequestParam(required = false) Integer genreId,
+                                           @RequestParam(required = false) BigDecimal minRating,
+                                           @RequestParam(defaultValue = "false") boolean rewatch,
+                                           @RequestParam(defaultValue = "false") boolean withReview,
+                                           @RequestParam(required = false) String mediaType,
+                                           @RequestParam(required = false) String q)
+    {
+        DiaryFilter filter = new DiaryFilter(year, month, genreId, minRating, rewatch, withReview, mediaType, q);
+        return new DiaryCountResponse(listDiaryEntries.count(user.id(), filter));
+    }
+
+    @GetMapping("/diary/filters")
+    @Operation(summary = "Opções dos filtros do diário: anos, gêneros e tipos que existem nele")
+    public DiaryFiltersResponse filters(CurrentUser user)
+    {
+        return DiaryFiltersResponse.from(diaryFilters.execute(user.id()));
     }
 
     @PostMapping("/diary/entries")
