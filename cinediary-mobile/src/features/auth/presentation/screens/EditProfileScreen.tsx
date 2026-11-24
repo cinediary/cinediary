@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { ActionSheet, Avatar, Button, Skeleton, Text, TextField, useToast } from '@/shared/ui';
+import { ActionSheet, Avatar, Button, markImageBroken, Skeleton, Text, TextField, useToast, useWorkingImageUrl } from '@/shared/ui';
 import { fonts, palette, radius, semantic, space, touch, type as typeScale } from '@/shared/theme';
 import { Camera, CaretDown, EnvelopeSimple, ImageSquare, Trash } from 'phosphor-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -299,6 +299,8 @@ function CoverSection({ profile }: { profile: UserProfile }) {
   const a = strings.account;
   const toast = useToast();
   const { remove } = useProfileHeader();
+  // Capa que não carrega: a prévia fica vazia (dá para trocar ou remover normalmente).
+  const preview = useWorkingImageUrl(profile.headerUrl);
   const open = () => nav.push('/profile/header');
   const onRemove = () =>
     remove.mutate(undefined, {
@@ -319,8 +321,14 @@ function CoverSection({ profile }: { profile: UserProfile }) {
         disabled={remove.isPending}
         style={({ pressed }) => [styles.cover, pressed && styles.selectPressed]}
       >
-        {profile.headerUrl ? (
-          <Image source={{ uri: profile.headerUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
+        {preview ? (
+          <Image
+            source={{ uri: preview }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={150}
+            onError={() => markImageBroken(preview)}
+          />
         ) : (
           <View style={styles.coverEmpty}>
             <ImageSquare size={24} color={palette.ink500} />

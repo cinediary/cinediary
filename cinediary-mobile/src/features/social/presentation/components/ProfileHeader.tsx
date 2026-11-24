@@ -8,7 +8,7 @@ import { Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSynthet
 
 import { formatNumber, strings } from '@/shared/i18n';
 import { fonts, palette, radius, shadow, space } from '@/shared/theme';
-import { Avatar, Text } from '@/shared/ui';
+import { Avatar, markImageBroken, Text, useWorkingImageUrl } from '@/shared/ui';
 import type { FollowList } from '../../domain/social';
 import { openFollowList } from '../navigation';
 
@@ -68,6 +68,7 @@ const VEIL_START = 0.4;
  * cores dela por trás da foto, do nome e da bio, clareando até o fundo (ver Cover).
  */
 export function ProfileHeader(p: ProfileHeaderProps) {
+  const headerUrl = useWorkingImageUrl(p.headerUrl);
   const s = strings.social;
   const [bioOpen, setBioOpen] = useState(false);
   // O perfil guarda o código (ex.: "she"); aqui vira o texto do idioma de quem vê ("ela/dela", "she/her").
@@ -100,8 +101,8 @@ export function ProfileHeader(p: ProfileHeaderProps) {
 
   return (
     <View style={styles.root}>
-      {p.headerUrl ? <Cover url={p.headerUrl} bleedTop={p.coverBleedTop ?? 0} /> : null}
-      <View style={[styles.ring, p.headerUrl ? styles.ringOnCover : null]}>
+      {headerUrl ? <Cover url={headerUrl} bleedTop={p.coverBleedTop ?? 0} /> : null}
+      <View style={[styles.ring, headerUrl ? styles.ringOnCover : null]}>
         <Avatar name={p.name || p.username} imageUrl={p.avatarUrl} size={AVATAR} />
       </View>
 
@@ -161,9 +162,10 @@ export function ProfileHeader(p: ProfileHeaderProps) {
 /**
  * Barra de status de quem mostra o ProfileHeader: clara enquanto a capa está atrás dela, e a padrão quando
  * a pessoa rola e a capa sai (senão os ícones claros ficariam sobre o fundo claro). Devolve o onScroll da
- * tela. Sem capa, sempre a padrão.
+ * tela. Sem capa (ou com uma que não carregou), sempre a padrão.
  */
-export function useCoverStatusBar(hasCover: boolean) {
+export function useCoverStatusBar(headerUrl: string | null | undefined) {
+  const hasCover = !!useWorkingImageUrl(headerUrl);
   const overCover = useRef(true);
   const apply = useCallback(() => setStatusBarStyle(hasCover && overCover.current ? 'light' : 'auto'), [hasCover]);
   useFocusEffect(
@@ -210,7 +212,13 @@ function Cover({ url, bleedTop }: { url: string; bleedTop: number }) {
         <LinearGradient colors={[bg(VEIL_START), bg(0.96), bg(1)]} locations={[0, 0.3, 1]} style={StyleSheet.absoluteFill} />
       </View>
       <View {...hidden} style={[styles.cover, { marginTop: -bleedTop, height }]}>
-        <Image source={{ uri: url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+        <Image
+          source={{ uri: url }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={200}
+          onError={() => markImageBroken(url)}
+        />
         {Array.from({ length: BLUR_STEPS }, (_, i) => {
           // Faixas encostadas em pixels inteiros, sem sobrepor: onde duas se sobrepunham (ou sobrava fresta)
           // aparecia uma linha.

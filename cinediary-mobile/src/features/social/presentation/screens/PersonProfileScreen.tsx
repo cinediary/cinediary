@@ -53,7 +53,7 @@ export function PersonProfileScreen() {
     Promise.all([profile.refetch(), canSee ? diary.refetch() : null, canSee ? stats.refetch() : null]),
   );
   const top = useFloatingBackInset();
-  const onScrollCover = useCoverStatusBar(!!p?.headerUrl);
+  const onScrollCover = useCoverStatusBar(p?.headerUrl);
 
   if (!p) {
     return (

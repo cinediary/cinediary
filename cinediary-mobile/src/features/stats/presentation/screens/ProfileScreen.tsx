@@ -22,6 +22,7 @@ import {
   Text,
   Title,
   useGridItemWidth,
+  useWorkingImageUrl,
   VerticalBars,
 } from '@/shared/ui';
 import { refreshProfile, useMyStats } from '../../application/useMyStats';
@@ -39,7 +40,9 @@ export function ProfileScreen() {
   const social = usePublicProfile(me.data?.username ?? '');
   const diary = useDiaryEntries();
   const insets = useSafeAreaInsets();
-  const onScrollCover = useCoverStatusBar(!!me.data?.headerUrl);
+  // A capa que vale para o layout: sem capa, ou com uma que não carregou, o topo fica como antes.
+  const headerUrl = useWorkingImageUrl(me.data?.headerUrl);
+  const onScrollCover = useCoverStatusBar(me.data?.headerUrl);
   const favWidth = useGridItemWidth(4);
   const profile = me.data;
 
@@ -69,15 +72,15 @@ export function ProfileScreen() {
     <Screen
       scroll
       onRefresh={refreshProfile}
-      edges={profile.headerUrl ? [] : undefined}
+      edges={headerUrl ? [] : undefined}
       onScroll={onScrollCover}
-      contentStyle={[styles.page, profile.headerUrl ? coverPadding : null]}
+      contentStyle={[styles.page, headerUrl ? coverPadding : null]}
     >
       <ProfileHeader
         name={profile.displayName || profile.username}
         username={profile.username}
         avatarUrl={profile.avatarUrl}
-        headerUrl={profile.headerUrl}
+        headerUrl={headerUrl}
         coverBleedTop={coverTop}
         pronouns={profile.pronouns}
         bio={profile.bio}
