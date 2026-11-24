@@ -10,9 +10,11 @@ import { Button, ErrorState, Skeleton, SkeletonRows, Text, Title } from '@/share
 import { useOverlay } from '@/shared/ui/BottomSheet';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { useDiaryCount, useDiaryEntries, useDiaryFilterOptions } from '../../application/diaryQueries';
-import { filtersToQuery, isFiltered, NO_FILTERS, type DiaryFilters } from '../../domain/diaryFilters';
+import { filtersToQuery, isFiltered, NO_FILTERS, type DiaryFilterOptions, type DiaryFilters } from '../../domain/diaryFilters';
 import { DiaryFilterBar, DiaryFilterSheet, enter, leave } from '../components/DiaryFilterBar';
 import { diaryRows as toRows, EntryRow } from '../components/DiaryTimeline';
+
+const NO_OPTIONS: DiaryFilterOptions = { years: [], genres: [], movies: 0, series: 0 };
 
 /** A busca espera a pessoa parar de digitar antes de ir ao servidor. */
 const SEARCH_DEBOUNCE_MS = 300;
@@ -20,7 +22,9 @@ const SEARCH_DEBOUNCE_MS = 300;
 /** Conta o rascunho da folha de filtros, esperando um instante entre um toque e outro. */
 function useDraftCount(draft: DiaryFilters) {
   const settled = useDebouncedValue(draft, 250);
-  return useDiaryCount(settled).data;
+  const count = useDiaryCount(settled);
+  // Enquanto o número do rascunho atual não chega, nada de número velho (nem botão desligado por ele).
+  return settled === draft && !count.isPlaceholderData ? count.data : undefined;
 }
 
 /**
@@ -43,7 +47,10 @@ export function DiaryScreen() {
   const count = useDiaryCount(applied, filtered);
   const entries = diary.data?.pages.flat() ?? [];
   const patch = (p: Partial<DiaryFilters>) => setFilters((f) => ({ ...f, ...p }));
-  const hasDiary = !!options.data && options.data.movies + options.data.series > 0;
+  // A barra aparece com o diário, sem depender das opções: sem elas (carregando ou com erro), a busca e o botão
+  // continuam, só sem as abas de ano e com a folha mais curta.
+  const filterOptions = options.data ?? NO_OPTIONS;
+  const hasDiary = options.data ? options.data.movies + options.data.series > 0 : entries.length > 0 || filtered;
 
   // Enquanto a lista do filtro novo não chega, a anterior fica apagada (sem esqueleto nem salto).
   const changing = diary.isPlaceholderData && diary.isFetching;
@@ -61,11 +68,11 @@ export function DiaryScreen() {
   }, [appliedKey]);
 
   const openSheet = () => {
-    if (!options.data) return;
+    if (!options.data) void options.refetch();
     overlay.show(
       <DiaryFilterSheet
         initial={filters}
-        options={options.data}
+        options={filterOptions}
         useCount={useDraftCount}
         onApply={setFilters}
         onClose={overlay.hide}
@@ -73,7 +80,8 @@ export function DiaryScreen() {
     );
   };
 
-  if (diary.isPending || (diary.isError && !diary.data)) {
+  // Erro de tela inteira só no diário sem filtro: com filtro, o topo continua (dá para mudar ou limpar a busca).
+  if (diary.isPending || (diary.isError && !diary.data && !filtered)) {
     return (
       <View style={diary.isError ? [styles.root, styles.center] : styles.root}>
         {diary.isError ? (
@@ -110,10 +118,11 @@ export function DiaryScreen() {
         ListHeaderComponent={
           <View style={[styles.header, { paddingTop: backInset }]}>
             <Title parts={t.diaryTitle} />
-            {hasDiary && options.data ? (
-              <DiaryFilterBar filters={filters} options={options.data} onChange={patch} onOpenSheet={openSheet} />
+            {hasDiary ? (
+              <DiaryFilterBar filters={filters} options={filterOptions} onChange={patch} onOpenSheet={openSheet} />
             ) : null}
-            {filtered && count.data !== undefined && entries.length > 0 ? (
+            {/* Sem o número do filtro anterior enquanto o novo carrega. */}
+            {filtered && count.data !== undefined && !count.isPlaceholderData && entries.length > 0 ? (
               <Animated.View entering={enter} exiting={leave}>
                 <Text variant="caption" tone="muted">
                   {t.filters.count(count.data)}
@@ -123,7 +132,12 @@ export function DiaryScreen() {
           </View>
         }
         ListEmptyComponent={
-          filtered && !changing ? (
+          filtered && diary.isError ? (
+            <View style={styles.empty}>
+              <ErrorState onRetry={() => diary.refetch()} />
+              <Button label={t.filters.clearAll} variant="ghost" size="sm" onPress={() => setFilters(NO_FILTERS)} />
+            </View>
+          ) : filtered && !changing ? (
             <Animated.View entering={enter} style={styles.empty}>
               <Text variant="bodyStrong">{t.filters.emptyTitle}</Text>
               <Text tone="secondary" style={styles.centerText}>

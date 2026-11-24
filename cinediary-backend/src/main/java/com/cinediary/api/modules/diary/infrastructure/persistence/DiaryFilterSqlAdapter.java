@@ -21,9 +21,12 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 class DiaryFilterSqlAdapter implements DiaryFilterQueryPort
 {
-    /** Minúsculas e sem acento, sem depender da extensão unaccent: "Hereditário" e "hereditario" se acham. */
-    private static final String FOLD_FROM = "áàâãäåéèêëíìîïóòôõöúùûüçñý";
-    private static final String FOLD_TO = "aaaaaaeeeeiiiiooooouuuucny";
+    /**
+     * Minúsculas e sem acento, sem depender da extensão unaccent: "Hereditário" e "hereditario" se acham. As
+     * maiúsculas acentuadas também estão na lista: com uma collation C, o lower() do Postgres não mexe nelas.
+     */
+    private static final String FOLD_FROM = "áàâãäåéèêëíìîïóòôõöúùûüçñýÁÀÂÃÄÅÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑÝ";
+    private static final String FOLD_TO = "aaaaaaeeeeiiiiooooouuuucnyaaaaaaeeeeiiiiooooouuuucny";
 
     private final JdbcClient jdbc;
 
@@ -33,7 +36,7 @@ class DiaryFilterSqlAdapter implements DiaryFilterQueryPort
         Map<String, Object> params = new HashMap<>();
         String where = where(userId, filter, params);
         params.put("limit", size);
-        params.put("offset", page * size);
+        params.put("offset", (long) page * size); // long: uma página muito alta não vira um OFFSET negativo
         return jdbc.sql("""
                         SELECT e.id FROM diary_entries e JOIN catalog_titles t ON t.id = e.title_id
                          WHERE %s
@@ -131,7 +134,9 @@ class DiaryFilterSqlAdapter implements DiaryFilterQueryPort
     private static String foldJava(String s)
     {
         StringBuilder out = new StringBuilder();
-        for (char c : s.toLowerCase().toCharArray()) {
+        // NFC: um "é" digitado em duas partes (e + acento) vira uma letra só, a que está na lista. Locale.ROOT: sem
+        // a regra de outro idioma (ex.: o i sem ponto do turco).
+        for (char c : java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFC).toLowerCase(java.util.Locale.ROOT).toCharArray()) {
             int i = FOLD_FROM.indexOf(c);
             out.append(i >= 0 ? FOLD_TO.charAt(i) : c);
         }

@@ -112,6 +112,7 @@ export const diary = {
     more: 'Mais',
     rewatch: 'Revistos',
     withReview: 'Com review',
+    apply: 'Aplicar',
     clear: 'Limpar',
     show: (n: number) => (n === 1 ? 'Ver 1 registro' : `Ver ${n} registros`),
     showNone: 'Nenhum registro',

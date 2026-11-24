@@ -113,6 +113,7 @@ export const diary: Strings['diary'] = {
     more: 'Plus',
     rewatch: 'Revus',
     withReview: 'Avec critique',
+    apply: 'Appliquer',
     clear: 'Effacer',
     show: (n: number) => (n === 1 ? 'Voir 1 entrée' : `Voir ${n} entrées`),
     showNone: 'Aucune entrée',

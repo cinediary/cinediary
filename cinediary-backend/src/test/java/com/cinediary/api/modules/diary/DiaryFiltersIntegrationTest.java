@@ -61,6 +61,11 @@ class DiaryFiltersIntegrationTest extends IntegrationTest
         assertThat(titles(diary().param("q", "hereditario"))).containsExactly("Hereditário", "Hereditário");
         assertThat(titles(diary().param("q", "  WHIP "))).containsExactly("Whiplash");
         assertThat(titles(diary().param("q", "%"))).isEmpty();
+        // Maiúscula acentuada no título e acento digitado em duas partes (e + ´) na busca
+        long eramos = TestTitles.movie(jdbc, "Éramos Seis", 10, "18:Drama");
+        entry(eramos, "2025-01-10", "4", null);
+        assertThat(titles(diary().param("q", "eramos"))).containsExactly("Éramos Seis");
+        assertThat(titles(diary().param("q", "E\u0301ramos"))).containsExactly("Éramos Seis");
         // Também acha pelo título guardado em outro idioma
         jdbc.sql("INSERT INTO catalog_title_translations (title_id, language, title) VALUES (?, 'en', 'Hereditary')")
                 .param(hereditary).update();
@@ -96,6 +101,8 @@ class DiaryFiltersIntegrationTest extends IntegrationTest
             ids.addAll(JsonPath.<List<String>>read(body, "$[*].id"));
         }
         assertThat(ids).hasSize(3).doesNotHaveDuplicates();
+        // Uma página muito alta é só uma lista vazia (antes o OFFSET estourava o int e virava erro 500)
+        assertThat(titles(diary().param("year", "2025").param("page", "30000000").param("size", "100"))).isEmpty();
     }
 
     @Test

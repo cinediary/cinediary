@@ -38,6 +38,7 @@ const monthShort = strings.common.monthsShort;
 export const ratingLabel = (r: number) => (r >= 5 ? t.ratingExact : t.ratingFrom(String(r).replace('.', ',')));
 
 type Patch = (p: Partial<DiaryFilters>) => void;
+const MAX_QUERY = 100;
 
 /**
  * Topo do "Meu diário" (#147, opção D do Design System): a busca com o botão de filtros no canto e, embaixo,
@@ -67,7 +68,13 @@ export function DiaryFilterBar({
     <Animated.View layout={layout} style={styles.bar}>
       <View style={styles.searchRow}>
         <View style={styles.flex}>
-          <SearchField value={filters.query} onChangeText={(query) => onChange({ query })} placeholder={t.search} />
+          {/* O servidor aceita até 100 caracteres na busca (DiaryFilter). */}
+          <SearchField
+            value={filters.query}
+            onChangeText={(query) => onChange({ query })}
+            placeholder={t.search}
+            maxLength={MAX_QUERY}
+          />
         </View>
         <FilterButton count={count} onPress={onOpenSheet} />
       </View>
@@ -248,7 +255,7 @@ export function DiaryFilterSheet({
           <Button label={t.clear} variant="ghost" onPress={() => setDraft(clearSheetFilters(draft))} />
           <View style={styles.flex}>
             <Button
-              label={count === undefined ? t.title : count === 0 ? t.showNone : t.show(count)}
+              label={count === undefined ? t.apply : count === 0 ? t.showNone : t.show(count)}
               disabled={count === 0}
               onPress={() => {
                 onApply(draft);

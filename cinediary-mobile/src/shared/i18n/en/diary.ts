@@ -112,6 +112,7 @@ export const diary: Strings['diary'] = {
     more: 'More',
     rewatch: 'Rewatches',
     withReview: 'With review',
+    apply: 'Apply',
     clear: 'Clear',
     show: (n: number) => (n === 1 ? 'Show 1 entry' : `Show ${n} entries`),
     showNone: 'No entries',
