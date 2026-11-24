@@ -7,11 +7,13 @@ import java.util.List;
 
 public record TitleExtrasResponse(LocalDate releaseDate, List<String> originCountries, List<TitleExtras.Company> companies,
                                   List<TitleExtras.CrewMember> crew, String trailerYoutubeKey, String collectionName,
-                                  List<TitleSummaryView> collection, List<TitleSummaryView> similar)
+                                  List<TitleSummaryView> collection, List<TitleSummaryView> similar,
+                                  TitleExtras.WatchProviders watchProviders)
 {
     public static TitleExtrasResponse from(TitleExtras e)
     {
         return new TitleExtrasResponse(e.releaseDate(), e.originCountries(), e.companies(), e.crew(),
-                e.trailerYoutubeKey(), e.collectionName(), e.collection(), e.similar());
+                e.trailerYoutubeKey(), e.collectionName(), e.collection(), e.similar(),
+                e.watchProviders());
     }
 }

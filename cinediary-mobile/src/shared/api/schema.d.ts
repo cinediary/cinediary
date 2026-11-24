@@ -1919,12 +1919,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lançamento, país, produtoras, equipe, trailer, coleção e similares do título */
+        /** Lançamento, país, produtoras, equipe, trailer, coleção, similares e onde assistir do título */
         get: {
             parameters: {
                 query?: {
                     /** @description Idioma do aparelho (BCP 47, ex.: pt-BR), para escolher o trailer; ausente = pt-BR */
                     language?: string;
+                    /** @description País do aparelho (ISO 3166-1, ex.: BR), para o onde assistir; ausente = o país do idioma */
+                    region?: string;
                 };
                 header?: never;
                 path: {
@@ -3283,6 +3285,27 @@ export interface components {
             /** @description Outros filmes da franquia, em ordem de lançamento */
             collection: components["schemas"]["CatalogTitleSummary"][];
             similar: components["schemas"]["CatalogTitleSummary"][];
+            /** @description Onde assistir no país do aparelho, dados do JustWatch (crédito obrigatório); nulo quando não há assinatura, aluguel nem compra */
+            watchProviders?: {
+                /** @description ISO 3166-1 (ex.: BR) */
+                region: string;
+                /** @description O país por extenso, no idioma do conteúdo (ex.: Brasil) */
+                regionName: string;
+                /** @description Página do TMDB com todas as opções no país */
+                link?: string | null;
+                /** @description Assinatura, na ordem do JustWatch */
+                stream: components["schemas"]["WatchProvider"][];
+                /** @description Aluguel */
+                rent: components["schemas"]["WatchProvider"][];
+                /** @description Compra */
+                buy: components["schemas"]["WatchProvider"][];
+            } | null;
+        };
+        WatchProvider: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            logoUrl?: string | null;
         };
         CompanyResponse: {
             /** Format: int64 */

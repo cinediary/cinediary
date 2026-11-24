@@ -135,6 +135,8 @@ export interface AnalyticsEvents {
   entry_companion_responded: { response: 'accept' | 'decline' | 'remove' };
   /** Conversão do teste A/B "trailer-button-placement": `placement` é a variante que a pessoa viu. */
   trailer_opened: { tmdb_id: number; media_type: MediaType; placement: 'meta' | 'actions' };
+  /** A seção "Onde assistir" apareceu (uma vez por abertura da página). Quantos serviços em cada fileira. */
+  watch_provider_viewed: { tmdb_id: number; media_type: MediaType; stream_count: number; rent_count: number; buy_count: number };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;

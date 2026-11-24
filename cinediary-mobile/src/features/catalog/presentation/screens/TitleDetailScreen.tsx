@@ -15,7 +15,7 @@ import { CastSection } from '../components/CastSection';
 import { ExtrasSkeleton, SeasonsSkeleton } from '../components/Skeletons';
 import { SeriesProgressSection } from '../components/SeriesProgressSection';
 import { TitleActions } from '../components/TitleActions';
-import { AboutSection, CrewSection, RelatedSections } from '../components/TitleExtrasSections';
+import { AboutSection, CrewSection, RelatedSections, WatchProvidersSection } from '../components/TitleExtrasSections';
 import { TitleHeader } from '../components/TitleHeader';
 import { TrailerPlayer } from '../components/TrailerPlayer';
 import { YourEntries } from '../components/YourEntries';
@@ -25,7 +25,7 @@ import { useTrailerPlacement, type TrailerSlot } from '../trailerPlacement';
 
 /**
  * TI-01 (filme) / TI-02 (série), de cima para baixo: topo (backdrop elástico, pôster que amplia),
- * ações, Registrar + Trailer, progresso/seus registros, elenco, equipe, sobre (lançamento, país,
+ * ações, Registrar + Trailer, progresso/seus registros, elenco, onde assistir, equipe, sobre (lançamento, país,
  * produtoras), da mesma coleção e similares. Os extras chegam depois do básico, sem segurar a tela.
  */
 export function TitleDetailScreen() {
@@ -121,6 +121,7 @@ export function TitleDetailScreen() {
           <CastSection mediaType={title.mediaType} tmdbId={title.tmdbId} titleName={title.title} />
           {extras.data ? (
             <>
+              <WatchProvidersSection extras={extras.data} mediaType={title.mediaType} tmdbId={title.tmdbId} />
               <CrewSection extras={extras.data} mediaType={title.mediaType} tmdbId={title.tmdbId} titleName={title.title} />
               <AboutSection extras={extras.data} mediaType={title.mediaType} />
               <RelatedSections extras={extras.data} />
