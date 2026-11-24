@@ -2779,6 +2779,219 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/{username}/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listas de um perfil (as privadas só para o dono; perfil privado que você não segue, 403) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    username: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Listas, das atualizadas por último */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListSummaryResponse"][];
+                    };
+                };
+                /** @description Perfil privado que você não segue */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Perfil não encontrado */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cria uma lista (nome obrigatório; ranking e visibilidade opcionais) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ListRequest"];
+                };
+            };
+            responses: {
+                /** @description Lista criada (sem títulos) */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description Nome vazio ou longo demais, descrição longa demais ou visibilidade inválida */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lists/{listId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: string;
+            };
+            cookie?: never;
+        };
+        /** Uma lista com os títulos, na ordem */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description A lista */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description Lista privada, ou de um perfil privado que você não segue */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Lista não encontrada */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Exclui uma lista (só o dono) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Excluída */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Não é o dono */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Edita uma lista (só o dono; o que não vier fica como está, descrição vazia apaga) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ListRequest"];
+                };
+            };
+            responses: {
+                /** @description A lista editada */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description Não é o dono */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/users/{username}/stats": {
         parameters: {
             query?: never;
@@ -3433,6 +3646,44 @@ export interface components {
             onboardingCompleted: boolean;
             /** Format: uuid */
             activatedMatchId?: string | null;
+        };
+        ListRequest: {
+            name?: string;
+            description?: string | null;
+            ranked?: boolean;
+            /** @enum {string} */
+            visibility?: "PUBLIC" | "PRIVATE";
+        };
+        ListOwnerResponse: {
+            /** Format: uuid */
+            id: string;
+            username: string;
+            displayName?: string | null;
+            avatarUrl?: string | null;
+        };
+        ListSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            owner: components["schemas"]["ListOwnerResponse"];
+            name: string;
+            description?: string | null;
+            ranked: boolean;
+            /** @enum {string} */
+            visibility: "PUBLIC" | "PRIVATE";
+            itemsCount: number;
+            /** @description Os pôsteres dos primeiros títulos (até 4), na ordem da lista */
+            coverPosters: (string | null)[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ListDetailResponse: components["schemas"]["ListSummaryResponse"] & {
+            items: {
+                position: number;
+                title: components["schemas"]["CatalogTitleSummary"];
+                note?: string | null;
+            }[];
         };
         CatalogTitleSummary: {
             /** Format: int64 */

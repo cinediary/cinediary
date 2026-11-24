@@ -1,0 +1,138 @@
+package com.cinediary.api.modules.lists.infrastructure.persistence;
+
+import com.cinediary.api.modules.lists.domain.ListItem;
+import com.cinediary.api.modules.lists.domain.ListVisibility;
+import com.cinediary.api.modules.lists.domain.ListsRepositoryPort;
+import com.cinediary.api.modules.lists.domain.UserList;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.stereotype.Component;
+
+/** Listas e itens em SQL direto (tabelas lists e list_items, V26). */
+@Component
+@RequiredArgsConstructor
+class ListsJdbcAdapter implements ListsRepositoryPort
+{
+    private static final String COLUMNS = "id, user_id, name, description, ranked, visibility, created_at, updated_at";
+
+    private final JdbcClient jdbc;
+
+    @Override
+    public UserList create(UserList list)
+    {
+        return jdbc.sql("""
+                        INSERT INTO lists (user_id, name, description, ranked, visibility)
+                        VALUES (:u, :name, :description, :ranked, :visibility)
+                        RETURNING """ + " " + COLUMNS)
+                .param("u", list.ownerId())
+                .param("name", list.name())
+                .param("description", list.description())
+                .param("ranked", list.ranked())
+                .param("visibility", list.visibility().name())
+                .query(ListsJdbcAdapter::toList)
+                .single();
+    }
+
+    @Override
+    public UserList update(UserList list)
+    {
+        return jdbc.sql("""
+                        UPDATE lists SET name = :name, description = :description, ranked = :ranked,
+                                         visibility = :visibility, updated_at = NOW()
+                         WHERE id = :id
+                        RETURNING """ + " " + COLUMNS)
+                .param("id", list.id())
+                .param("name", list.name())
+                .param("description", list.description())
+                .param("ranked", list.ranked())
+                .param("visibility", list.visibility().name())
+                .query(ListsJdbcAdapter::toList)
+                .single();
+    }
+
+    @Override
+    public void delete(UUID listId)
+    {
+        jdbc.sql("DELETE FROM lists WHERE id = :id").param("id", listId).update();
+    }
+
+    @Override
+    public Optional<UserList> find(UUID listId)
+    {
+        return jdbc.sql("SELECT " + COLUMNS + " FROM lists WHERE id = :id")
+                .param("id", listId)
+                .query(ListsJdbcAdapter::toList)
+                .optional();
+    }
+
+    @Override
+    public List<UserList> listsOf(UUID ownerId, boolean includePrivate)
+    {
+        return jdbc.sql("SELECT " + COLUMNS + " FROM lists WHERE user_id = :u"
+                        + (includePrivate ? "" : " AND visibility = 'PUBLIC'")
+                        + " ORDER BY updated_at DESC, id DESC")
+                .param("u", ownerId)
+                .query(ListsJdbcAdapter::toList)
+                .list();
+    }
+
+    @Override
+    public List<ListItem> items(UUID listId)
+    {
+        return jdbc.sql("SELECT title_id, position, note FROM list_items WHERE list_id = :id ORDER BY position, added_at")
+                .param("id", listId)
+                .query((rs, n) -> new ListItem(rs.getLong(1), rs.getInt(2), rs.getString(3)))
+                .list();
+    }
+
+    @Override
+    public Map<UUID, Integer> itemCounts(Collection<UUID> listIds)
+    {
+        Map<UUID, Integer> out = new HashMap<>();
+        if (listIds.isEmpty()) {
+            return out;
+        }
+        jdbc.sql("SELECT list_id, COUNT(*) FROM list_items WHERE list_id IN (:ids) GROUP BY list_id")
+                .param("ids", listIds)
+                .query((rs, n) -> out.put(rs.getObject(1, UUID.class), rs.getInt(2)))
+                .list();
+        return out;
+    }
+
+    @Override
+    public Map<UUID, List<Long>> coverTitles(Collection<UUID> listIds, int perList)
+    {
+        Map<UUID, List<Long>> out = new LinkedHashMap<>();
+        if (listIds.isEmpty()) {
+            return out;
+        }
+        jdbc.sql("""
+                        SELECT list_id, title_id FROM (
+                            SELECT list_id, title_id, position,
+                                   ROW_NUMBER() OVER (PARTITION BY list_id ORDER BY position, added_at) AS rn
+                              FROM list_items WHERE list_id IN (:ids)
+                        ) ranked WHERE rn <= :n ORDER BY list_id, rn""")
+                .param("ids", listIds)
+                .param("n", perList)
+                .query((rs, n) -> out.computeIfAbsent(rs.getObject(1, UUID.class), k -> new ArrayList<>()).add(rs.getLong(2)))
+                .list();
+        return out;
+    }
+
+    private static UserList toList(ResultSet rs, int n) throws SQLException
+    {
+        return new UserList(rs.getObject("id", UUID.class), rs.getObject("user_id", UUID.class), rs.getString("name"),
+                rs.getString("description"), rs.getBoolean("ranked"), ListVisibility.valueOf(rs.getString("visibility")),
+                rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
+    }
+}

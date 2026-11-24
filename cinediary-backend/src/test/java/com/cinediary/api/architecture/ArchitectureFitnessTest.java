@@ -21,7 +21,7 @@ import org.springframework.modulith.core.ApplicationModules;
 class ArchitectureFitnessTest
 {
     private static final String ROOT = "com.cinediary.api";
-    private static final List<String> MODULES = List.of("users", "catalog", "diary", "importing", "stats", "match", "social");
+    private static final List<String> MODULES = List.of("users", "catalog", "diary", "importing", "stats", "match", "social", "lists");
     private static final List<String> LAYERS = List.of("api", "domain", "application", "infrastructure", "presentation");
 
     private static JavaClasses classes;

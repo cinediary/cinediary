@@ -16,6 +16,8 @@ security:
   - BearerAuth: []
 
 tags:
+  - name: Lists
+    description: Listas criadas pela pessoa, com ou sem ranking, públicas ou privadas
   - name: Users & Onboarding
     description: Sincronização Clerk via Svix, perfil, privacidade e onboarding cinematográfico sem mínimo obrigatório
   - name: Catalog (TMDB)
@@ -1277,6 +1279,96 @@ paths:
               schema:
                 $ref: '#/components/schemas/ImportJobResponse'
 
+  /api/v1/users/{username}/lists:
+    get:
+      tags: [Lists]
+      summary: Listas de um perfil (as privadas só para o dono; perfil privado que você não segue, 403)
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Listas, das atualizadas por último
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListSummaryResponse'
+        '403':
+          description: Perfil privado que você não segue
+        '404':
+          description: Perfil não encontrado
+
+  /api/v1/lists:
+    post:
+      tags: [Lists]
+      summary: Cria uma lista (nome obrigatório; ranking e visibilidade opcionais)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListRequest'
+      responses:
+        '201':
+          description: Lista criada (sem títulos)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '400':
+          description: Nome vazio ou longo demais, descrição longa demais ou visibilidade inválida
+
+  /api/v1/lists/{listId}:
+    parameters:
+      - in: path
+        name: listId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Lists]
+      summary: Uma lista com os títulos, na ordem
+      responses:
+        '200':
+          description: A lista
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '403':
+          description: Lista privada, ou de um perfil privado que você não segue
+        '404':
+          description: Lista não encontrada
+    patch:
+      tags: [Lists]
+      summary: Edita uma lista (só o dono; o que não vier fica como está, descrição vazia apaga)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListRequest'
+      responses:
+        '200':
+          description: A lista editada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '403':
+          description: Não é o dono
+    delete:
+      tags: [Lists]
+      summary: Exclui uma lista (só o dono)
+      responses:
+        '204':
+          description: Excluída
+        '403':
+          description: Não é o dono
+
   /api/v1/users/{username}/stats:
     get:
       tags: [Stats]
@@ -1875,6 +1967,53 @@ components:
           format: uuid
           nullable: true
 
+    ListRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 100 }
+        description: { type: string, maxLength: 1000, nullable: true }
+        ranked: { type: boolean }
+        visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+    ListOwnerResponse:
+      type: object
+      required: [id, username]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        displayName: { type: string, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+    ListSummaryResponse:
+      type: object
+      required: [id, owner, name, ranked, visibility, itemsCount, coverPosters, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        owner: { $ref: '#/components/schemas/ListOwnerResponse' }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        ranked: { type: boolean }
+        visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+        itemsCount: { type: integer }
+        coverPosters:
+          type: array
+          description: Os pôsteres dos primeiros títulos (até 4), na ordem da lista
+          items: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ListDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/ListSummaryResponse'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                required: [position, title]
+                properties:
+                  position: { type: integer }
+                  title: { $ref: '#/components/schemas/CatalogTitleSummary' }
+                  note: { type: string, nullable: true }
     CatalogTitleSummary:
       type: object
       required: [id, tmdbId, mediaType, titlePt, originalTitle]
