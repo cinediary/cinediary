@@ -43,6 +43,6 @@ public class GetImportJobUseCase
         int liked = (int) staged.stream().filter(s -> s.item().liked()).count();
         return new ImportReview(job, catalog.summaries(previewIds, userId), rated, liked,
                 catalog.summaries(diary.favoriteTitleIds(userId), userId),
-                catalog.summaries(ConfirmImportJobUseCase.importedFavorites(staged), userId));
+                catalog.summaries(ImportJobApplier.importedFavorites(staged), userId));
     }
 }

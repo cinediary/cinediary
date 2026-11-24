@@ -94,6 +94,11 @@ export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } =
             )
           ) : (
             <>
+              {flow.confirmError ? (
+                <Text tone="danger" style={styles.textCenter} accessibilityLiveRegion="polite">
+                  {t.confirmFailed}
+                </Text>
+              ) : null}
               <Button label={t.confirm} loading={flow.confirming} onPress={() => flow.confirm(favoritesMode)} />
               <Button label={strings.common.cancel} variant="ghost" disabled={flow.confirming} onPress={() => void flow.reset()} />
             </>
