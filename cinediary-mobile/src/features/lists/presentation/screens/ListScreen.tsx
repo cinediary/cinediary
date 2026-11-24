@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
-import { PencilSimple, Rows, SquaresFour } from 'phosphor-react-native';
-import { FlatList, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ArrowsDownUp, PencilSimple, Rows, SquaresFour } from 'phosphor-react-native';
+import { useState } from 'react';
+import { Alert, FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,12 +9,14 @@ import { useMe } from '@/features/auth/application/profileQueries';
 import { openProfile } from '@/features/social/presentation/navigation';
 import { strings } from '@/shared/i18n';
 import { palette, semantic, space } from '@/shared/theme';
-import { ErrorState, Skeleton, SkeletonRows, Text } from '@/shared/ui';
+import { Button, ErrorState, Skeleton, SkeletonRows, Text, TextEditSheet, Title, useToast } from '@/shared/ui';
+import { useOverlay } from '@/shared/ui/BottomSheet';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
-import { useList } from '../../application/listsQueries';
+import { useEditListItems, useList } from '../../application/listsQueries';
 import { useListLayout } from '../../application/useListLayout';
 import type { ListItem } from '../../domain/list';
 import { ListGridCell, ListHeader, ListRow } from '../components/ListViews';
+import { SortableListRows } from '../components/SortableListRows';
 import { openEditList } from '../navigation';
 
 const COLUMNS = 3;
@@ -22,7 +25,7 @@ const enter = FadeIn.duration(200).easing(Easing.bezier(0.25, 0.1, 0.25, 1));
 /**
  * Uma lista (#21): quem fez, o nome, a descrição e os títulos. Com ranking abre em linhas (o número e a nota de
  * cada título); sem ranking, em grade. O ícone no canto troca entre as duas e o app lembra a escolha de cada lista.
- * O dono tem o lápis para editar.
+ * O dono tem o lápis para editar e "Organizar" (#22): arrastar para reordenar, tirar títulos e escrever a nota.
  */
 export function ListScreen() {
   const t = strings.lists;
@@ -34,6 +37,10 @@ export function ListScreen() {
   const list = useList(listId);
   const { layout, toggle } = useListLayout(listId, list.data?.ranked);
   const cell = (width - space.screenX * 2 - space.md * (COLUMNS - 1)) / COLUMNS;
+  const [organizing, setOrganizing] = useState(false);
+  const edit = useEditListItems(listId);
+  const overlay = useOverlay();
+  const toast = useToast();
 
   if (list.isPending || (list.isError && !list.data)) {
     return (
@@ -56,15 +63,74 @@ export function ListScreen() {
   const mine = me.data?.id === data.owner.id;
   const grid = layout === 'grid';
 
+  const failed = () => toast(t.saveError);
+  const removeItem = (item: ListItem) =>
+    Alert.alert(t.removeItemConfirm(item.title.title), undefined, [
+      { text: strings.common.cancel, style: 'cancel' },
+      { text: t.remove, style: 'destructive', onPress: () => edit.remove.mutate(item.title.id, { onError: failed }) },
+    ]);
+  const editNote = (item: ListItem) =>
+    overlay.show(
+      <TextEditSheet
+        title={t.noteTitle}
+        initialText={item.note ?? ''}
+        maxLength={1000}
+        placeholder={t.notePlaceholder}
+        allowEmpty
+        onSave={(text) => {
+          edit.note.mutate({ titleId: item.title.id, text }, { onError: failed });
+          overlay.hide();
+        }}
+        onClose={overlay.hide}
+      />,
+    );
+
+  if (organizing && mine) {
+    return (
+      <View style={styles.root}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingTop: backInset, paddingBottom: insets.bottom + space.xl }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View entering={enter} style={styles.organize}>
+            <View style={styles.organizeTop}>
+              <View style={styles.flex}>
+                <Title parts={['', data.name, '']} />
+              </View>
+              <Button label={t.organizeDone} size="sm" onPress={() => setOrganizing(false)} />
+            </View>
+            <Text variant="caption" tone="muted">
+              {t.organizeHint}
+            </Text>
+            <SortableListRows
+              items={data.items}
+              ranked={data.ranked}
+              onReorder={(ids) => edit.reorder.mutate(ids, { onError: failed })}
+              onRemove={removeItem}
+              onEditNote={editNote}
+            />
+          </Animated.View>
+        </ScrollView>
+        <FloatingBackButton />
+        {overlay.node}
+      </View>
+    );
+  }
+
   const header = (
     <View style={[styles.header, { paddingTop: backInset }]}>
       <ListHeader list={data} onOwner={mine ? undefined : () => openProfile(data.owner.username, 'list')} />
       {data.items.length ? (
         <View style={styles.tools}>
           {mine ? (
-            <Tool label={t.edit} onPress={() => openEditList(data.id)}>
-              <PencilSimple size={18} color={palette.ink700} />
-            </Tool>
+            <>
+              <Tool label={t.organize} onPress={() => setOrganizing(true)}>
+                <ArrowsDownUp size={18} color={palette.ink700} />
+              </Tool>
+              <Tool label={t.edit} onPress={() => openEditList(data.id)}>
+                <PencilSimple size={18} color={palette.ink700} />
+              </Tool>
+            </>
           ) : null}
           <Tool label={grid ? t.showRows : t.showGrid} onPress={toggle}>
             {grid ? <Rows size={18} color={palette.ink700} /> : <SquaresFour size={18} color={palette.ink700} />}
@@ -111,6 +177,7 @@ export function ListScreen() {
         />
       </Animated.View>
       <FloatingBackButton />
+      {overlay.node}
     </View>
   );
 }
@@ -153,4 +220,6 @@ const styles = StyleSheet.create({
   gridRow: { gap: space.md, marginBottom: space.md },
   rowGap: { height: space.lg },
   empty: { alignItems: 'center', gap: space.xs, paddingVertical: space['3xl'] },
+  organize: { gap: space.lg },
+  organizeTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
 });
