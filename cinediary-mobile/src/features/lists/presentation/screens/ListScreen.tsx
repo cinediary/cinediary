@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { ArrowsDownUp, PencilSimple, Rows, SquaresFour } from 'phosphor-react-native';
+import { ArrowsDownUp, PencilSimple, Plus, Rows, SquaresFour } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Alert, FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, FadeIn } from 'react-native-reanimated';
@@ -17,7 +17,7 @@ import { useListLayout } from '../../application/useListLayout';
 import type { ListItem } from '../../domain/list';
 import { ListGridCell, ListHeader, ListRow } from '../components/ListViews';
 import { SortableListRows } from '../components/SortableListRows';
-import { openEditList } from '../navigation';
+import { openAddTitles, openEditList } from '../navigation';
 
 const COLUMNS = 3;
 const enter = FadeIn.duration(200).easing(Easing.bezier(0.25, 0.1, 0.25, 1));
@@ -135,6 +135,11 @@ export function ListScreen() {
           ) : null}
         </View>
         <View style={styles.tools}>
+          {mine && data.items.length ? (
+            <Tool label={t.addTitles} onPress={() => openAddTitles(data.id)}>
+              <Plus size={18} weight="bold" color={palette.ink700} />
+            </Tool>
+          ) : null}
           {mine && data.items.length > 1 ? (
             <Tool label={t.organize} onPress={() => setOrganizing(true)}>
               <ArrowsDownUp size={18} color={palette.ink700} />
@@ -171,9 +176,19 @@ export function ListScreen() {
                 {t.emptyList}
               </Text>
               {mine ? (
-                <Text variant="caption" tone="muted" style={styles.centerText}>
-                  {t.emptyListMine}
-                </Text>
+                <>
+                  <Text variant="caption" tone="muted" style={styles.centerText}>
+                    {t.emptyListMine}
+                  </Text>
+                  <View style={styles.emptyAction}>
+                    <Button
+                      label={t.addTitles}
+                      size="sm"
+                      icon={<Plus size={16} weight="bold" color={semantic.onPrimary} />}
+                      onPress={() => openAddTitles(data.id)}
+                    />
+                  </View>
+                </>
               ) : null}
             </View>
           }
@@ -231,6 +246,7 @@ const styles = StyleSheet.create({
   gridRow: { gap: space.md, marginBottom: space.md },
   rowGap: { height: space.lg },
   empty: { alignItems: 'center', gap: space.xs, paddingVertical: space['3xl'] },
+  emptyAction: { marginTop: space.md },
   organize: { gap: space.lg },
   organizeTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
 });

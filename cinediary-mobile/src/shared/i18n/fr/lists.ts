@@ -14,7 +14,7 @@ export const lists = {
   emptyMineText: 'Regroupe films et séries à ta façon : les meilleurs films d’horreur, pour Noël…',
   emptyOther: 'Aucune liste pour l’instant.',
   emptyList: 'Cette liste est encore vide.',
-  emptyListMine: 'Ajoute des titres depuis la page de chaque film ou série.',
+  emptyListMine: 'Cherche ici même ou ajoute depuis la page de chaque film ou série.',
   loadError: 'Impossible de charger les listes.',
   showRows: 'Afficher en lignes',
   showGrid: 'Afficher en grille',
@@ -64,4 +64,9 @@ export const lists = {
   notePlaceholder: 'Pourquoi ce titre est-il dans la liste ?',
   addNote: 'Écrire une note',
   reorderA11y: 'Maintiens et fais glisser pour changer l’ordre',
+  addTitles: 'Ajouter des titres',
+  addTitlesTo: (name: string) => title('Ajouter à ', name, ''),
+  addSearch: 'Chercher un film ou une série',
+  addOne: (name: string) => `Ajouter ${name}`,
+  removeOne: (name: string) => `Retirer ${name} de la liste`,
 };

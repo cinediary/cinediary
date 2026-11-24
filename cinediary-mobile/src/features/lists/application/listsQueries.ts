@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { analytics } from '@/shared/analytics/analytics';
 import { queryClient } from '@/shared/api/queryClient';
 import { sharedKeys } from '@/shared/api/queryKeys';
-import type { MediaType } from '@/features/catalog/domain/title';
+import type { MediaType, TitleSummary } from '@/features/catalog/domain/title';
 import type { ListDetail, ListItem } from '../domain/list';
 import { listsApi, type ListChanges } from '../infrastructure/listsApi';
 
@@ -108,6 +108,16 @@ export function useEditListItems(listId: string) {
     if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
   };
 
+  /** Pela busca de dentro da lista: o título entra no fim, na hora. */
+  const add = useMutation({
+    mutationFn: (title: TitleSummary) => listsApi.addItem(listId, title.id),
+    onMutate: (title) => optimistic((items) => [...items, { position: items.length + 1, title, note: null }]),
+    onError: rollback,
+    onSuccess: (list, title) => {
+      analytics.track('list_item_added', { from: 'list', media_type: title.mediaType });
+      refresh(list);
+    },
+  });
   const reorder = useMutation({
     mutationFn: (titleIds: number[]) => listsApi.reorder(listId, titleIds),
     onMutate: (titleIds) => optimistic((items) => titleIds.map((id) => items.find((i) => i.title.id === id)!).filter(Boolean)),
@@ -127,7 +137,7 @@ export function useEditListItems(listId: string) {
     onError: rollback,
     onSuccess: refresh,
   });
-  return { reorder, remove, note };
+  return { add, reorder, remove, note };
 }
 
 /** A folha da página do título: cria uma lista nova já com o título dentro. */
@@ -167,7 +177,8 @@ export function useLikeList(listId: string) {
     },
     onSuccess: (state, { liked, own }) => {
       const current = queryClient.getQueryData<ListDetail>(key);
-      if (current) queryClient.setQueryData<ListDetail>(key, { ...current, likedByMe: state.liked, likesCount: state.likesCount });
+      if (current)
+        queryClient.setQueryData<ListDetail>(key, { ...current, likedByMe: state.liked, likesCount: state.likesCount });
       analytics.track('list_liked', { own_list: own, liked });
       void queryClient.invalidateQueries({ queryKey: [...sharedKeys.lists, 'user'] });
     },

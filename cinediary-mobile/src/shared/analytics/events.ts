@@ -24,7 +24,7 @@ export type QuickLogEntryPoint =
 export type LogScope = 'title' | 'season' | 'episode';
 export type RecommendationSection = 'for_you' | 'trending_week' | 'because_you_liked' | 'collection' | 'similar';
 /** Onde a busca do catálogo está sendo usada. */
-export type SearchContext = 'search_tab' | 'log_tab' | 'shared_watchlist' | 'favorites' | 'profile_header';
+export type SearchContext = 'search_tab' | 'log_tab' | 'shared_watchlist' | 'favorites' | 'profile_header' | 'list_add';
 
 export interface AnalyticsEvents {
   user_signed_up: { auth_provider: AuthProvider; from_invite: boolean };
