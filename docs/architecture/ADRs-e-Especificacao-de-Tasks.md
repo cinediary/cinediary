@@ -69,7 +69,7 @@
 | `match_story_viewed` | Usuário visualiza o Match Story | `match_id`, `compatibility_score`, `slides_viewed_count` (`1..8`) |
 | `match_story_shared` | Usuário compartilha um slide 9:16 fora do app | `match_id`, `slide_index` (`1..8`), `slide_type` |
 | `recommendation_opened` | Tocou num título de uma seção de recomendação | `section` (`for_you`, `trending_week`, `because_you_liked`, `collection`, `similar`), `position` (a partir de 0), `tmdb_id`, `media_type`, `source` (origem do "Para você", opcional) |
-| `search_performed` | Resultados de uma busca chegaram (uma vez por busca, depois do debounce) | `context` (`search_tab`, `log_tab`, `shared_watchlist`, `favorites`), `query_length`, `results_count`, `filter`, `from_cache` |
+| `search_performed` | Resultados de uma busca chegaram (uma vez por busca, depois do debounce) | `context` (`search_tab`, `log_tab`, `shared_watchlist`, `favorites`, `profile_header`), `query_length`, `results_count`, `filter`, `from_cache` |
 | `search_result_opened` | Escolheu um resultado da busca | `context`, `position`, `tmdb_id`, `media_type`, `query_length` |
 | `title_marked` | Curtir, watchlist ou favorito ligado/desligado | `action` (`liked`, `watchlist`, `favorite`), `value` (`boolean`), `tmdb_id`, `media_type` |
 | `episode_toggled` | Marcou/desmarcou episódios na lista de temporadas | `watched` (`boolean`), `count`, `whole_season` (`boolean`), `with_stills` (variante da flag `episode-stills`) |

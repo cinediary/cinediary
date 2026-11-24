@@ -22,6 +22,7 @@ const toProfile = (dto: Schemas['UserProfileResponse']): UserProfile => ({
   showSpoilers: dto.showSpoilers ?? false,
   defaultReplyPolicy: dto.defaultReplyPolicy ?? 'EVERYONE',
   approveCompanions: dto.approveCompanions ?? true,
+  headerUrl: dto.headerUrl ?? null,
 });
 
 /** Gateway HTTP do módulo users (perfil e onboarding). */
@@ -29,6 +30,12 @@ export const profileApi = {
   me: async (): Promise<UserProfile> => toProfile(await unwrap(api.GET('/api/v1/me'))),
 
   update: async (changes: ProfileChanges): Promise<UserProfile> => toProfile(await unwrap(api.PATCH('/api/v1/me', { body: changes }))),
+
+  /** Capa do perfil: um dos backdrops do título (`titleId` interno do catálogo). */
+  setHeader: async (titleId: number, backdropPath: string): Promise<UserProfile> =>
+    toProfile(await unwrap(api.PUT('/api/v1/me/header', { body: { titleId, backdropPath } }))),
+
+  removeHeader: async (): Promise<UserProfile> => toProfile(await unwrap(api.DELETE('/api/v1/me/header'))),
 
   /** Cadastro (sem login): o @username está livre? */
   async usernameAvailability(username: string): Promise<{ available: boolean; reason: UsernameReason }> {

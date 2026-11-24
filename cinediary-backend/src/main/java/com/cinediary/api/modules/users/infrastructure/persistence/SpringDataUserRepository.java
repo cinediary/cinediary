@@ -94,6 +94,8 @@ interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, UUID>
                SET deleted_at = :deletedAt,
                    -- Conta excluída libera o @username (alguém, ou a mesma pessoa numa conta nova, pode usá-lo)
                    username = 'excluido_' || substr(replace(id::text, '-', ''), 1, 12),
+                   header_title_id = NULL,
+                   header_backdrop_path = NULL,
                    clerk_event_timestamp = :eventTimestamp,
                    updated_at = NOW()
              WHERE clerk_id = :clerkId

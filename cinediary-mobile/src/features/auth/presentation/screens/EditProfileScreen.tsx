@@ -3,6 +3,7 @@ import { ActionSheet, Avatar, Button, Skeleton, Text, TextField, useToast } from
 import { fonts, palette, radius, semantic, space, touch, type as typeScale } from '@/shared/theme';
 import { Camera, CaretDown, EnvelopeSimple, ImageSquare, Trash } from 'phosphor-react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
 import { strings } from '@/shared/i18n';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useState } from 'react';
@@ -10,6 +11,7 @@ import { useState } from 'react';
 import { isValidEmail, isValidUsername, normalizeUsername } from '../../domain/credentials';
 import { useUsernameAvailability } from '../../application/useUsernameAvailability';
 import { useEditProfile } from '../../application/useEditProfile';
+import { useProfileHeader } from '../../application/profileHeader';
 import { AuthFormLayout } from '../components/AuthFormLayout';
 import { useMe } from '../../application/profileQueries';
 import { BIO_MAX, isPronounCode, NAME_MAX, PRONOUN_CODES, type UserProfile } from '../../domain/profile';
@@ -86,6 +88,7 @@ function EditProfileForm({ profile }: { profile: UserProfile }) {
       footer={<Button label={a.save} loading={edit.busy === 'profile'} disabled={!canSave} onPress={onSave} />}
     >
       <PhotoPicker profile={profile} edit={edit} />
+      <CoverSection profile={profile} />
 
       <Text variant="overline" tone="secondary" accessibilityRole="header">
         {a.sectionIdentity}
@@ -289,6 +292,57 @@ function PhotoPicker({ profile, edit }: { profile: UserProfile; edit: Edit }) {
 }
 
 /**
+ * Capa do perfil: uma cena (backdrop do TMDB) de um filme ou série. Escolher abre a tela de busca + cenas;
+ * remover salva na hora. Não tem upload: a imagem fica no TMDB.
+ */
+function CoverSection({ profile }: { profile: UserProfile }) {
+  const a = strings.account;
+  const toast = useToast();
+  const { remove } = useProfileHeader();
+  const open = () => nav.push('/profile/header');
+  const onRemove = () =>
+    remove.mutate(undefined, {
+      onSuccess: () => toast(a.coverRemoved),
+      onError: () => toast(a.coverError),
+    });
+
+  return (
+    <View style={styles.field}>
+      <Text variant="bodyStrong" tone="secondary">
+        {a.cover}
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={profile.headerUrl ? a.coverChange : a.coverChoose}
+        onPress={open}
+        style={({ pressed }) => [styles.cover, pressed && styles.selectPressed]}
+      >
+        {profile.headerUrl ? (
+          <Image source={{ uri: profile.headerUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
+        ) : (
+          <View style={styles.coverEmpty}>
+            <ImageSquare size={24} color={palette.ink500} />
+            <Text variant="caption" tone="muted" style={styles.coverHint}>
+              {a.coverHint}
+            </Text>
+          </View>
+        )}
+      </Pressable>
+      <View style={styles.coverActions}>
+        <View style={styles.flex}>
+          <Button label={profile.headerUrl ? a.coverChange : a.coverChoose} size="sm" variant="secondary" onPress={open} />
+        </View>
+        {profile.headerUrl ? (
+          <View style={styles.flex}>
+            <Button label={a.coverRemove} size="sm" variant="danger" loading={remove.isPending} onPress={onRemove} />
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+/**
  * E-mail da conta (login). Trocar pede o código que o Clerk manda para o endereço novo: só depois de
  * confirmado ele vira o principal e o antigo sai.
  */
@@ -418,6 +472,17 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   count: { textAlign: 'right' },
+  cover: {
+    aspectRatio: 16 / 9,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: palette.borderStrong,
+    backgroundColor: palette.surface,
+  },
+  coverEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.xs, padding: space.lg },
+  coverHint: { textAlign: 'center' },
+  coverActions: { flexDirection: 'row', gap: space.sm },
   flex: { flex: 1 },
   photoBusy: {
     ...StyleSheet.absoluteFill,

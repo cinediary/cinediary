@@ -33,6 +33,12 @@ public interface CatalogModulePort
     /** Filmes populares e conhecidos de pelo menos um dos gêneros (TMDB discover), com o estado do viewer. */
     List<TitleSummaryView> discoverMovies(List<Integer> genreIds, UUID viewerId);
 
+    /** Backdrops do título que podem virar capa do perfil (caminhos do TMDB). Vazio se o título não existir. */
+    List<String> backdropPaths(long titleId);
+
+    /** URL da imagem de um backdrop do TMDB (null quando o caminho é null). */
+    String backdropUrl(String path);
+
     /** "Quem gostou deste também gostou" (TMDB), com o estado do viewer. Vazio se o título não existir. */
     List<TitleSummaryView> similarTo(long titleId, UUID viewerId);
 }

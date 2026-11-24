@@ -113,6 +113,80 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/me/header": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Define a capa do perfil: um backdrop do TMDB de um título (sem upload) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateHeaderRequest"];
+                };
+            };
+            responses: {
+                /** @description Perfil com a capa nova */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UserProfileResponse"];
+                    };
+                };
+                /** @description A imagem não é um dos backdrops do título */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Título não encontrado no catálogo */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        /** Remove a capa do perfil */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Perfil sem capa */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UserProfileResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/onboarding": {
         parameters: {
             query?: never;
@@ -1912,6 +1986,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog/{mediaType}/{tmdbId}/backdrops": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Backdrops sem texto do título, para escolher a capa do perfil (cache de 6 h) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    mediaType: components["schemas"]["MediaType"];
+                    tmdbId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Lista vazia quando o TMDB não tem imagens sem texto */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TitleBackdropsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog/{mediaType}/{tmdbId}/extras": {
         parameters: {
             query?: never;
@@ -3100,6 +3213,8 @@ export interface components {
             pendingRequestsCount: number;
             bio?: string | null;
             pronouns?: string | null;
+            /** @description Capa do perfil (backdrop do TMDB); nulo = sem capa. Pública, como a foto */
+            headerUrl?: string | null;
         };
         SocialPersonResponse: {
             /** Format: uuid */
@@ -3153,6 +3268,26 @@ export interface components {
             showSpoilers?: boolean;
             /** @description Só no /me. "Aprovar marcações": true = você aceita ou recusa quando te marcam; false = já entra aceita */
             approveCompanions?: boolean;
+            /** @description Capa do perfil (backdrop do TMDB); nulo = sem capa */
+            headerUrl?: string | null;
+        };
+        UpdateHeaderRequest: {
+            /**
+             * Format: int64
+             * @description ID interno do título no catálogo
+             */
+            titleId: number;
+            /** @description Um dos `path` de /catalog/{mediaType}/{tmdbId}/backdrops */
+            backdropPath: string;
+        };
+        TitleBackdropsResponse: {
+            /** @description Sem texto (sem o nome do título escrito), os mais votados primeiro; até 30 */
+            backdrops: {
+                /** @description O que se manda em PUT /me/header (ex.: /abc.jpg) */
+                path: string;
+                /** @description A imagem pronta (1280 px) */
+                url: string;
+            }[];
         };
         /** @description Campos ausentes não mudam. Texto vazio em firstName, lastName, bio e pronouns apaga. */
         UpdateProfileRequest: {

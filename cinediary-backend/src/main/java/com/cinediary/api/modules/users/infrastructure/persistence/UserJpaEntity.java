@@ -44,6 +44,12 @@ class UserJpaEntity
     @Column(name = "avatar_url")
     private String avatarUrl;
 
+    @Column(name = "header_title_id")
+    private Long headerTitleId;
+
+    @Column(name = "header_backdrop_path")
+    private String headerBackdropPath;
+
     private String bio;
 
     private String pronouns;

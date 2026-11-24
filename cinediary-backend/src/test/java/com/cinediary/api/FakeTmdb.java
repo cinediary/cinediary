@@ -148,6 +148,11 @@ public final class FakeTmdb
                        "overview":""}]}""",
             "/company/79", """
                     {"id":79,"name":"Village Roadshow Pictures","logo_path":"/vr.png","origin_country":"US"}""",
+            "/movie/603/images", """
+                    {"id":603,"backdrops":[
+                      {"file_path":"/bg-ok.jpg","iso_639_1":null,"vote_average":5.2,"width":1920,"height":1080},
+                      {"file_path":"/bg-best.jpg","iso_639_1":null,"vote_average":5.6,"width":3840,"height":2160},
+                      {"file_path":"/bg-ok.jpg","iso_639_1":null,"vote_average":5.2,"width":1920,"height":1080}]}""",
             "/movie/603/recommendations", """
                     {"page":1,"total_results":2,"results":[
                       {"id":245891,"title":"John Wick","original_title":"John Wick","release_date":"2014-10-22",

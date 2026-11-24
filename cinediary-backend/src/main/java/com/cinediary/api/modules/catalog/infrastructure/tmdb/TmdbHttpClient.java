@@ -521,6 +521,20 @@ class TmdbHttpClient implements TmdbGatewayPort
         return props.posterUrl(path);
     }
 
+    private static final int MAX_BACKDROPS = 30;
+
+    @Override
+    public List<String> backdrops(MediaType type, long tmdbId)
+    {
+        JsonNode body = get("/" + type.tmdbPath() + "/" + tmdbId + "/images",
+                uri -> uri.queryParam("include_image_language", "null"));
+        List<JsonNode> backdrops = new ArrayList<>();
+        body.path("backdrops").forEach(backdrops::add);
+        backdrops.sort(Comparator.comparingDouble((JsonNode b) -> b.path("vote_average").asDouble()).reversed());
+        return backdrops.stream().map(b -> text(b, "file_path")).filter(java.util.Objects::nonNull).distinct()
+                .limit(MAX_BACKDROPS).toList();
+    }
+
     @Override
     public String backdropUrl(String path)
     {

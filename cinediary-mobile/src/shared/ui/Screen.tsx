@@ -29,6 +29,11 @@ export interface ScreenProps extends PropsWithChildren {
   footer?: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   /**
+   * iOS: o ScrollView recua o conteúdo sozinho abaixo do relógio ('automatic'). 'never' para telas que
+   * desenham até o topo e cuidam do recuo elas mesmas (ex.: perfil com capa, com edges={[]}).
+   */
+  insetAdjustment?: 'automatic' | 'never';
+  /**
    * Com teclado aberto, a tela rola até este elemento ficar inteiro acima dele (ex.: o botão de
    * enviar do formulário). Sem isso, só a linha do cursor fica visível.
    */
@@ -39,7 +44,16 @@ export interface ScreenProps extends PropsWithChildren {
  * Moldura padrão de tela. Com scroll, o conteúdo passa por baixo da barra
  * nativa de abas (Liquid Glass) via contentInsetAdjustmentBehavior (UX-01 §7.1).
  */
-export function Screen({ children, scroll = false, edges = ['top'], onRefresh, footer, contentStyle, keyboardTarget }: ScreenProps) {
+export function Screen({
+  children,
+  scroll = false,
+  edges = ['top'],
+  onRefresh,
+  footer,
+  contentStyle,
+  keyboardTarget,
+  insetAdjustment = 'automatic',
+}: ScreenProps) {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const keyboard = useKeepAboveKeyboard(scrollRef, keyboardTarget);
   // O spinner vem do gesto, não da query; com tempo mínimo (ver usePullToRefresh).
@@ -56,7 +70,7 @@ export function Screen({ children, scroll = false, edges = ['top'], onRefresh, f
           // Sem a barrinha lateral de rolagem em todo o app (padrão em apps nativos; parecia web).
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.content, contentStyle]}
-          contentInsetAdjustmentBehavior="automatic"
+          contentInsetAdjustmentBehavior={insetAdjustment}
           // Teclado: a área de rolagem encolhe e o campo focado sobe (iOS); tocar fora de um campo ou
           // arrastar a tela para baixo fecha o teclado.
           automaticallyAdjustKeyboardInsets

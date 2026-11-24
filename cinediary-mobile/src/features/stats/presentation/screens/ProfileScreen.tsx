@@ -1,5 +1,6 @@
 import { CaretRight, UserPlus } from 'phosphor-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { openTitle } from '@/features/catalog/presentation/navigation';
 import { useDiaryEntries } from '@/features/diary/application/diaryQueries';
@@ -37,6 +38,7 @@ export function ProfileScreen() {
   // Contadores de seguidores/seguindo e pedidos pendentes vêm do perfil público (o mesmo que os outros veem).
   const social = usePublicProfile(me.data?.username ?? '');
   const diary = useDiaryEntries();
+  const insets = useSafeAreaInsets();
   const favWidth = useGridItemWidth(4);
   const profile = me.data;
 
@@ -56,13 +58,23 @@ export function ProfileScreen() {
 
   const recent = (diary.data?.pages.flat() ?? []).slice(0, 4);
   const s = stats.data;
+  // Com capa, a tela não reserva o topo (relógio): a capa sobe até lá e o conteúdo desce o mesmo tanto.
+  const coverTop = insets.top + space.lg;
 
   return (
-    <Screen scroll onRefresh={refreshProfile} contentStyle={styles.page}>
+    <Screen
+      scroll
+      onRefresh={refreshProfile}
+      edges={profile.headerUrl ? [] : undefined}
+      insetAdjustment={profile.headerUrl ? 'never' : 'automatic'}
+      contentStyle={[styles.page, profile.headerUrl ? { paddingTop: coverTop } : null]}
+    >
       <ProfileHeader
         name={profile.displayName || profile.username}
         username={profile.username}
         avatarUrl={profile.avatarUrl}
+        headerUrl={profile.headerUrl}
+        coverBleedTop={coverTop}
         pronouns={profile.pronouns}
         bio={profile.bio}
         isPrivate={profile.isPrivate}

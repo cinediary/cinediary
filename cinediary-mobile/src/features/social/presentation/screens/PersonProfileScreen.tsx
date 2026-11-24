@@ -89,6 +89,8 @@ export function PersonProfileScreen() {
           name={p.displayName || p.username}
           username={p.username}
           avatarUrl={p.avatarUrl}
+          headerUrl={p.headerUrl}
+          coverBleedTop={top}
           pronouns={p.pronouns}
           bio={p.bio}
           isPrivate={p.isPrivate}
