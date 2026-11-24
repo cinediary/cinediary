@@ -2994,6 +2994,229 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/lists/{listId}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adiciona um título no fim da lista (só o dono) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ListItemRequest"];
+                };
+            };
+            responses: {
+                /** @description A lista com o título novo */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description Título não encontrado */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description O título já está na lista */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lists/{listId}/items/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Reordena a lista (só o dono; todos os títulos, cada um uma vez) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ListOrderRequest"];
+                };
+            };
+            responses: {
+                /** @description A lista na ordem nova */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description A ordem não tem exatamente os títulos da lista */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lists/{listId}/items/{titleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: string;
+                titleId: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Tira o título da lista (só o dono); as posições seguintes sobem */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                    titleId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description A lista sem o título */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description O título não está na lista */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Muda a nota do título na lista (só o dono; vazia apaga) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                    titleId: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ListItemRequest"];
+                };
+            };
+            responses: {
+                /** @description A lista com a nota nova */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/titles/{titleId}/my-lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As suas listas, cada uma dizendo se tem o título (folha "Adicionar à lista") */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    titleId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description As suas listas */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MyListResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/{username}/stats": {
         parameters: {
             query?: never;
@@ -3655,6 +3878,21 @@ export interface components {
             ranked?: boolean;
             /** @enum {string} */
             visibility?: "PUBLIC" | "PRIVATE";
+        };
+        ListItemRequest: {
+            /**
+             * Format: int64
+             * @description Ao adicionar (ignorado ao editar a nota)
+             */
+            titleId?: number;
+            note?: string | null;
+        };
+        ListOrderRequest: {
+            titleIds: number[];
+        };
+        MyListResponse: {
+            list: components["schemas"]["ListSummaryResponse"];
+            containsTitle: boolean;
         };
         ListOwnerResponse: {
             /** Format: uuid */

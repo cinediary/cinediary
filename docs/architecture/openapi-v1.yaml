@@ -1374,6 +1374,116 @@ paths:
         '403':
           description: Não é o dono
 
+  /api/v1/lists/{listId}/items:
+    parameters:
+      - in: path
+        name: listId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Lists]
+      summary: Adiciona um título no fim da lista (só o dono)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListItemRequest'
+      responses:
+        '201':
+          description: A lista com o título novo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '404':
+          description: Título não encontrado
+        '409':
+          description: O título já está na lista
+
+  /api/v1/lists/{listId}/items/order:
+    parameters:
+      - in: path
+        name: listId
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [Lists]
+      summary: Reordena a lista (só o dono; todos os títulos, cada um uma vez)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListOrderRequest'
+      responses:
+        '200':
+          description: A lista na ordem nova
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '400':
+          description: A ordem não tem exatamente os títulos da lista
+
+  /api/v1/lists/{listId}/items/{titleId}:
+    parameters:
+      - in: path
+        name: listId
+        required: true
+        schema: { type: string, format: uuid }
+      - in: path
+        name: titleId
+        required: true
+        schema: { type: integer, format: int64 }
+    patch:
+      tags: [Lists]
+      summary: Muda a nota do título na lista (só o dono; vazia apaga)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListItemRequest'
+      responses:
+        '200':
+          description: A lista com a nota nova
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+    delete:
+      tags: [Lists]
+      summary: Tira o título da lista (só o dono); as posições seguintes sobem
+      responses:
+        '200':
+          description: A lista sem o título
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '404':
+          description: O título não está na lista
+
+  /api/v1/titles/{titleId}/my-lists:
+    get:
+      tags: [Lists]
+      summary: As suas listas, cada uma dizendo se tem o título (folha "Adicionar à lista")
+      parameters:
+        - in: path
+          name: titleId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: As suas listas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MyListResponse'
+
   /api/v1/users/{username}/stats:
     get:
       tags: [Stats]
@@ -1979,6 +2089,24 @@ components:
         description: { type: string, maxLength: 1000, nullable: true }
         ranked: { type: boolean }
         visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+    ListItemRequest:
+      type: object
+      properties:
+        titleId: { type: integer, format: int64, description: Ao adicionar (ignorado ao editar a nota) }
+        note: { type: string, maxLength: 1000, nullable: true }
+    ListOrderRequest:
+      type: object
+      required: [titleIds]
+      properties:
+        titleIds:
+          type: array
+          items: { type: integer, format: int64 }
+    MyListResponse:
+      type: object
+      required: [list, containsTitle]
+      properties:
+        list: { $ref: '#/components/schemas/ListSummaryResponse' }
+        containsTitle: { type: boolean }
     ListOwnerResponse:
       type: object
       required: [id, username]
