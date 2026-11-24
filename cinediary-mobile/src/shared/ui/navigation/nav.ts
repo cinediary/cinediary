@@ -30,6 +30,8 @@ const open = guarded((go: () => void) => go());
 export const nav = {
   push: (href: Href) => open(() => router.push(href)),
   navigate: (href: Href) => open(() => router.navigate(href)),
+  /** Fecha as telas por cima até chegar em `href` (ex.: concluir um fluxo de várias telas e voltar ao começo). */
+  dismissTo: (href: Href) => open(() => router.dismissTo(href)),
   /** Voltar; sem tela para voltar (ex.: abriu pelo link com o app fechado), vai para o Início. */
   back: guarded(() => (router.canGoBack() ? router.back() : router.replace('/'))),
 };

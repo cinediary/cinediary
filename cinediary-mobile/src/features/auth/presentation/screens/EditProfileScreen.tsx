@@ -319,41 +319,45 @@ function CoverSection({ profile }: { profile: UserProfile }) {
         onPress={open}
         // Enquanto a remoção não termina, não abre o seletor (uma capa nova poderia ser sobrescrita por ela).
         disabled={remove.isPending}
-        style={({ pressed }) => [styles.cover, pressed && styles.selectPressed]}
+        style={({ pressed }) => [styles.cover, preview ? null : styles.coverEmptyFrame, pressed && styles.selectPressed]}
       >
         {preview ? (
-          <Image
-            source={{ uri: preview }}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            transition={150}
-            onError={() => markImageBroken(preview)}
-          />
+          <>
+            <Image
+              source={{ uri: preview }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              transition={150}
+              onError={() => markImageBroken(preview)}
+            />
+            {/* Contorno por cima da foto, no mesmo raio: a borda de antes ficava por fora, a foto por dentro
+                dela com cantos de outro raio, e sobrava uma fresta clara entre as duas. */}
+            <View pointerEvents="none" style={styles.coverOutline} />
+          </>
         ) : (
+          // Sem capa, a própria moldura é o botão: ícone, a ação e a explicação, centralizados.
           <View style={styles.coverEmpty}>
-            <ImageSquare size={24} color={palette.ink500} />
+            <ImageSquare size={26} color={palette.terracota500} weight="duotone" />
+            <Text variant="bodyStrong" tone="link">
+              {a.coverChoose}
+            </Text>
             <Text variant="caption" tone="muted" style={styles.coverHint}>
               {a.coverHint}
             </Text>
           </View>
         )}
       </Pressable>
-      <View style={styles.coverActions}>
-        <View style={styles.flex}>
-          <Button
-            label={profile.headerUrl ? a.coverChange : a.coverChoose}
-            size="sm"
-            variant="secondary"
-            disabled={remove.isPending}
-            onPress={open}
-          />
-        </View>
-        {profile.headerUrl ? (
+      {/* Com capa: trocar e remover numa linha só, com respiro da foto (antes colados nela, a 4 px). */}
+      {profile.headerUrl ? (
+        <View style={styles.coverActions}>
+          <View style={styles.flex}>
+            <Button label={a.coverChange} size="sm" variant="secondary" disabled={remove.isPending} onPress={open} />
+          </View>
           <View style={styles.flex}>
             <Button label={a.coverRemove} size="sm" variant="danger" loading={remove.isPending} onPress={onRemove} />
           </View>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -488,17 +492,19 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   count: { textAlign: 'right' },
-  cover: {
-    aspectRatio: 16 / 9,
+  cover: { aspectRatio: 16 / 9, borderRadius: radius.md, overflow: 'hidden', backgroundColor: palette.surfaceSunken },
+  // Sem capa: a moldura de "escolha aqui".
+  coverEmptyFrame: { borderWidth: 1.5, borderColor: palette.borderStrong, backgroundColor: palette.surface },
+  coverOutline: {
+    ...StyleSheet.absoluteFill,
     borderRadius: radius.md,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: palette.borderStrong,
-    backgroundColor: palette.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(42,33,28,0.12)',
   },
-  coverEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.xs, padding: space.lg },
-  coverHint: { textAlign: 'center' },
-  coverActions: { flexDirection: 'row', gap: space.sm },
+  coverEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.xs, paddingHorizontal: space.xl },
+  coverHint: { textAlign: 'center', marginTop: 2 },
+  // 16 px da foto (4 do campo + 12), na grade de 8 do iOS; 12 entre os dois botões.
+  coverActions: { flexDirection: 'row', gap: space.md, marginTop: space.md },
   flex: { flex: 1 },
   photoBusy: {
     ...StyleSheet.absoluteFill,

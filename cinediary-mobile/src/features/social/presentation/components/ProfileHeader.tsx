@@ -40,20 +40,32 @@ export interface ProfileHeaderProps {
 const BIO_LINES = 4;
 const COVER_HEIGHT = 200;
 const AVATAR = 96;
-/** Quanto as cores da capa descem (reflexo desfocado) por trás da foto, do nome e da bio. */
-const GLOW_HEIGHT = 170;
-/** Onde a capa nítida vira desfocada (parte de baixo dela), em faixas cada vez mais fortes. */
-const BLUR_FADE = 110;
+/** Quanto o perfil (foto, nome, bio…) sobe por cima da capa, além do que a foto já entra nela. */
+const LIFT = 60;
+/** O desfoque no fim da capa: os detalhes da foto se dissolvem antes de ela sumir no fundo. */
+const BLUR_FADE = 70;
 const BLUR_STEPS = 12;
 const BLUR = 28;
 /** Sombra no topo da capa (barra de status clara por cima). */
 const SCRIM = 0.38;
-/** O fundo do tema (palette.bg, "#rrggbb") com transparência, para o reflexo clarear aos poucos. */
+/** O fundo do tema (palette.bg, "#rrggbb") com transparência, para a capa sumir nele aos poucos. */
 const BG_RGB = [1, 3, 5].map((i) => parseInt(palette.bg.slice(i, i + 2), 16)).join(',');
 const bg = (alpha: number) => `rgba(${BG_RGB},${alpha})`;
-/** Quanto de fundo claro já tem no começo do reflexo (e no fim da capa, para emendar). */
-const VEIL_START = 0.4;
-
+/** O degradê no fim da capa (sobre a foto). */
+const FADE_HEIGHT = 110;
+/**
+ * Continuação do degradê abaixo da capa (uma cauda, com a capa espelhada e desfocada por baixo): a capa não
+ * termina já no fundo cheio, o que numa foto escura parecia um corte.
+ */
+const FADE_TAIL = 120;
+/** Quanto de fundo já tem na borda da capa; a cauda vai daí até o fundo cheio. */
+const FADE_AT_EDGE = 0.6;
+/** Curva em S (suave no começo e no fim): sem a virada brusca do final. */
+const smooth = (t: number) => t * t * (3 - 2 * t);
+type Stops<T> = readonly [T, T, ...T[]];
+const FADE_AT = Array.from({ length: 10 }, (_, i) => i / 9) as unknown as Stops<number>;
+const FADE_COVER = FADE_AT.map((t) => bg(smooth(t) * FADE_AT_EDGE)) as unknown as Stops<string>;
+const FADE_REST = FADE_AT.map((t) => bg(FADE_AT_EDGE + smooth(t) * (1 - FADE_AT_EDGE))) as unknown as Stops<string>;
 /**
  * Topo do perfil, igual para o seu e para o de outra pessoa, todo centralizado num eixo só:
  * - a foto, com um aro suave;
@@ -64,8 +76,7 @@ const VEIL_START = 0.4;
  * Antes a foto ficava à esquerda com os números ao lado e o resto da tela seguia outro alinhamento: a tela
  * parecia "torta".
  * Com capa, ela ocupa a largura toda e encosta no topo da tela (barra de status clara por cima de uma sombra
- * leve), e a foto sobe para cima da parte de baixo dela. Abaixo, um reflexo desfocado da capa continua as
- * cores dela por trás da foto, do nome e da bio, clareando até o fundo (ver Cover).
+ * leve), e a foto e o nome sobem para cima da parte de baixo dela, que some num degradê suave (ver Cover).
  */
 export function ProfileHeader(p: ProfileHeaderProps) {
   const headerUrl = useWorkingImageUrl(p.headerUrl);
@@ -189,27 +200,26 @@ export function useCoverStatusBar(headerUrl: string | null | undefined) {
 }
 
 /**
- * Capa no topo + um reflexo dela, espelhado e desfocado, que continua as cores para fora:
- * - abaixo, por trás da foto, do nome e da bio, com um véu claro que vai até o fundo. Espelhado porque
- *   assim a primeira linha do reflexo é a última da capa;
- * - na parte de baixo da própria capa, a versão desfocada entra em faixas cada vez mais opacas (o RN não
- *   tem máscara de transparência), então a capa passa de nítida a desfocada aos poucos;
+ * Capa no topo, que some no fundo sem marcar um corte (mesmo em foto escura):
+ * - o fim da foto passa de nítido a desfocado (BlurBands) e, por cima, um degradê em curva em S leva até 60%
+ *   do fundo na borda da capa;
+ * - abaixo da capa, uma cauda com a foto espelhada e desfocada termina o caminho até o fundo cheio, por trás da
+ *   foto do perfil e do nome;
  * - acima da capa (só ao puxar a tela para baixo), o reflexo da parte de cima, com a sombra do topo.
- * O reflexo é desenhado antes, então fica atrás da foto e do nome.
  */
 function Cover({ url, bleedTop }: { url: string; bleedTop: number }) {
   const height = COVER_HEIGHT + bleedTop;
-  const hidden = { pointerEvents: 'none', accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' } as const;
+  const hidden = {
+    pointerEvents: 'none',
+    accessibilityElementsHidden: true,
+    importantForAccessibility: 'no-hide-descendants',
+  } as const;
   return (
     <>
       {/* Acima da capa, do mesmo tamanho dela: cobre a distância de um puxar para atualizar. */}
       <View {...hidden} style={[styles.glow, { top: -bleedTop - height, height }]}>
         <Image source={{ uri: url }} style={[styles.mirrorUp, { height }]} contentFit="cover" blurRadius={BLUR} />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: `rgba(0,0,0,${SCRIM})` }]} />
-      </View>
-      <View {...hidden} style={[styles.glow, { top: COVER_HEIGHT, height: GLOW_HEIGHT }]}>
-        <Image source={{ uri: url }} style={[styles.mirror, { height }]} contentFit="cover" blurRadius={BLUR} />
-        <LinearGradient colors={[bg(VEIL_START), bg(0.96), bg(1)]} locations={[0, 0.3, 1]} style={StyleSheet.absoluteFill} />
       </View>
       <View {...hidden} style={[styles.cover, { marginTop: -bleedTop, height }]}>
         <Image
@@ -219,22 +229,34 @@ function Cover({ url, bleedTop }: { url: string; bleedTop: number }) {
           transition={200}
           onError={() => markImageBroken(url)}
         />
-        {Array.from({ length: BLUR_STEPS }, (_, i) => {
-          // Faixas encostadas em pixels inteiros, sem sobrepor: onde duas se sobrepunham (ou sobrava fresta)
-          // aparecia uma linha.
-          const start = height - BLUR_FADE;
-          const top = Math.round(start + (i * BLUR_FADE) / BLUR_STEPS);
-          const bottom = Math.round(start + ((i + 1) * BLUR_FADE) / BLUR_STEPS);
-          return (
-            <View key={i} style={[styles.band, { top, height: bottom - top, opacity: (i + 1) / BLUR_STEPS }]}>
-              <Image source={{ uri: url }} style={[styles.bandImage, { top: -top, height }]} contentFit="cover" blurRadius={BLUR} />
-            </View>
-          );
-        })}
         <LinearGradient colors={[`rgba(0,0,0,${SCRIM})`, 'rgba(0,0,0,0)']} style={[styles.scrim, { height: bleedTop + 48 }]} />
-        {/* O fim da capa já no tom do começo do reflexo. */}
-        <LinearGradient colors={[bg(0), bg(VEIL_START)]} style={styles.coverFade} />
+        <BlurBands url={url} height={height} />
+        <LinearGradient colors={FADE_COVER} locations={FADE_AT} style={[styles.coverFade, { height: FADE_HEIGHT }]} />
       </View>
+      <View {...hidden} style={[styles.glow, { top: COVER_HEIGHT, height: FADE_TAIL }]}>
+        <Image source={{ uri: url }} style={[styles.mirror, { height }]} contentFit="cover" blurRadius={BLUR} />
+        <LinearGradient colors={FADE_REST} locations={FADE_AT} style={StyleSheet.absoluteFill} />
+      </View>
+    </>
+  );
+}
+
+/** A parte de baixo da capa passando de nítida a desfocada, em faixas cada vez mais opacas (sem máscara no RN). */
+function BlurBands({ url, height }: { url: string; height: number }) {
+  return (
+    <>
+      {Array.from({ length: BLUR_STEPS }, (_, i) => {
+        // Faixas encostadas em pixels inteiros, sem sobrepor: onde duas se sobrepunham (ou sobrava fresta)
+        // aparecia uma linha.
+        const start = height - BLUR_FADE;
+        const top = Math.round(start + (i * BLUR_FADE) / BLUR_STEPS);
+        const bottom = Math.round(start + ((i + 1) * BLUR_FADE) / BLUR_STEPS);
+        return (
+          <View key={i} style={[styles.band, { top, height: bottom - top, opacity: (i + 1) / BLUR_STEPS }]}>
+            <Image source={{ uri: url }} style={[styles.bandImage, { top: -top, height }]} contentFit="cover" blurRadius={BLUR} />
+          </View>
+        );
+      })}
     </>
   );
 }
@@ -243,14 +265,14 @@ const styles = StyleSheet.create({
   root: { alignItems: 'center', gap: space.lg },
   cover: { alignSelf: 'stretch', marginHorizontal: -space.screenX, overflow: 'hidden', backgroundColor: palette.surfaceSunken },
   scrim: { position: 'absolute', top: 0, left: 0, right: 0 },
-  coverFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 56 },
+  coverFade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   band: { position: 'absolute', left: 0, right: 0, overflow: 'hidden' },
   bandImage: { position: 'absolute', left: 0, right: 0 },
   mirror: { position: 'absolute', top: 0, left: 0, right: 0, transform: [{ scaleY: -1 }] },
   mirrorUp: { position: 'absolute', bottom: 0, left: 0, right: 0, transform: [{ scaleY: -1 }] },
   glow: { position: 'absolute', left: -space.screenX, right: -space.screenX, overflow: 'hidden' },
   // A foto sobe para cima da parte de baixo da capa (desconta o espaço entre os blocos).
-  ringOnCover: { marginTop: -(AVATAR * 0.8 + space.lg) },
+  ringOnCover: { marginTop: -(AVATAR * 0.8 + space.lg + LIFT) },
   ring: {
     padding: 4,
     borderRadius: 999,
