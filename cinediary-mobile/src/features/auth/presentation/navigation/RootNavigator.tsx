@@ -1,11 +1,12 @@
 import { useAuth } from '@clerk/expo';
 import { Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ConnectionErrorScreen } from '@/shared/ui';
 import { useIsOffline } from '@/shared/api/network';
 import { OfflineBanner } from '@/shared/ui/navigation/OfflineBanner';
+import { pendingImport } from '@/features/importing/presentation/incomingImport';
 import { AnimatedSplash } from '@/shared/ui/splash/AnimatedSplash';
 import { semantic } from '@/shared/theme';
 import { nav } from '@/shared/ui/navigation/nav';
@@ -53,6 +54,21 @@ export function RootNavigator() {
   });
   const signOut = useSignOut();
   const offline = useIsOffline();
+
+  // Entrou agora (login de quem já tinha conta) com um ZIP aberto pelo "Abrir com…" antes (#111): abre a
+  // importação, que começa sozinha. Só na passagem de fora para dentro do app: abrindo o ZIP já logado, o link
+  // vai direto para a importação (+native-intent).
+  const wasInApp = useRef(inApp);
+  useEffect(() => {
+    const entered = inApp && !wasInApp.current;
+    wasInApp.current = inApp;
+    if (!entered) return;
+    // Falhou a leitura: segue sem abrir; o arquivo continua pendente e a importação o pega quando abrir.
+    void pendingImport
+      .exists()
+      .then((yes) => yes && nav.push('/import'))
+      .catch(() => {});
+  }, [inApp]);
 
   // Depois do commit, com o guard de (tabs) já liberado: abre o Story do Match ativado no onboarding.
   useEffect(() => {

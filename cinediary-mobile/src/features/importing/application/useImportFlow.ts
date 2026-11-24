@@ -1,6 +1,8 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useIsMutating, useMutation, useMutationState, useQuery } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
-import { useEffect, useRef, useState } from 'react';
+import { File } from 'expo-file-system';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { ApiError, isNetworkError } from '@/shared/api/client';
@@ -12,13 +14,16 @@ import {
   validateZip,
   type FavoritesMode,
   type ImportJob,
+  type PickedFile,
   type ZipValidationError,
 } from '../domain/importJob';
 import { activeImportStorage, type ActiveImport } from '../infrastructure/activeImportStorage';
 import { importApi } from '../infrastructure/importApi';
+import { pendingImport } from './incomingImport';
 
 export const importKeys = {
   active: ['import', 'active'] as const,
+  upload: ['import', 'upload'] as const,
   job: (id: string) => ['import', 'job', id] as const,
 };
 
@@ -54,12 +59,46 @@ export type ImportStep = 'intro' | 'uploading' | 'job';
  */
 export function useImportFlow() {
   const [validationError, setValidationError] = useState<ZipValidationError | null>(null);
-  const [current, setCurrent] = useState<ActiveImport | null>(null);
 
-  // Retoma um job em andamento quando a tela abre de novo.
-  useEffect(() => {
-    void activeImportStorage.get().then((a) => a && setCurrent(a));
-  }, []);
+  // O estado da importação é do app, não da tela: o envio em andamento (pela chave da mutation) e o job salvo
+  // (a mesma query do banner da Início). Qualquer tela de importação aberta mostra o mesmo passo. Antes cada tela
+  // tinha o seu, e uma segunda tela aberta por cima (ex.: pelo link do "Abrir com…") ficava no início, vazia,
+  // enquanto a de baixo enviava o arquivo.
+  const uploading = useIsMutating({ mutationKey: importKeys.upload }) > 0;
+  const lastUpload = useMutationState({ filters: { mutationKey: importKeys.upload }, select: (m) => m.state.status }).at(-1);
+  const active = useQuery({ queryKey: importKeys.active, queryFn: activeImportStorage.get });
+  // Guardado também aqui: a Início apaga o job salvo quando ele termina, e esta tela ainda mostra o resultado.
+  const [current, setCurrent] = useState<ActiveImport | null>(null);
+  if (active.data && active.data.jobId !== current?.jobId) setCurrent(active.data);
+
+  // Um ZIP aberto pelo "Abrir com…" (#111) começa sozinho, sem passar pelo seletor de arquivo: tanto o que já
+  // estava pendente quando a tela abriu quanto o que chega com ela aberta. Só enquanto a tela está em foco: uma
+  // importação escondida atrás de outra tela não pega o arquivo, e o link abre uma importação visível.
+  const startRef = useRef<(file: PickedFile, pendingUri: string | null) => void>(() => {});
+  useFocusEffect(
+    useCallback(() => {
+      const takeIncoming = async () => {
+        const incoming = await pendingImport.claim();
+        if (!incoming) return;
+        try {
+          const saved = await activeImportStorage.get();
+          if (saved || queryClient.isMutating({ mutationKey: importKeys.upload }) > 0) {
+            // Já tem uma importação andando: o arquivo novo não entra por cima dela.
+            await pendingImport.clear(incoming);
+            return;
+          }
+        } catch {
+          // Não deu para ler o job salvo: o arquivo continua pendente para a próxima vez que a tela abrir.
+          pendingImport.release(incoming);
+          return;
+        }
+        startRef.current(incomingFile(incoming), incoming);
+      };
+      const take = () => void takeIncoming().catch(() => {});
+      take();
+      return pendingImport.subscribe(take);
+    }, []),
+  );
 
   const job = useImportJob(current?.jobId ?? null);
 
@@ -74,7 +113,12 @@ export function useImportFlow() {
   }, [job.data?.status, job.data?.jobId]);
 
   const upload = useMutation({
-    mutationFn: importApi.upload,
+    mutationKey: importKeys.upload,
+    mutationFn: ({ file }: { file: PickedFile; pendingUri: string | null }) => importApi.upload(file),
+    // Aqui (e não no mutate) para rodar mesmo se a pessoa sair da tela durante o envio.
+    onSettled: (_data, _error, { pendingUri }) => {
+      if (pendingUri) void pendingImport.clear(pendingUri);
+    },
     // Falha antes de chegar ao backend (ex.: no próprio fetch) não deixa rastro no servidor: registra aqui.
     onError: (error) => {
       if (__DEV__) console.warn('[import] envio do ZIP falhou', error);
@@ -87,8 +131,7 @@ export function useImportFlow() {
       const entry = { jobId: created.jobId, startedAt: Date.now() };
       await activeImportStorage.set(entry);
       queryClient.setQueryData(importKeys.job(created.jobId), created);
-      void queryClient.invalidateQueries({ queryKey: importKeys.active });
-      setCurrent(entry);
+      queryClient.setQueryData(importKeys.active, entry);
     },
   });
 
@@ -127,35 +170,55 @@ export function useImportFlow() {
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    const file = { uri: asset.uri, name: asset.name, size: asset.size ?? null, mimeType: asset.mimeType ?? null };
+    start({ uri: asset.uri, name: asset.name, size: asset.size ?? null, mimeType: asset.mimeType ?? null }, null);
+  }
+
+  /** Valida e envia. `pendingUri`: o arquivo veio do "Abrir com…" e é apagado do app depois do envio. */
+  function start(file: PickedFile, pendingUri: string | null) {
+    setValidationError(null);
     const error = validateZip(file);
     if (error) {
       setValidationError(error);
+      if (pendingUri) void pendingImport.clear(pendingUri);
       return;
     }
     analytics.track('import_started', { provider: 'LETTERBOXD', file_size_bytes: file.size ?? 0 });
-    upload.mutate(file);
+    upload.mutate({ file, pendingUri });
   }
+  startRef.current = start;
 
   async function reset() {
     await activeImportStorage.clear();
-    void queryClient.invalidateQueries({ queryKey: importKeys.active });
-    upload.reset();
+    queryClient.setQueryData(importKeys.active, null);
+    // Esquece os envios anteriores (o erro de um envio vale para todas as telas, ver lastUpload).
+    const mutations = queryClient.getMutationCache();
+    mutations.findAll({ mutationKey: importKeys.upload }).forEach((m) => mutations.remove(m));
     confirm.reset();
     setCurrent(null);
     setValidationError(null);
   }
 
-  const step: ImportStep = upload.isPending ? 'uploading' : current ? 'job' : 'intro';
+  const step: ImportStep = uploading ? 'uploading' : current ? 'job' : 'intro';
 
   return {
     step,
     job: job.data,
-    jobError: job.isError || upload.isError,
+    jobError: job.isError || (!uploading && lastUpload === 'error'),
     validationError,
     pickAndUpload,
     confirm: (favoritesMode: FavoritesMode) => current && confirm.mutate({ jobId: current.jobId, favoritesMode }),
     confirming: confirm.isPending,
     reset,
   };
+}
+
+/** O arquivo recebido como PickedFile: a cópia no app sempre termina em .zip (ver pendingImportFile). */
+function incomingFile(uri: string): PickedFile {
+  let size: number | null = null;
+  try {
+    size = new File(uri).size ?? null;
+  } catch {
+    // Sem o tamanho, o backend ainda recusa um arquivo grande demais.
+  }
+  return { uri, name: uri.split('/').pop() || 'letterboxd.zip', size, mimeType: 'application/zip' };
 }
