@@ -3179,6 +3179,75 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/lists/{listId}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Curte a lista (de novo não duplica; o dono ganha o aviso no sino) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Curtida */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListLikeResponse"];
+                    };
+                };
+                /** @description Lista que você não pode ver */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        /** Descurte a lista (o aviso some) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Descurtida */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListLikeResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/titles/{titleId}/my-lists": {
         parameters: {
             query?: never;
@@ -3592,7 +3661,7 @@ export interface components {
             items: {
                 id: string;
                 /** @enum {string} */
-                kind: "LOGGED" | "FOLLOWED" | "LIKED_ENTRY" | "REPLIED_ENTRY" | "WATCHLISTED";
+                kind: "LOGGED" | "FOLLOWED" | "LIKED_ENTRY" | "REPLIED_ENTRY" | "WATCHLISTED" | "LIKED_LIST";
                 actor: components["schemas"]["FeedAuthor"];
                 /** @description Quem foi seguido / dono da review curtida ou respondida */
                 target?: components["schemas"]["FeedAuthor"] | null;
@@ -3600,6 +3669,8 @@ export interface components {
                 commentText?: string | null;
                 /** @description Só em WATCHLISTED (quer ver) */
                 title?: components["schemas"]["CatalogTitleSummary"] | null;
+                /** @description Só em LIKED_LIST (curtiu a lista de alguém; só listas públicas que você pode ver) */
+                list?: components["schemas"]["ListRef"] | null;
                 /** Format: date-time */
                 createdAt: string;
             }[];
@@ -3652,7 +3723,7 @@ export interface components {
         NotificationResponse: {
             id: string;
             /** @enum {string} */
-            kind: "FOLLOWED" | "FOLLOW_REQUESTED" | "FOLLOW_APPROVED" | "ENTRY_LIKED" | "ENTRY_REPLIED" | "ENTRY_COMPANION";
+            kind: "FOLLOWED" | "FOLLOW_REQUESTED" | "FOLLOW_APPROVED" | "ENTRY_LIKED" | "ENTRY_REPLIED" | "ENTRY_COMPANION" | "LIST_LIKED";
             /** @description Mais recentes primeiro (até 3) */
             actors: components["schemas"]["FeedAuthor"][];
             actorCount: number;
@@ -3671,6 +3742,13 @@ export interface components {
              * @enum {string|null}
              */
             companionStatus?: "PENDING" | "ACCEPTED" | null;
+            /** @description Só no LIST_LIKED: a lista curtida (curtidas de várias pessoas na mesma lista vêm agrupadas) */
+            list?: components["schemas"]["ListRef"] | null;
+        };
+        ListRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
         };
         /** @enum {string} */
         CompanionStatus: "PENDING" | "ACCEPTED" | "DECLINED";
@@ -3890,6 +3968,10 @@ export interface components {
         ListOrderRequest: {
             titleIds: number[];
         };
+        ListLikeResponse: {
+            liked: boolean;
+            likesCount: number;
+        };
         MyListResponse: {
             list: components["schemas"]["ListSummaryResponse"];
             containsTitle: boolean;
@@ -3911,6 +3993,8 @@ export interface components {
             /** @enum {string} */
             visibility: "PUBLIC" | "PRIVATE";
             itemsCount: number;
+            likesCount: number;
+            likedByMe: boolean;
             /** @description Os pôsteres dos primeiros títulos (até 4), na ordem da lista */
             coverPosters: (string | null)[];
             /** Format: date-time */

@@ -13,6 +13,11 @@ public interface NotificationsPort
 
     void removeByComment(UUID commentId);
 
+    /** "Curtiu sua lista" (repetido não duplica; nunca para si mesmo). */
+    void addListLike(UUID recipientId, UUID actorId, UUID listId);
+
+    void removeListLike(UUID recipientId, UUID actorId, UUID listId);
+
     /**
      * Você aprovou o pedido: o aviso "pediu para seguir" vira "começou a te seguir", já visto (foi você quem
      * aprovou) e com a data de agora. {@code requesterId} nulo = todos os pedidos (o perfil ficou público).

@@ -12,6 +12,6 @@ import java.time.Instant;
  * o {@code title}.
  */
 public record ActivityItem(String key, ActivityKind kind, UserView actor, UserView target, DiaryEntryView entry,
-                           String commentText, TitleSummaryView title, Instant createdAt)
+                           String commentText, TitleSummaryView title, ListRef list, Instant createdAt)
 {
 }

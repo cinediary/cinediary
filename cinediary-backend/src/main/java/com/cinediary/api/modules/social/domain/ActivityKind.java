@@ -6,5 +6,7 @@ package com.cinediary.api.modules.social.domain;
  */
 public enum ActivityKind
 {
-    LOGGED, FOLLOWED, LIKED_ENTRY, REPLIED_ENTRY, WATCHLISTED
+    LOGGED, FOLLOWED, LIKED_ENTRY, REPLIED_ENTRY, WATCHLISTED,
+    /** Curtiu a lista de alguém (#20). */
+    LIKED_LIST
 }
