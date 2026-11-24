@@ -100,7 +100,7 @@ export const social: Strings['social'] = {
     audience: 'Audience rating',
     yourRating: 'your rating',
     seeAllReviews: (n: number) => (n === 1 ? 'See the review' : `See all ${n} reviews`),
-    reviewsEmpty: 'No one has reviewed this yet. Be the first?',
+    reviewsEmpty: "Here you'll see other people's reviews.",
     sortPopular: 'Popular',
     sortRecent: 'Recent',
     sortFriends: 'Friends',

@@ -106,7 +106,7 @@ export const social = {
     audience: 'Nota do público',
     yourRating: 'sua nota',
     seeAllReviews: (n: number) => (n === 1 ? 'Ver a review' : `Ver todas as ${n} reviews`),
-    reviewsEmpty: 'Ninguém escreveu uma review ainda. Que tal ser a primeira pessoa?',
+    reviewsEmpty: 'Aqui você vai ver as reviews de outras pessoas.',
     sortPopular: 'Populares',
     sortRecent: 'Recentes',
     sortFriends: 'Amigos',
