@@ -25,7 +25,8 @@ class ActivityAdapter implements ActivityPort
         return new Activity(rs.getObject("id", UUID.class), rs.getObject("actor_id", UUID.class),
                 ActivityKind.valueOf(rs.getString("kind")), rs.getObject("target_user_id", UUID.class),
                 rs.getObject("entry_id", UUID.class), rs.getObject("comment_id", UUID.class),
-                rs.getObject("title_id", Long.class), rs.getTimestamp("created_at").toInstant());
+                rs.getObject("title_id", Long.class), rs.getObject("list_id", UUID.class), rs.getString("list_name"),
+                "PUBLIC".equals(rs.getString("list_visibility")), rs.getTimestamp("created_at").toInstant());
     }
 
     @Override
@@ -59,6 +60,25 @@ class ActivityAdapter implements ActivityPort
     }
 
     @Override
+    public void listLiked(UUID actorId, UUID ownerId, UUID listId)
+    {
+        if (actorId.equals(ownerId)) {
+            return;
+        }
+        jdbc.sql("""
+                        INSERT INTO activities (actor_id, kind, target_user_id, list_id)
+                        VALUES (:a, 'LIKED_LIST', :t, :l) ON CONFLICT DO NOTHING""")
+                .param("a", actorId).param("t", ownerId).param("l", listId).update();
+    }
+
+    @Override
+    public void listUnliked(UUID actorId, UUID listId)
+    {
+        jdbc.sql("DELETE FROM activities WHERE actor_id = :a AND kind = 'LIKED_LIST' AND list_id = :l")
+                .param("a", actorId).param("l", listId).update();
+    }
+
+    @Override
     public void watchlisted(UUID actorId, long titleId)
     {
         jdbc.sql("""
@@ -81,10 +101,11 @@ class ActivityAdapter implements ActivityPort
             return List.of();
         }
         return jdbc.sql("""
-                        SELECT * FROM activities
-                         WHERE actor_id IN (:ids)
-                           AND (CAST(:before AS timestamptz) IS NULL OR created_at < CAST(:before AS timestamptz))
-                         ORDER BY created_at DESC, id DESC LIMIT :limit""")
+                        SELECT a.*, l.name AS list_name, l.visibility AS list_visibility
+                          FROM activities a LEFT JOIN lists l ON l.id = a.list_id
+                         WHERE a.actor_id IN (:ids)
+                           AND (CAST(:before AS timestamptz) IS NULL OR a.created_at < CAST(:before AS timestamptz))
+                         ORDER BY a.created_at DESC, a.id DESC LIMIT :limit""")
                 .param("ids", List.copyOf(actorIds)).param("before", before).param("limit", limit)
                 .query(ActivityAdapter::map).list();
     }

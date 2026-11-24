@@ -1465,6 +1465,35 @@ paths:
         '404':
           description: O título não está na lista
 
+  /api/v1/lists/{listId}/like:
+    parameters:
+      - in: path
+        name: listId
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [Lists]
+      summary: Curte a lista (de novo não duplica; o dono ganha o aviso no sino)
+      responses:
+        '200':
+          description: Curtida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListLikeResponse'
+        '403':
+          description: Lista que você não pode ver
+    delete:
+      tags: [Lists]
+      summary: Descurte a lista (o aviso some)
+      responses:
+        '200':
+          description: Descurtida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListLikeResponse'
+
   /api/v1/titles/{titleId}/my-lists:
     get:
       tags: [Lists]
@@ -1734,7 +1763,7 @@ components:
             required: [id, kind, actor, createdAt]
             properties:
               id: { type: string }
-              kind: { type: string, enum: [LOGGED, FOLLOWED, LIKED_ENTRY, REPLIED_ENTRY, WATCHLISTED] }
+              kind: { type: string, enum: [LOGGED, FOLLOWED, LIKED_ENTRY, REPLIED_ENTRY, WATCHLISTED, LIKED_LIST] }
               actor: { $ref: '#/components/schemas/FeedAuthor' }
               target:
                 allOf: [{ $ref: '#/components/schemas/FeedAuthor' }]
@@ -1748,6 +1777,10 @@ components:
                 allOf: [{ $ref: '#/components/schemas/CatalogTitleSummary' }]
                 nullable: true
                 description: "Só em WATCHLISTED (quer ver)"
+              list:
+                allOf: [{ $ref: '#/components/schemas/ListRef' }]
+                nullable: true
+                description: "Só em LIKED_LIST (curtiu a lista de alguém; só listas públicas que você pode ver)"
               createdAt: { type: string, format: date-time }
         nextBefore: { type: string, format: date-time, nullable: true }
     TitleReview:
@@ -1808,7 +1841,7 @@ components:
       required: [id, kind, actors, actorCount, createdAt, unseen, relationship]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [FOLLOWED, FOLLOW_REQUESTED, FOLLOW_APPROVED, ENTRY_LIKED, ENTRY_REPLIED, ENTRY_COMPANION] }
+        kind: { type: string, enum: [FOLLOWED, FOLLOW_REQUESTED, FOLLOW_APPROVED, ENTRY_LIKED, ENTRY_REPLIED, ENTRY_COMPANION, LIST_LIKED] }
         actors: { type: array, items: { $ref: '#/components/schemas/FeedAuthor' }, description: "Mais recentes primeiro (até 3)" }
         actorCount: { type: integer }
         entry:
@@ -1827,6 +1860,16 @@ components:
           nullable: true
           enum: [PENDING, ACCEPTED]
           description: "Só no ENTRY_COMPANION: PENDING mostra Aceitar e Recusar; ACCEPTED, já aceito"
+        list:
+          allOf: [{ $ref: '#/components/schemas/ListRef' }]
+          nullable: true
+          description: "Só no LIST_LIKED: a lista curtida (curtidas de várias pessoas na mesma lista vêm agrupadas)"
+    ListRef:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
     CompanionStatus:
       type: string
       enum: [PENDING, ACCEPTED, DECLINED]
@@ -2101,6 +2144,12 @@ components:
         titleIds:
           type: array
           items: { type: integer, format: int64 }
+    ListLikeResponse:
+      type: object
+      required: [liked, likesCount]
+      properties:
+        liked: { type: boolean }
+        likesCount: { type: integer }
     MyListResponse:
       type: object
       required: [list, containsTitle]
@@ -2117,7 +2166,7 @@ components:
         avatarUrl: { type: string, nullable: true }
     ListSummaryResponse:
       type: object
-      required: [id, owner, name, ranked, visibility, itemsCount, coverPosters, createdAt, updatedAt]
+      required: [id, owner, name, ranked, visibility, itemsCount, likesCount, likedByMe, coverPosters, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         owner: { $ref: '#/components/schemas/ListOwnerResponse' }
@@ -2126,6 +2175,8 @@ components:
         ranked: { type: boolean }
         visibility: { type: string, enum: [PUBLIC, PRIVATE] }
         itemsCount: { type: integer }
+        likesCount: { type: integer }
+        likedByMe: { type: boolean }
         coverPosters:
           type: array
           description: Os pôsteres dos primeiros títulos (até 4), na ordem da lista

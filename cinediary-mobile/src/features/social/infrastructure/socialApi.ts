@@ -16,6 +16,7 @@ import type {
   Person,
   PublicProfile,
   Relationship,
+  ActivityKind,
 } from '../domain/social';
 
 const toReview = (dto: Schemas['TitleReview']): TitleReview => ({
@@ -85,7 +86,16 @@ const toActor = (dto: Schemas['FeedAuthor']): Actor => ({
   avatarUrl: dto.avatarUrl ?? null,
 });
 
-const toNotification = (dto: Schemas['NotificationResponse']): AppNotification => ({
+/**
+ * Avisos e atividades que esta versão do app ainda não mostra (as curtidas de listas, #20; o app chega no #23):
+ * ficam de fora, em vez de quebrar a tela com um tipo que ela não conhece.
+ */
+type KnownNotification = Schemas['NotificationResponse'] & { kind: AppNotification['kind'] };
+type KnownActivity = Schemas['ActivityResponse']['items'][number] & { kind: ActivityKind };
+const isKnownNotification = (dto: Schemas['NotificationResponse']): dto is KnownNotification => dto.kind !== 'LIST_LIKED';
+const isKnownActivity = (dto: Schemas['ActivityResponse']['items'][number]): dto is KnownActivity => dto.kind !== 'LIKED_LIST';
+
+const toNotification = (dto: KnownNotification): AppNotification => ({
   id: dto.id,
   kind: dto.kind,
   actors: dto.actors.map(toActor),
@@ -192,7 +202,7 @@ export const socialApi = {
   async activity(before: string | null, limit = 25): Promise<ActivityPage> {
     const dto = await unwrap(api.GET('/api/v1/activity', { params: { query: { ...(before ? { before } : {}), limit } } }));
     return {
-      items: dto.items.map((i) => ({
+      items: dto.items.filter(isKnownActivity).map((i) => ({
         id: i.id,
         kind: i.kind,
         actor: toActor(i.actor),
@@ -231,7 +241,7 @@ export const socialApi = {
   friends: async (q: string): Promise<Actor[]> =>
     (await unwrap(api.GET('/api/v1/me/friends', { params: { query: { q } } }))).map(toActor),
 
-  notifications: async (): Promise<AppNotification[]> => (await unwrap(api.GET('/api/v1/me/notifications'))).map(toNotification),
+  notifications: async (): Promise<AppNotification[]> => (await unwrap(api.GET('/api/v1/me/notifications'))).filter(isKnownNotification).map(toNotification),
 
   unreadCount: async (): Promise<number> => (await unwrap(api.GET('/api/v1/me/notifications/unread-count'))).count,
 

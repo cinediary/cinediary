@@ -14,6 +14,7 @@ import java.util.List;
  */
 public record NotificationItem(String key, NotificationKind kind, List<UserView> actors, int actorCount, DiaryEntryView entry,
                                String commentText, Instant createdAt, boolean unseen, Relationship relationship,
-                               com.cinediary.api.modules.social.domain.CompanionStatus companionStatus)
+                               com.cinediary.api.modules.social.domain.CompanionStatus companionStatus,
+                               /** Na curtida de lista: a lista. */ ListRef list)
 {
 }

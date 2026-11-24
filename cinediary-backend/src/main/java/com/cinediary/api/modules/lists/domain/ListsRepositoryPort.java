@@ -53,4 +53,15 @@ public interface ListsRepositoryPort
 
     /** Ids das listas de alguém que têm o título. */
     java.util.Set<UUID> listsContaining(UUID ownerId, long titleId);
+
+    /** true se a curtida é nova (curtir de novo não duplica). */
+    boolean like(UUID listId, UUID userId);
+
+    /** true se havia curtida. */
+    boolean unlike(UUID listId, UUID userId);
+
+    Map<UUID, Integer> likeCounts(Collection<UUID> listIds);
+
+    /** Quais dessas listas a pessoa curtiu. */
+    java.util.Set<UUID> likedBy(UUID userId, Collection<UUID> listIds);
 }

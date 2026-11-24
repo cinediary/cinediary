@@ -1,6 +1,8 @@
 package com.cinediary.api.modules.lists.presentation;
 
 import com.cinediary.api.modules.lists.application.ListItemsUseCase;
+import com.cinediary.api.modules.lists.application.ListLikesUseCase;
+import com.cinediary.api.modules.lists.presentation.dto.ListLikeResponse;
 import com.cinediary.api.modules.lists.application.ManageListsUseCase;
 import com.cinediary.api.modules.lists.presentation.dto.ListItemRequest;
 import com.cinediary.api.modules.lists.presentation.dto.ListOrderRequest;
@@ -36,6 +38,7 @@ public class ListsController
 {
     private final ManageListsUseCase lists;
     private final ListItemsUseCase items;
+    private final ListLikesUseCase likes;
 
     @GetMapping("/users/{username}/lists")
     @Operation(summary = "Listas de um perfil (as privadas só para o dono; perfil privado que você não segue: 403)")
@@ -114,5 +117,19 @@ public class ListsController
     public List<MyListResponse> myLists(CurrentUser user, @PathVariable long titleId)
     {
         return items.myLists(user.id(), titleId).stream().map(MyListResponse::from).toList();
+    }
+
+    @PutMapping("/lists/{listId}/like")
+    @Operation(summary = "Curte a lista (de novo não duplica; o dono ganha o aviso no sino)")
+    public ListLikeResponse like(CurrentUser user, @PathVariable UUID listId)
+    {
+        return ListLikeResponse.from(likes.like(user.id(), listId));
+    }
+
+    @DeleteMapping("/lists/{listId}/like")
+    @Operation(summary = "Descurte a lista (o aviso some)")
+    public ListLikeResponse unlike(CurrentUser user, @PathVariable UUID listId)
+    {
+        return ListLikeResponse.from(likes.unlike(user.id(), listId));
     }
 }

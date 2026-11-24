@@ -38,12 +38,15 @@ class ListAssembler
         Map<UUID, UserView> owners = users.findByIds(all.stream().map(UserList::ownerId).distinct().toList()).stream()
                 .collect(Collectors.toMap(UserView::id, Function.identity()));
         Map<UUID, Integer> counts = lists.itemCounts(ids);
+        Map<UUID, Integer> likes = lists.likeCounts(ids);
+        java.util.Set<UUID> liked = lists.likedBy(viewerId, ids);
         Map<UUID, List<Long>> covers = lists.coverTitles(ids, COVER_POSTERS);
         Map<Long, TitleSummaryView> titles = titles(covers.values().stream().flatMap(List::stream).distinct().toList(), viewerId);
         return all.stream()
                 .map(l -> new ListResults.Summary(l, owners.get(l.ownerId()), counts.getOrDefault(l.id(), 0),
                         covers.getOrDefault(l.id(), List.of()).stream()
-                                .map(titles::get).filter(Objects::nonNull).map(TitleSummaryView::posterUrl).toList()))
+                                .map(titles::get).filter(Objects::nonNull).map(TitleSummaryView::posterUrl).toList(),
+                        likes.getOrDefault(l.id(), 0), liked.contains(l.id())))
                 .toList();
     }
 

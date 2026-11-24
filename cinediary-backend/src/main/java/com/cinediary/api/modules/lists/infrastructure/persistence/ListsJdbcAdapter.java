@@ -209,6 +209,47 @@ class ListsJdbcAdapter implements ListsRepositoryPort
                 .param("u", ownerId).param("t", titleId).query(UUID.class).list());
     }
 
+    @Override
+    public boolean like(UUID listId, UUID userId)
+    {
+        return jdbc.sql("INSERT INTO list_likes (list_id, user_id) VALUES (:l, :u) ON CONFLICT DO NOTHING")
+                .param("l", listId).param("u", userId).update() == 1;
+    }
+
+    @Override
+    public boolean unlike(UUID listId, UUID userId)
+    {
+        return jdbc.sql("DELETE FROM list_likes WHERE list_id = :l AND user_id = :u")
+                .param("l", listId).param("u", userId).update() == 1;
+    }
+
+    @Override
+    public Map<UUID, Integer> likeCounts(Collection<UUID> listIds)
+    {
+        Map<UUID, Integer> out = new HashMap<>();
+        if (listIds.isEmpty()) {
+            return out;
+        }
+        // Só curtidas de contas ativas.
+        jdbc.sql("""
+                        SELECT ll.list_id, COUNT(*) FROM list_likes ll JOIN users u ON u.id = ll.user_id
+                         WHERE ll.list_id IN (:ids) AND u.deleted_at IS NULL GROUP BY ll.list_id""")
+                .param("ids", listIds)
+                .query((rs, n) -> out.put(rs.getObject(1, UUID.class), rs.getInt(2)))
+                .list();
+        return out;
+    }
+
+    @Override
+    public java.util.Set<UUID> likedBy(UUID userId, Collection<UUID> listIds)
+    {
+        if (listIds.isEmpty()) {
+            return java.util.Set.of();
+        }
+        return new java.util.HashSet<>(jdbc.sql("SELECT list_id FROM list_likes WHERE user_id = :u AND list_id IN (:ids)")
+                .param("u", userId).param("ids", listIds).query(UUID.class).list());
+    }
+
     private static UserList toList(ResultSet rs, int n) throws SQLException
     {
         return new UserList(rs.getObject("id", UUID.class), rs.getObject("user_id", UUID.class), rs.getString("name"),

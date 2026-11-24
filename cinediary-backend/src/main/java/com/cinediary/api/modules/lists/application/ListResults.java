@@ -13,7 +13,8 @@ public final class ListResults
     }
 
     /** A lista sem os itens: o dono, quantos títulos e os pôsteres da capa (os primeiros, na ordem). */
-    public record Summary(UserList list, UserView owner, int itemsCount, List<String> coverPosters)
+    public record Summary(UserList list, UserView owner, int itemsCount, List<String> coverPosters, int likesCount,
+                          boolean likedByMe)
     {
     }
 

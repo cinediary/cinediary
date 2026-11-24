@@ -15,6 +15,11 @@ public interface ActivityPort
 
     void removeByComment(UUID commentId);
 
+    /** Curtiu a lista de alguém (repetido não duplica; a própria lista não entra). */
+    void listLiked(UUID actorId, UUID ownerId, UUID listId);
+
+    void listUnliked(UUID actorId, UUID listId);
+
     /** "Quer ver": entrou na watchlist (repetido não duplica) / saiu dela. */
     void watchlisted(UUID actorId, long titleId);
 
