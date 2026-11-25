@@ -1,9 +1,9 @@
 import { CaretRight, ListPlus } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import type { TitleSummary } from '@/features/catalog/domain/title';
 import { strings } from '@/shared/i18n';
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, makeStyles, useColors } from '@/shared/theme';
 import { Text } from '@/shared/ui';
 import { useMyLists } from '../../application/listsQueries';
 
@@ -12,6 +12,8 @@ import { useMyLists } from '../../application/listsQueries';
  * Se o título já está em listas suas, diz em quantas.
  */
 export function AddToListRow({ title, onPress }: { title: TitleSummary; onPress: () => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.lists;
   const mine = useMyLists(title.id);
   const inLists = mine.data?.filter((m) => m.containsTitle).length ?? 0;
@@ -24,7 +26,7 @@ export function AddToListRow({ title, onPress }: { title: TitleSummary; onPress:
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
       <View style={styles.icon}>
-        <ListPlus size={20} color={palette.terracota700} />
+        <ListPlus size={20} color={colors.terracota700} />
       </View>
       <View style={styles.flex}>
         <Text variant="bodyStrong">{t.addToList}</Text>
@@ -34,12 +36,12 @@ export function AddToListRow({ title, onPress }: { title: TitleSummary; onPress:
           </Text>
         ) : null}
       </View>
-      <CaretRight size={16} color={palette.ink500} />
+      <CaretRight size={16} color={colors.ink500} />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -47,9 +49,9 @@ const styles = StyleSheet.create({
     paddingVertical: space.md,
     paddingHorizontal: space.md,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   icon: {
     width: 36,
@@ -57,8 +59,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.terracota100,
+    backgroundColor: c.terracota100,
   },
   flex: { flex: 1, gap: 2 },
   pressed: { opacity: 0.75 },
-});
+}));

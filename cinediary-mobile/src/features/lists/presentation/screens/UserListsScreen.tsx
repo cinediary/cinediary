@@ -1,11 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Plus } from 'phosphor-react-native';
-import { FlatList, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { FlatList, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { strings } from '@/shared/i18n';
-import { semantic, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Button, ErrorState, Skeleton, Text, Title } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { useUserLists } from '../../application/listsQueries';
@@ -17,6 +17,7 @@ const COLUMNS = 2;
 
 /** "Ver tudo" das listas de um perfil (#21): os mosaicos em 2 colunas; no seu, "Nova lista" no topo. */
 export function UserListsScreen() {
+  const styles = useStyles();
   const t = strings.lists;
   const { username = '' } = useLocalSearchParams<{ username: string }>();
   const { width } = useWindowDimensions();
@@ -71,11 +72,11 @@ export function UserListsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   center: { flex: 1, justifyContent: 'center' },
   content: { paddingHorizontal: space.screenX },
   header: { gap: space.md, paddingBottom: space.xl, alignItems: 'flex-start' },
   row: { gap: space.lg, marginBottom: space.xl },
   empty: { textAlign: 'center', paddingVertical: space['3xl'] },
-});
+}));

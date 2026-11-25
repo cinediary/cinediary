@@ -1,8 +1,8 @@
 import { ArrowCounterClockwise, EyeSlash, Heart } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { parseIsoDate, strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, makeStyles, useColors } from '@/shared/theme';
 import { PosterArt, StarRating, Text } from '@/shared/ui';
 import { groupByMonth, type DiaryEntry } from '../../domain/diary';
 import { useHidesSpoiler } from '../../application/useHidesSpoiler';
@@ -13,6 +13,7 @@ const { months } = strings.common;
 
 /** Linha do tempo do IN-01 agrupada por mês, com o dia em Fraunces. Tocar numa linha abre a entrada. */
 export function DiaryTimeline({ entries }: { entries: DiaryEntry[] }) {
+  const styles = useStyles();
   const { groups, undated } = groupByMonth(entries);
   return (
     <View style={styles.root}>
@@ -54,6 +55,8 @@ export function EntryRow({
   /** Padrão: a sua entrada. No perfil de outra pessoa, abre a entrada dela (somente leitura). */
   onOpen?: (entry: DiaryEntry) => void;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const hideReview = useHidesSpoiler(entry);
   return (
     <Pressable
@@ -77,10 +80,10 @@ export function EntryRow({
             </View>
           ) : null}
           {entry.rating ? <StarRating value={entry.rating} size="mini" /> : null}
-          {entry.liked ? <Heart size={14} weight="fill" color={semantic.liked} /> : null}
+          {entry.liked ? <Heart size={14} weight="fill" color={colors.liked} /> : null}
           {entry.isRewatch ? (
             <View style={styles.rewatch}>
-              <ArrowCounterClockwise size={12} color={palette.ink700} />
+              <ArrowCounterClockwise size={12} color={colors.ink700} />
               <Text variant="caption">{strings.catalog.rewatchBadge}</Text>
             </View>
           ) : null}
@@ -89,7 +92,7 @@ export function EntryRow({
         {entry.reviewText ? (
           hideReview ? (
             <View style={styles.spoiler}>
-              <EyeSlash size={13} color={palette.ink500} />
+              <EyeSlash size={13} color={colors.ink500} />
               <Text variant="caption" tone="muted">
                 {strings.diary.spoilerInList}
               </Text>
@@ -105,20 +108,20 @@ export function EntryRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.xl },
   group: { gap: space.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   pressed: { opacity: 0.7 },
-  day: { width: 32, fontFamily: 'Fraunces_600SemiBold', fontSize: 22, lineHeight: 26, color: palette.ink900, textAlign: 'center' },
+  day: { width: 32, fontFamily: 'Fraunces_600SemiBold', fontSize: 22, lineHeight: 26, color: c.ink900, textAlign: 'center' },
   texts: { flex: 1, gap: 4 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   review: { fontStyle: 'italic' },
   spoiler: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  scope: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, backgroundColor: palette.surfaceSunken },
-  scopeText: { fontFamily: 'Nunito_800ExtraBold', color: palette.ink700 },
+  scope: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, backgroundColor: c.surfaceSunken },
+  scopeText: { fontFamily: 'Nunito_800ExtraBold', color: c.ink700 },
   rewatch: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-});
+}));
 
 export type DiaryRow =
   { kind: 'month'; key: string; label: string } | { kind: 'entry'; key: string; entry: DiaryEntry; day: number | null };

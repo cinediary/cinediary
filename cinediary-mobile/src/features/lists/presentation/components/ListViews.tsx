@@ -1,9 +1,9 @@
 import { Heart, LockSimple } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { openTitle } from '@/features/catalog/presentation/navigation';
 import { strings } from '@/shared/i18n';
-import { fonts, palette, radius, space } from '@/shared/theme';
+import { fonts, radius, space, makeStyles, useColors, lightColors } from '@/shared/theme';
 import { Avatar, PosterArt, Text } from '@/shared/ui';
 import type { ListDetail, ListItem, UserList } from '../../domain/list';
 import { ListCover, type ListCoverStyle } from './ListCover';
@@ -12,9 +12,11 @@ const t = strings.lists;
 
 /** "4 títulos · ♥ 12" (e o cadeado se for privada): o que vai embaixo do nome da lista. */
 export function ListMeta({ list }: { list: UserList }) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <View style={styles.meta}>
-      {list.visibility === 'PRIVATE' ? <LockSimple size={12} color={palette.ink500} /> : null}
+      {list.visibility === 'PRIVATE' ? <LockSimple size={12} color={colors.ink500} /> : null}
       <Text variant="caption" tone="muted">
         {t.titlesCount(list.itemsCount)}
       </Text>
@@ -23,7 +25,7 @@ export function ListMeta({ list }: { list: UserList }) {
           <Text variant="caption" tone="muted">
             ·
           </Text>
-          <Heart size={11} weight="fill" color={palette.ink500} />
+          <Heart size={11} weight="fill" color={colors.ink500} />
           <Text variant="caption" tone="muted" accessibilityLabel={t.likes(list.likesCount)}>
             {list.likesCount}
           </Text>
@@ -48,6 +50,7 @@ export function ListCard({
   onPress?: () => void;
   cover?: ListCoverStyle;
 }) {
+  const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -73,6 +76,7 @@ export function ListCard({
 
 /** O topo da tela da lista: quem fez, o nome, a descrição e o resumo. */
 export function ListHeader({ list, onOwner }: { list: ListDetail; onOwner?: () => void }) {
+  const styles = useStyles();
   return (
     <View style={styles.header}>
       <Pressable accessibilityRole="button" onPress={onOwner} disabled={!onOwner} style={styles.owner} hitSlop={6}>
@@ -92,6 +96,7 @@ export function ListHeader({ list, onOwner }: { list: ListDetail; onOwner?: () =
 
 /** Um título na grade (3 por linha); com ranking, o número no canto do pôster. */
 export function ListGridCell({ item, ranked, width }: { item: ListItem; ranked: boolean; width: number }) {
+  const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -111,6 +116,7 @@ export function ListGridCell({ item, ranked, width }: { item: ListItem; ranked: 
 
 /** Um título em linha: o número (com ranking), o pôster, o nome e o ano e, se houver, a nota da pessoa. */
 export function ListRow({ item, ranked }: { item: ListItem; ranked: boolean }) {
+  const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -140,6 +146,7 @@ export function ListRow({ item, ranked }: { item: ListItem; ranked: boolean }) {
 
 /** Os títulos em grade de 3 (Design System; a tela da lista usa uma lista virtualizada com as células). */
 export function ListGrid({ list, width }: { list: ListDetail; width: number }) {
+  const styles = useStyles();
   const w = (width - space.md * 2) / 3;
   return (
     <View style={[styles.grid, { gap: space.md }]}>
@@ -152,6 +159,7 @@ export function ListGrid({ list, width }: { list: ListDetail; width: number }) {
 
 /** Os títulos em linhas (Design System; a tela da lista usa uma lista virtualizada com as linhas). */
 export function ListRows({ list }: { list: ListDetail }) {
+  const styles = useStyles();
   return (
     <View style={styles.rows}>
       {list.items.map((item) => (
@@ -161,20 +169,20 @@ export function ListRows({ list }: { list: ListDetail }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   pressed: { opacity: 0.75 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   cardText: { gap: 2, paddingTop: space.sm },
   stripCard: {
     padding: space.md,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   header: { gap: space.sm },
   owner: { flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'flex-start' },
-  name: { fontFamily: fonts.display, fontSize: 28, lineHeight: 34, color: palette.ink900 },
+  name: { fontFamily: fonts.display, fontSize: 28, lineHeight: 34, color: c.ink900 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   rankBadge: {
     position: 'absolute',
@@ -188,10 +196,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(42,33,28,0.72)',
   },
-  rankBadgeText: { color: palette.surface, fontFamily: fonts.bodyHeavy, fontSize: 12, lineHeight: 16 },
+  // Sobre a capa escurecida: claro nos dois temas
+  rankBadgeText: { color: lightColors.surface, fontFamily: fonts.bodyHeavy, fontSize: 12, lineHeight: 16 },
   rows: { gap: space.lg },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
-  rank: { width: 28, fontFamily: fonts.display, fontSize: 22, lineHeight: 28, color: palette.ink500, textAlign: 'right' },
+  rank: { width: 28, fontFamily: fonts.display, fontSize: 22, lineHeight: 28, color: c.ink500, textAlign: 'right' },
   rowText: { flex: 1, gap: 2, paddingTop: 2 },
   note: { marginTop: space.xs, fontStyle: 'italic' },
-});
+}));

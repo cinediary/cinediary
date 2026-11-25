@@ -1,13 +1,13 @@
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams } from 'expo-router';
 import { Check, Plus, X } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { CatalogSearchPanel } from '@/features/catalog/presentation/components/CatalogSearchPanel';
 import { MyTitlesShortcuts } from '@/features/diary/presentation/components/MyTitlesShortcuts';
 import type { TitleSummary } from '@/features/catalog/domain/title';
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space, touch } from '@/shared/theme';
+import { space, touch, makeStyles, useColors } from '@/shared/theme';
 import { Screen, Title, useToast } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useEditListItems, useList } from '../../application/listsQueries';
@@ -18,6 +18,8 @@ import { useEditListItems, useList } from '../../application/listsQueries';
  * Sem teclado ao abrir, como na lista de vocês do Match: dá para navegar e só digitar se quiser.
  */
 export function AddTitlesToListScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.lists;
   const toast = useToast();
   const { listId = '' } = useLocalSearchParams<{ listId: string }>();
@@ -44,7 +46,7 @@ export function AddTitlesToListScreen() {
           onPress={() => nav.back()}
           style={styles.close}
         >
-          <X size={22} color={palette.ink900} />
+          <X size={22} color={colors.ink900} />
         </Pressable>
       </View>
       <CatalogSearchPanel
@@ -52,8 +54,8 @@ export function AddTitlesToListScreen() {
         placeholder={t.addSearch}
         onOpen={toggle}
         onAction={toggle}
-        actionIcon={<Plus size={22} weight="bold" color={semantic.primary} />}
-        activeActionIcon={<Check size={22} weight="bold" color={semantic.primary} />}
+        actionIcon={<Plus size={22} weight="bold" color={colors.primary} />}
+        activeActionIcon={<Check size={22} weight="bold" color={colors.primary} />}
         isActionActive={(title) => inList(title.id)}
         actionLabel={(title) => (inList(title.id) ? t.removeOne(title.title) : t.addOne(title.title))}
         // Antes de digitar: os seus favoritos e os vistos por último, com ✓ nos que já estão na lista.
@@ -69,7 +71,7 @@ export function AddTitlesToListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   flex: { flex: 1 },
   close: {
@@ -78,6 +80,6 @@ const styles = StyleSheet.create({
     borderRadius: touch.minTarget / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
   },
-});
+}));

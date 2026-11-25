@@ -1,12 +1,12 @@
 import * as Haptics from 'expo-haptics';
 import { DotsSixVertical, MinusCircle } from 'phosphor-react-native';
 import { useEffect, useRef } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, { useAnimatedReaction, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
-import { fonts, palette, radius, space } from '@/shared/theme';
+import { fonts, radius, space, makeStyles, useColors } from '@/shared/theme';
 import { PosterArt, Text } from '@/shared/ui';
 import type { ListItem } from '../../domain/list';
 
@@ -89,6 +89,8 @@ function Row({
   onRemove: () => void;
   onEditNote: () => void;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.lists;
   const id = item.title.id;
   const y = useSharedValue((positions.get()[id] ?? 0) * STEP);
@@ -149,7 +151,7 @@ function Row({
     <GestureDetector gesture={drag}>
       <Animated.View accessibilityHint={t.reorderA11y} style={[styles.row, style]}>
         <Pressable accessibilityRole="button" accessibilityLabel={t.removeItem(item.title.title)} onPress={onRemove} hitSlop={8}>
-          <MinusCircle size={22} weight="fill" color={palette.error} />
+          <MinusCircle size={22} weight="fill" color={colors.error} />
         </Pressable>
         {/* O número da posição salva: muda quando a pessoa solta a linha (a lista volta na ordem nova). */}
         {ranked ? <Text style={styles.rank}>{item.position}</Text> : null}
@@ -167,13 +169,13 @@ function Row({
             {item.note ?? t.addNote}
           </Text>
         </Pressable>
-        <DotsSixVertical size={20} color={palette.ink400} />
+        <DotsSixVertical size={20} color={colors.ink400} />
       </Animated.View>
     </GestureDetector>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   row: {
     position: 'absolute',
     left: 0,
@@ -185,14 +187,14 @@ const styles = StyleSheet.create({
     gap: space.md,
     paddingHorizontal: space.md,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
     shadowColor: '#000',
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
   },
-  rank: { width: 24, fontFamily: fonts.display, fontSize: 18, lineHeight: 24, color: palette.ink500, textAlign: 'center' },
+  rank: { width: 24, fontFamily: fonts.display, fontSize: 18, lineHeight: 24, color: c.ink500, textAlign: 'center' },
   texts: { flex: 1, gap: 2 },
   note: { fontStyle: 'italic' },
-});
+}));

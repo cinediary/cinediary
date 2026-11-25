@@ -1,10 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, TextInput, View } from 'react-native';
 
 import { AuthFormLayout } from '@/features/auth/presentation/components/AuthFormLayout';
 import { strings } from '@/shared/i18n';
-import { palette, radius, space, type as typeScale } from '@/shared/theme';
+import { radius, space, type as typeScale, makeStyles, useColors } from '@/shared/theme';
 import { Button, Checkbox, ErrorState, SegmentedControl, SkeletonRows, Text, TextField, useToast } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useCreateList, useDeleteList, useList, useUpdateList } from '../../application/listsQueries';
@@ -34,6 +34,8 @@ export function EditListScreen() {
  * edição volta para a lista. Excluir pede confirmação.
  */
 function ListForm({ list }: { list?: ListDetail }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.lists;
   const toast = useToast();
   const create = useCreateList();
@@ -125,7 +127,7 @@ function ListForm({ list }: { list?: ListDetail }) {
           value={description}
           onChangeText={setDescription}
           placeholder={t.descriptionPlaceholder}
-          placeholderTextColor={palette.ink500}
+          placeholderTextColor={colors.ink500}
           accessibilityLabel={t.description}
           maxLength={DESCRIPTION_MAX}
           multiline
@@ -163,7 +165,7 @@ function ListForm({ list }: { list?: ListDetail }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   field: { gap: space.xs },
   description: {
     ...typeScale.body,
@@ -171,11 +173,11 @@ const styles = StyleSheet.create({
     padding: space.md,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: palette.borderStrong,
-    backgroundColor: palette.surface,
-    color: palette.ink900,
+    borderColor: c.borderStrong,
+    backgroundColor: c.surface,
+    color: c.ink900,
     textAlignVertical: 'top',
   },
   count: { textAlign: 'right' },
   danger: { alignItems: 'flex-start', paddingTop: space.md },
-});
+}));

@@ -1,12 +1,12 @@
 import { Check } from 'phosphor-react-native';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import Animated, { Easing, ZoomIn } from 'react-native-reanimated';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import type { TitleSummary } from '@/features/catalog/domain/title';
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, makeStyles, useColors } from '@/shared/theme';
 import { PosterArt, PosterCard, SectionHeader, Text, useGridItemWidth } from '@/shared/ui';
 import { useDiaryEntries } from '../../application/diaryQueries';
 
@@ -32,6 +32,8 @@ export function MyTitlesShortcuts({
   /** O que o leitor de tela diz ao focar um título (ex.: "Adicionar Duna"). */
   labelFor?: (title: TitleSummary) => string;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const a = strings.account;
   const me = useMe();
   const diary = useDiaryEntries();
@@ -99,7 +101,7 @@ export function MyTitlesShortcuts({
                         entering={ZoomIn.duration(180).easing(Easing.bezier(0.25, 0.1, 0.25, 1))}
                         style={styles.check}
                       >
-                        <Check size={14} weight="bold" color={semantic.onPrimary} />
+                        <Check size={14} weight="bold" color={colors.onPrimary} />
                       </Animated.View>
                     ) : null}
                   </View>
@@ -116,14 +118,14 @@ export function MyTitlesShortcuts({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.xl },
   section: { gap: space.md },
   favorites: { flexDirection: 'row', gap: space.md },
   bleed: { marginHorizontal: -space.screenX },
   railContent: { paddingHorizontal: space.screenX, gap: space.md },
   item: { width: RAIL_POSTER, gap: space.xs },
-  itemName: { color: palette.ink900 },
+  itemName: { color: c.ink900 },
   pressed: { opacity: 0.7 },
   check: {
     position: 'absolute',
@@ -134,8 +136,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: semantic.primary,
+    backgroundColor: c.primary,
     borderWidth: 2,
-    borderColor: palette.surface,
+    borderColor: c.surface,
   },
-});
+}));

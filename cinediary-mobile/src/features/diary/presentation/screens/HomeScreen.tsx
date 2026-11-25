@@ -15,7 +15,7 @@ import { FriendsRail } from '@/features/social/presentation/components/FriendsRa
 import { analytics } from '@/shared/analytics/analytics';
 import type { RecommendationSection } from '@/shared/analytics/events';
 import { strings } from '@/shared/i18n';
-import { palette, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import { Banner, Button, EmptyState, ErrorState, Screen, SectionHeader, SkeletonRows, Text } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import { refreshHome, useContinueWatching, useDiaryEntries, useUndatedWatched } from '../../application/diaryQueries';
@@ -53,6 +53,7 @@ function forYouCaption(forYou: ForYou | undefined): string | undefined {
  * Pôster aqui abre a página do título (é descoberta, não registro).
  */
 export function HomeScreen() {
+  const colors = useColors();
   const t = strings.diary;
   const me = useMe();
   const diary = useDiaryEntries();
@@ -121,7 +122,7 @@ export function HomeScreen() {
         <ErrorState onRetry={() => diary.refetch()} />
       ) : entries.length === 0 ? (
         <EmptyState
-          illustration={<Ticket size={56} color={palette.terracota500} weight="duotone" />}
+          illustration={<Ticket size={56} color={colors.terracota500} weight="duotone" />}
           title={t.emptyTitle}
           description={t.emptyDescription}
           actionLabel={t.emptyLog}
