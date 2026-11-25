@@ -29,7 +29,7 @@ export const importing: Strings['importing'] = {
   statReviews: 'Reseñas',
   statWatchlist: 'En la watchlist',
   statLists: 'Listas',
-  listsPrivate: 'Tus listas de Letterboxd llegan privadas: solo tú las ves, y puedes abrirlas cuando quieras.',
+  listsPrivate: 'Las listas nuevas de Letterboxd llegan privadas: solo tú las ves. Las que ya importaste antes mantienen la visibilidad que elegiste.',
   previewTitle: 'Algunos de tu Letterboxd',
   favoritesTitle: 'Tus favoritos',
   favoritesInApp: 'Hoy en la app',

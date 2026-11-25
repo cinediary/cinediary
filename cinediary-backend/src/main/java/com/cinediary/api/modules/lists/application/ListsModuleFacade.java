@@ -26,9 +26,10 @@ public class ListsModuleFacade implements ListsModulePort
     public int importLists(UUID userId, String source, List<ImportedList> imported)
     {
         int written = 0;
+        Set<String> used = new HashSet<>();
         for (ImportedList in : imported) {
             // Nome ou descrição maiores que o app aceita: cortados (não derrubam a importação inteira).
-            String name = cut(in.name(), UserList.MAX_NAME);
+            String name = unique(cut(in.name(), UserList.MAX_NAME), used);
             String description = cut(in.description(), UserList.MAX_DESCRIPTION);
             if (name == null) {
                 continue;
@@ -42,6 +43,23 @@ public class ListsModuleFacade implements ListsModulePort
             written++;
         }
         return written;
+    }
+
+    /**
+     * Duas listas com o mesmo nome depois do corte (nomes longos que só mudam no fim) não podem virar a mesma: a
+     * segunda ganha " (2)", a terceira " (3)"… na ordem da exportação, então reimportar acha cada uma de novo.
+     */
+    private static String unique(String name, Set<String> used)
+    {
+        if (name == null) {
+            return null;
+        }
+        String candidate = name;
+        for (int n = 2; !used.add(candidate.toLowerCase(java.util.Locale.ROOT)); n++) {
+            String suffix = " (" + n + ")";
+            candidate = cut(name, UserList.MAX_NAME - suffix.length()) + suffix;
+        }
+        return candidate;
     }
 
     private static String cut(String text, int max)

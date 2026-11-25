@@ -66,7 +66,12 @@ public class LetterboxdZipParser
         }
         List<LetterboxdExport.UnresolvedFavorite> unresolved = new ArrayList<>();
         List<LetterboxdParsedItem> items = consolidate(files, unresolved);
-        if (items.size() > limits.maxItems()) {
+        // O limite vale para os títulos distintos de tudo: os dos CSVs e os que só aparecem nas listas (cada um é
+        // uma busca no catálogo).
+        java.util.Set<String> distinct = new java.util.HashSet<>();
+        items.forEach(i -> distinct.add(i.key()));
+        lists.forEach(l -> l.entries().forEach(e -> distinct.add(e.key())));
+        if (distinct.size() > limits.maxItems()) {
             throw new InvalidImportFileException("A exportação tem mais de " + limits.maxItems() + " filmes");
         }
         return new LetterboxdExport(items, unresolved, lists);

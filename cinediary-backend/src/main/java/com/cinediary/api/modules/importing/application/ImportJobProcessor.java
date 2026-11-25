@@ -107,7 +107,14 @@ public class ImportJobProcessor
                     onlyInLists.putIfAbsent(e.key(), e);
                 }
             }));
-            found.putAll(resolve(onlyInLists.values(), permits));
+            // TMDB fora no meio: a importação para (como quando cai nos filmes). Seguir montaria uma lista sem esses
+            // títulos, e reimportar uma lista que já existe apagaria os itens dela que estavam certos.
+            AtomicInteger listUnavailable = new AtomicInteger();
+            found.putAll(resolve(onlyInLists.values(), permits, listUnavailable));
+            if (listUnavailable.get() > 0) {
+                jobs.save(job.failed("O catálogo (TMDB) está indisponível agora. Tente de novo em alguns minutos."));
+                return;
+            }
             List<StagedList> lists = new ArrayList<>();
             java.util.Set<String> unmatchedLabels = new java.util.HashSet<>(unmatched);
             for (LetterboxdList l : export.lists()) {
@@ -137,7 +144,8 @@ public class ImportJobProcessor
     }
 
     /** Busca no catálogo, em paralelo controlado (o mesmo limite dos filmes); devolve só os encontrados. */
-    private Map<String, Long> resolve(java.util.Collection<LetterboxdList.Entry> entries, Semaphore permits) throws Exception
+    private Map<String, Long> resolve(java.util.Collection<LetterboxdList.Entry> entries, Semaphore permits,
+                                      AtomicInteger unavailable) throws Exception
     {
         Map<String, Long> out = new java.util.concurrent.ConcurrentHashMap<>();
         try (ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -147,6 +155,8 @@ public class ImportJobProcessor
                     permits.acquireUninterruptibly();
                     try {
                         catalog.resolveMovie(e.name(), e.year()).ifPresent(t -> out.put(e.key(), t.id()));
+                    } catch (ExternalServiceUnavailableException ex) {
+                        unavailable.incrementAndGet();
                     } catch (RuntimeException ex) {
                         log.warn("Falha ao reconciliar '{}' (lista): {}", e.label(), ex.getMessage());
                     } finally {
