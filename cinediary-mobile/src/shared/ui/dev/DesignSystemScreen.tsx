@@ -26,7 +26,7 @@ import {
   SwipeRow,
   TextEditSheet,
 } from '@/shared/ui';
-import { palette, space, useTheme, useColors, makeStyles } from '@/shared/theme';
+import { alpha, palette, space, useTheme, useColors, makeStyles } from '@/shared/theme';
 import { nav } from '../navigation/nav';
 import { OfflineBanner } from '../navigation/OfflineBanner';
 import { AnimatedSplash } from '../splash/AnimatedSplash';
@@ -468,7 +468,7 @@ const useStyles = makeStyles((c) => ({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,253,249,0.92)',
+    backgroundColor: alpha(c.surface, 0.92),
     alignItems: 'center',
     justifyContent: 'center',
   },

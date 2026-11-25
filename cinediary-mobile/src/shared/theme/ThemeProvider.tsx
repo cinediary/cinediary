@@ -63,13 +63,12 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   const reduceMotion = useReducedMotion();
   const rootRef = useRef<ComponentRef<typeof View>>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
+  // A escolha que espera a foto ficar pronta (enquanto captura); a mais recente vale se chegarem outras
   const pending = useRef<AppearancePreference | null>(null);
-  const fading = useRef(false);
+  // Cada troca aplicada por baixo da foto pede um esmaecer (mesmo que a escolha final seja a que já estava)
+  const [fadeRequest, setFadeRequest] = useState(0);
   const opacity = useSharedValue(1);
-  const finish = useCallback(() => {
-    pending.current = null;
-    setSnapshot(null);
-  }, []);
+  const finish = useCallback(() => setSnapshot(null), []);
   // Lidos pelo setPreference sem recriá-lo
   const latest = useRef({ preference, system, reduceMotion });
   useLayoutEffect(() => {
@@ -93,8 +92,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
 
   // As telas já redesenharam com o tema novo por baixo da foto: no quadro seguinte, ela esmaece
   useEffect(() => {
-    if (!snapshot || !fading.current) return;
-    fading.current = false;
+    if (!fadeRequest) return;
     requestAnimationFrame(() =>
       opacity.set(
         withTiming(0, { duration: CROSSFADE_MS, easing: Easing.out(Easing.cubic) }, (done) => {
@@ -102,7 +100,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
         }),
       ),
     );
-  }, [scheme, preference, snapshot, opacity, finish]);
+  }, [fadeRequest, opacity, finish]);
 
   const setPreference = useCallback(
     (p: AppearancePreference) => {
@@ -111,7 +109,12 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       // Com claro ou escuro forçado, o "sistema" lido aqui é o forçado: não dá para saber se "Automático" muda as
       // cores, então esmaece mesmo assim (se nada mudar, a foto some sobre a mesma tela, sem se notar)
       const changesColors = current !== null && p !== current && (current !== 'system' || resolve(p, sys) !== resolve(current, sys));
-      if (!changesColors || reduce || pending.current || !rootRef.current) {
+      // Já capturando: esta escolha passa a ser a que entra quando a foto aparecer
+      if (pending.current) {
+        pending.current = p;
+        return;
+      }
+      if (!changesColors || reduce || !rootRef.current) {
         setState(p);
         return;
       }
@@ -124,8 +127,9 @@ export function ThemeProvider({ children }: PropsWithChildren) {
           setSnapshot(uri);
         })
         .catch(() => {
+          const next = pending.current ?? p;
           pending.current = null;
-          setState(p);
+          setState(next);
         });
     },
     [opacity],
@@ -135,8 +139,17 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   const onSnapshotShown = useCallback(() => {
     const next = pending.current;
     if (!next) return;
-    fading.current = true;
+    pending.current = null;
     setState(next);
+    setFadeRequest((n) => n + 1);
+  }, []);
+
+  // A foto não carregou: troca direto, sem esmaecer
+  const onSnapshotError = useCallback(() => {
+    const next = pending.current;
+    pending.current = null;
+    setSnapshot(null);
+    if (next) setState(next);
   }, []);
 
   const fadeStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
@@ -153,7 +166,14 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       </View>
       {snapshot ? (
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, fadeStyle]}>
-          <Image source={{ uri: snapshot }} style={styles.root} onDisplay={onSnapshotShown} transition={0} cachePolicy="none" />
+          <Image
+            source={{ uri: snapshot }}
+            style={styles.root}
+            onDisplay={onSnapshotShown}
+            onError={onSnapshotError}
+            transition={0}
+            cachePolicy="none"
+          />
         </Animated.View>
       ) : null}
     </ThemeContext.Provider>

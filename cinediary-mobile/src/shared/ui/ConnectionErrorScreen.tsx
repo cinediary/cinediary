@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
-import { fonts, party, radius, space, touch, useColors, type Colors, makeStyles } from '@/shared/theme';
+import { fonts, lightColors, party, radius, space, touch, useColors, type Colors, makeStyles } from '@/shared/theme';
 import { Button } from './Button';
 import { BrandC, BrandStar, starRestRect } from './splash/BrandGlyphs';
 import { STAR_REST_ROTATION } from './splash/brandMark';
@@ -174,7 +174,7 @@ export function ConnectionErrorScreen({
             onPress={onRetry}
             style={({ pressed }) => [styles.creamButton, pressed && styles.pressed]}
           >
-            {retrying ? <ActivityIndicator color={colors.terracota700} /> : null}
+            {retrying ? <ActivityIndicator color={lightColors.terracota700} /> : null}
             <Text style={styles.creamButtonText}>{retrying ? t.retrying : t.retry}</Text>
           </Pressable>
         ) : (
@@ -211,7 +211,8 @@ const useStyles = makeStyles((c) => ({
     justifyContent: 'center',
     gap: space.sm,
   },
-  creamButtonText: { fontFamily: fonts.bodyHeavy, color: c.terracota700, fontSize: 16 },
+  // O botão é creme nos dois temas: o texto fica o terracota escuro do claro
+  creamButtonText: { fontFamily: fonts.bodyHeavy, color: lightColors.terracota700, fontSize: 16 },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   signOut: { minHeight: 44, justifyContent: 'center' },
 }));
