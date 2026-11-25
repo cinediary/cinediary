@@ -1,11 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { UsersThree } from 'phosphor-react-native';
 import { useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, makeStyles, useColors } from '@/shared/theme';
 import { ErrorState, SegmentedControl, SkeletonRows, Text } from '@/shared/ui';
 import { usePullToRefresh } from '@/shared/ui/usePullToRefresh';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
@@ -19,6 +19,8 @@ import { PersonRow } from '../components/PersonRow';
  * cartão, com o botão de seguir alinhado à direita.
  */
 export function FollowListScreen({ kind: initial }: { kind: FollowList }) {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social;
   const { username = '' } = useLocalSearchParams<{ username: string }>();
   const insets = useSafeAreaInsets();
@@ -42,7 +44,7 @@ export function FollowListScreen({ kind: initial }: { kind: FollowList }) {
           styles.content,
           { paddingTop: backInset, paddingBottom: insets.bottom + space.xl },
         ]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={semantic.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
@@ -67,7 +69,7 @@ export function FollowListScreen({ kind: initial }: { kind: FollowList }) {
           <ErrorState onRetry={() => list.refetch()} />
         ) : (list.data?.length ?? 0) === 0 ? (
           <PeopleEmpty
-            icon={<UsersThree size={28} color={palette.ink500} />}
+            icon={<UsersThree size={28} color={colors.ink500} />}
             text={kind === 'followers' ? s.listEmptyFollowers : s.listEmptyFollowing}
           />
         ) : (
@@ -83,9 +85,9 @@ export function FollowListScreen({ kind: initial }: { kind: FollowList }) {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: space.screenX, gap: space.lg },
   header: { gap: 2, paddingBottom: space.xs },
   center: { textAlign: 'center' },
-});
+}));

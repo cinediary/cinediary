@@ -1,13 +1,13 @@
 import * as Haptics from 'expo-haptics';
 import { X } from 'phosphor-react-native';
 import { useEffect, useRef } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, { useAnimatedReaction, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import type { TitleSummary } from '@/features/catalog/domain/title';
 import { strings } from '@/shared/i18n';
-import { palette, poster, radius, semantic } from '@/shared/theme';
+import { poster, radius, makeStyles, useColors } from '@/shared/theme';
 import { PosterArt } from '@/shared/ui';
 
 const SPRING = { damping: 18, stiffness: 220, mass: 0.6 };
@@ -38,6 +38,7 @@ export function SortableFavorites({
   onReorder: (next: TitleSummary[]) => void;
   onRemove: (item: TitleSummary) => void;
 }) {
+  const styles = useStyles();
   const step = slotWidth + gap;
   const height = Math.round(slotWidth / poster.ratio);
   const positions = useSharedValue<Positions>(positionsOf(items));
@@ -97,6 +98,8 @@ function Slot({
   onDrop: () => void;
   onRemove: () => void;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const x = useSharedValue((positions.get()[item.id] ?? 0) * step);
   const lifted = useSharedValue(0);
   const dragging = useSharedValue(false);
@@ -163,21 +166,21 @@ function Slot({
           hitSlop={8}
           style={styles.remove}
         >
-          <X size={14} weight="bold" color={palette.surface} />
+          <X size={14} weight="bold" color={colors.surface} />
         </Pressable>
       </Animated.View>
     </GestureDetector>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   slot: {
     position: 'absolute',
     top: 0,
     left: 0,
     // Fundo sólido (coberto pelo pôster): sem ele, o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
     borderRadius: poster.radius,
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
     shadowColor: '#000',
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
@@ -188,8 +191,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: palette.border,
-    backgroundColor: palette.surfaceSunken,
+    borderColor: c.border,
+    backgroundColor: c.surfaceSunken,
   },
   remove: {
     position: 'absolute',
@@ -198,10 +201,10 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: palette.ink900,
+    backgroundColor: c.ink900,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: semantic.background,
+    borderColor: c.background,
   },
-});
+}));

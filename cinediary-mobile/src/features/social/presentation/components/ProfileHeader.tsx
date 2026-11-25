@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
 import { formatNumber, strings } from '@/shared/i18n';
-import { fonts, palette, radius, shadow, space } from '@/shared/theme';
+import { darkColors, fonts, lightColors, makeStyles, radius, shadow, space, useColors, type Colors } from '@/shared/theme';
 import { Avatar, markImageBroken, Text, useWorkingImageUrl } from '@/shared/ui';
 import type { FollowList } from '../../domain/social';
 import { openFollowList } from '../navigation';
@@ -48,9 +48,6 @@ const BLUR_STEPS = 12;
 const BLUR = 28;
 /** Sombra no topo da capa (barra de status clara por cima). */
 const SCRIM = 0.38;
-/** O fundo do tema (palette.bg, "#rrggbb") com transparência, para a capa sumir nele aos poucos. */
-const BG_RGB = [1, 3, 5].map((i) => parseInt(palette.bg.slice(i, i + 2), 16)).join(',');
-const bg = (alpha: number) => `rgba(${BG_RGB},${alpha})`;
 /** O degradê no fim da capa (sobre a foto). */
 const FADE_HEIGHT = 110;
 /**
@@ -64,8 +61,19 @@ const FADE_AT_EDGE = 0.6;
 const smooth = (t: number) => t * t * (3 - 2 * t);
 type Stops<T> = readonly [T, T, ...T[]];
 const FADE_AT = Array.from({ length: 10 }, (_, i) => i / 9) as unknown as Stops<number>;
-const FADE_COVER = FADE_AT.map((t) => bg(smooth(t) * FADE_AT_EDGE)) as unknown as Stops<string>;
-const FADE_REST = FADE_AT.map((t) => bg(FADE_AT_EDGE + smooth(t) * (1 - FADE_AT_EDGE))) as unknown as Stops<string>;
+/**
+ * Os degradês da capa até o fundo do tema ("#rrggbb" com transparência, para a capa sumir nele aos poucos), um
+ * por tema: no escuro a capa some no fundo escuro (#61).
+ */
+function coverFades(c: Colors) {
+  const rgb = [1, 3, 5].map((i) => parseInt(c.bg.slice(i, i + 2), 16)).join(',');
+  const bg = (alpha: number) => `rgba(${rgb},${alpha})`;
+  return {
+    cover: FADE_AT.map((t) => bg(smooth(t) * FADE_AT_EDGE)) as unknown as Stops<string>,
+    rest: FADE_AT.map((t) => bg(FADE_AT_EDGE + smooth(t) * (1 - FADE_AT_EDGE))) as unknown as Stops<string>,
+  };
+}
+const FADES = { light: coverFades(lightColors), dark: coverFades(darkColors) };
 /**
  * Topo do perfil, igual para o seu e para o de outra pessoa, todo centralizado num eixo só:
  * - a foto, com um aro suave;
@@ -79,6 +87,8 @@ const FADE_REST = FADE_AT.map((t) => bg(FADE_AT_EDGE + smooth(t) * (1 - FADE_AT_
  * leve), e a foto e o nome sobem para cima da parte de baixo dela, que some num degradê suave (ver Cover).
  */
 export function ProfileHeader(p: ProfileHeaderProps) {
+  const styles = useStyles();
+  const themeColors = useColors();
   const headerUrl = useWorkingImageUrl(p.headerUrl);
   const s = strings.social;
   const [bioOpen, setBioOpen] = useState(false);
@@ -137,7 +147,7 @@ export function ProfileHeader(p: ProfileHeaderProps) {
           ) : null}
           {p.isPrivate ? (
             <View accessible accessibilityLabel={strings.stats.privateBadge}>
-              <LockSimple size={13} color={palette.ink700} />
+              <LockSimple size={13} color={themeColors.ink700} />
             </View>
           ) : null}
         </View>
@@ -215,6 +225,8 @@ export function useCoverStatusBar(headerUrl: string | null | undefined) {
  * - acima da capa (só ao puxar a tela para baixo), o reflexo da parte de cima, com a sombra do topo.
  */
 function Cover({ url, bleedTop }: { url: string; bleedTop: number }) {
+  const styles = useStyles();
+  const fades = FADES[useColors().scheme];
   const height = COVER_HEIGHT + bleedTop;
   const hidden = {
     pointerEvents: 'none',
@@ -238,11 +250,11 @@ function Cover({ url, bleedTop }: { url: string; bleedTop: number }) {
         />
         <LinearGradient colors={[`rgba(0,0,0,${SCRIM})`, 'rgba(0,0,0,0)']} style={[styles.scrim, { height: bleedTop + 48 }]} />
         <BlurBands url={url} height={height} />
-        <LinearGradient colors={FADE_COVER} locations={FADE_AT} style={[styles.coverFade, { height: FADE_HEIGHT }]} />
+        <LinearGradient colors={fades.cover} locations={FADE_AT} style={[styles.coverFade, { height: FADE_HEIGHT }]} />
       </View>
       <View {...hidden} style={[styles.glow, { top: COVER_HEIGHT, height: FADE_TAIL }]}>
         <Image source={{ uri: url }} style={[styles.mirror, { height }]} contentFit="cover" blurRadius={BLUR} />
-        <LinearGradient colors={FADE_REST} locations={FADE_AT} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={fades.rest} locations={FADE_AT} style={StyleSheet.absoluteFill} />
       </View>
     </>
   );
@@ -250,6 +262,7 @@ function Cover({ url, bleedTop }: { url: string; bleedTop: number }) {
 
 /** A parte de baixo da capa passando de nítida a desfocada, em faixas cada vez mais opacas (sem máscara no RN). */
 function BlurBands({ url, height }: { url: string; height: number }) {
+  const styles = useStyles();
   return (
     <>
       {Array.from({ length: BLUR_STEPS }, (_, i) => {
@@ -268,9 +281,9 @@ function BlurBands({ url, height }: { url: string; height: number }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { alignItems: 'center', gap: space.lg },
-  cover: { alignSelf: 'stretch', marginHorizontal: -space.screenX, overflow: 'hidden', backgroundColor: palette.surfaceSunken },
+  cover: { alignSelf: 'stretch', marginHorizontal: -space.screenX, overflow: 'hidden', backgroundColor: c.surfaceSunken },
   scrim: { position: 'absolute', top: 0, left: 0, right: 0 },
   coverFade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   band: { position: 'absolute', left: 0, right: 0, overflow: 'hidden' },
@@ -283,16 +296,16 @@ const styles = StyleSheet.create({
   ring: {
     padding: 4,
     borderRadius: 999,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
     ...shadow.e2,
   },
   identity: { alignItems: 'center', gap: space.xs, alignSelf: 'stretch' },
   center: { textAlign: 'center' },
   handle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' },
-  badge: { paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: palette.surfaceSunken },
-  badgeText: { color: palette.ink700, fontFamily: fonts.bodyHeavy },
+  badge: { paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: c.surfaceSunken },
+  badgeText: { color: c.ink700, fontFamily: fonts.bodyHeavy },
   bio: { marginTop: space.xs, lineHeight: 22, paddingHorizontal: space.sm },
   counters: {
     alignSelf: 'stretch',
@@ -300,13 +313,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: space.md,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   counter: { flex: 1, alignItems: 'center', gap: 2 },
-  divider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: palette.border },
+  divider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: c.border },
   pressed: { opacity: 0.6 },
-  value: { fontFamily: fonts.display, fontSize: 22, lineHeight: 26, color: palette.ink900 },
+  value: { fontFamily: fonts.display, fontSize: 22, lineHeight: 26, color: c.ink900 },
   actions: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: space.sm },
-});
+}));

@@ -1,9 +1,9 @@
 import { ChatText, Heart, UsersThree } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
-import { fonts, palette, poster, radius, semantic, space } from '@/shared/theme';
+import { fonts, poster, radius, space, makeStyles, useColors } from '@/shared/theme';
 import { Avatar, Button, PosterArt, Rail, SectionHeader, Skeleton, StarRating, Text, useRailItemWidth } from '@/shared/ui';
 import { FRIENDS_RAIL_SIZE, useFriendsFeed } from '../../application/feedQueries';
 import { usePublicProfile } from '../../application/socialQueries';
@@ -16,6 +16,8 @@ import { openFriendsFeed, openPeopleSearch, openPersonEntry } from '../navigatio
  * Tocar abre o registro da pessoa. Sem ninguém seguido, vira um convite para encontrar amigos.
  */
 export function FriendsRail({ username }: { username: string }) {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social;
   const width = useRailItemWidth();
   const feed = useFriendsFeed(FRIENDS_RAIL_SIZE);
@@ -46,7 +48,7 @@ export function FriendsRail({ username }: { username: string }) {
         <SectionHeader title={s.friendsRail} />
         <View style={styles.invite}>
           <View style={styles.inviteIcon}>
-            <UsersThree size={24} color={semantic.link} weight="bold" />
+            <UsersThree size={24} color={colors.link} weight="bold" />
           </View>
           <View style={styles.flex}>
             {followsNobody ? <Text variant="bodyStrong">{s.friendsFindTitle}</Text> : null}
@@ -73,6 +75,8 @@ export function FriendsRail({ username }: { username: string }) {
 }
 
 function FriendActivityCard({ item, width, position }: { item: FeedItem; width: number; position: number }) {
+  const styles = useStyles();
+  const colors = useColors();
   const { entry, author } = item;
   const hasReview = !!entry.reviewText;
   const label = [author.displayName || author.username, entry.title.title].join(', ');
@@ -88,7 +92,7 @@ function FriendActivityCard({ item, width, position }: { item: FeedItem; width: 
     >
       <PosterArt title={entry.title.title} posterUrl={entry.title.posterUrl} width={width} radius={radius.md} />
       <View style={styles.author}>
-        <Avatar name={author.displayName || author.username} imageUrl={author.avatarUrl} size={20} borderColor={palette.surface} />
+        <Avatar name={author.displayName || author.username} imageUrl={author.avatarUrl} size={20} borderColor={colors.surface} />
         <Text variant="caption" numberOfLines={1} style={styles.username}>
           {author.username}
         </Text>
@@ -96,21 +100,21 @@ function FriendActivityCard({ item, width, position }: { item: FeedItem; width: 
       {entry.rating || entry.liked || hasReview ? (
         <View style={styles.signals}>
           {entry.rating ? <StarRating value={entry.rating} size="mini" /> : null}
-          {entry.liked ? <Heart size={12} weight="fill" color={semantic.liked} /> : null}
-          {hasReview ? <ChatText size={13} weight="bold" color={palette.ink500} /> : null}
+          {entry.liked ? <Heart size={12} weight="fill" color={colors.liked} /> : null}
+          {hasReview ? <ChatText size={13} weight="bold" color={colors.ink500} /> : null}
         </View>
       ) : null}
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.md },
   flex: { flex: 1, gap: 2 },
   card: { gap: 6 },
   pressed: { opacity: 0.75 },
   author: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  username: { flex: 1, fontFamily: fonts.bodyHeavy, color: palette.ink900 },
+  username: { flex: 1, fontFamily: fonts.bodyHeavy, color: c.ink900 },
   signals: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   invite: {
     flexDirection: 'row',
@@ -118,9 +122,9 @@ const styles = StyleSheet.create({
     gap: space.md,
     padding: space.lg,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   inviteIcon: {
     width: 44,
@@ -128,6 +132,6 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.terracota100,
+    backgroundColor: c.terracota100,
   },
-});
+}));

@@ -1,10 +1,10 @@
 import { Heart } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { SpoilerReview } from '@/features/diary/presentation/components/SpoilerReview';
 import { openEntry } from '@/features/diary/presentation/navigation';
-import { palette, radius, semantic, space } from '@/shared/theme';
+import { radius, space, makeStyles, useColors } from '@/shared/theme';
 import { Avatar, StarRating, Text } from '@/shared/ui';
 import type { TitleReview } from '../../domain/social';
 import { openPersonEntry, openProfile } from '../navigation';
@@ -14,6 +14,8 @@ import { openPersonEntry, openProfile } from '../navigation';
  * desfocado para quem não é o autor). Curtidas e respostas ficam na entrada, que abre ao tocar.
  */
 export function ReviewCard({ review }: { review: TitleReview }) {
+  const styles = useStyles();
+  const colors = useColors();
   const meId = useMe().data?.id;
   const { entry, author } = review;
   const open = () => (author.id === meId ? openEntry(entry) : openPersonEntry(author.username, entry));
@@ -35,7 +37,7 @@ export function ReviewCard({ review }: { review: TitleReview }) {
           </Text>
           <View style={styles.signals}>
             {entry.rating ? <StarRating value={entry.rating} size="mini" /> : null}
-            {entry.liked ? <Heart size={12} weight="fill" color={semantic.liked} /> : null}
+            {entry.liked ? <Heart size={12} weight="fill" color={colors.liked} /> : null}
           </View>
         </View>
       </View>
@@ -44,17 +46,17 @@ export function ReviewCard({ review }: { review: TitleReview }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   card: {
     gap: space.sm,
     padding: space.md,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   pressed: { opacity: 0.75 },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   who: { flex: 1, gap: 2 },
   signals: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-});
+}));

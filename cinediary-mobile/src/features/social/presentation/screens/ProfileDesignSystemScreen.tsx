@@ -1,6 +1,6 @@
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 
-import { palette, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Button, Screen, Text } from '@/shared/ui';
 import { ProfileHeader } from '../components/ProfileHeader';
 
@@ -20,6 +20,7 @@ const CANVAS_HEIGHT = 620;
  * meio-termo, para conferir o fim suave da capa. Cada prévia desenha no tamanho da tela e reduz.
  */
 export function ProfileDesignSystemScreen() {
+  const styles = useStyles();
   const { width } = useWindowDimensions();
   const previewW = (width - space.screenX * 2 - space.md) / 2;
   const scale = previewW / width;
@@ -61,9 +62,9 @@ export function ProfileDesignSystemScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   cell: { gap: space.xs, paddingBottom: space.md },
-  preview: { borderRadius: 18, overflow: 'hidden', backgroundColor: palette.bg, borderWidth: 1, borderColor: palette.border },
-  canvas: { transformOrigin: 'top left', paddingHorizontal: space.screenX, backgroundColor: palette.bg, overflow: 'hidden' },
-});
+  preview: { borderRadius: 18, overflow: 'hidden', backgroundColor: c.bg, borderWidth: 1, borderColor: c.border },
+  canvas: { transformOrigin: 'top left', paddingHorizontal: space.screenX, backgroundColor: c.bg, overflow: 'hidden' },
+}));

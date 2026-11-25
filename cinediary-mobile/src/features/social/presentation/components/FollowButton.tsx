@@ -1,10 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { Check, Clock, UserPlus } from 'phosphor-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Alert, Pressable } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { fonts, palette, radius, semantic, space, touch } from '@/shared/theme';
+import { fonts, radius, space, touch, makeStyles, useColors } from '@/shared/theme';
 import { Text, useToast } from '@/shared/ui';
 import { useToggleFollow } from '../../application/socialQueries';
 import { nextRelationship, type Person, type Relationship } from '../../domain/social';
@@ -18,6 +18,8 @@ import { nextRelationship, type Person, type Relationship } from '../../domain/s
  * (seguia, mas sem resposta nenhuma). Quando a pessoa que veio por prop muda, vale o que veio.
  */
 export function FollowButton({ person, size = 'md' }: { person: Person & { followsYou?: boolean }; size?: 'md' | 'sm' }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.social;
   const toast = useToast();
   const [tapped, setTapped] = useState<{ from: Relationship; to: Relationship } | null>(null);
@@ -50,7 +52,7 @@ export function FollowButton({ person, size = 'md' }: { person: Person & { follo
 
   const filled = r === 'NONE';
   const label = r === 'FOLLOWING' ? t.following : r === 'REQUESTED' ? t.requested : person.followsYou ? t.followBack : t.follow;
-  const color = filled ? semantic.onPrimary : palette.ink900;
+  const color = filled ? colors.onPrimary : colors.ink900;
   const iconSize = size === 'sm' ? 14 : 16;
   const Icon = r === 'FOLLOWING' ? Check : r === 'REQUESTED' ? Clock : UserPlus;
 
@@ -76,12 +78,12 @@ export function FollowButton({ person, size = 'md' }: { person: Person & { follo
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   base: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs, borderRadius: radius.pill },
   md: { minHeight: touch.buttonHeightSm, paddingHorizontal: space.xl },
   sm: { minHeight: 34, minWidth: 108, paddingHorizontal: space.md },
-  filled: { backgroundColor: semantic.primary },
-  outline: { backgroundColor: palette.surface, borderWidth: 1.5, borderColor: palette.borderStrong },
+  filled: { backgroundColor: c.primary },
+  outline: { backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.borderStrong },
   pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
   label: { fontFamily: fonts.bodyHeavy },
-});
+}));

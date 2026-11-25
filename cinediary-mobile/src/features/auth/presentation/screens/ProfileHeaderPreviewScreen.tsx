@@ -1,11 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { usePublicProfile } from '@/features/social/application/socialQueries';
 import { ProfileHeader } from '@/features/social/presentation/components/ProfileHeader';
 import { strings } from '@/shared/i18n';
-import { semantic, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Button, ErrorState, Skeleton, Text, useToast } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useMe } from '../../application/profileQueries';
@@ -18,6 +18,7 @@ import { finishCoverFlow } from '../navigation/coverNavigation';
  * cena" volta para as cenas, sem salvar nada.
  */
 export function ProfileHeaderPreviewScreen() {
+  const styles = useStyles();
   const a = strings.account;
   const p = useLocalSearchParams<{ titleId: string; name: string; path: string; url: string }>();
   const insets = useSafeAreaInsets();
@@ -77,9 +78,9 @@ export function ProfileHeaderPreviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: space.screenX, paddingBottom: space.xl },
-  footer: { paddingHorizontal: space.screenX, paddingTop: space.md, gap: space.sm, backgroundColor: semantic.background },
+  footer: { paddingHorizontal: space.screenX, paddingTop: space.md, gap: space.sm, backgroundColor: c.background },
   hint: { textAlign: 'center' },
-});
+}));

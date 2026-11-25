@@ -1,11 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { ChatText } from 'phosphor-react-native';
 import { useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, makeStyles, useColors } from '@/shared/theme';
 import { ErrorState, SegmentedControl, SkeletonRows, Text } from '@/shared/ui';
 import { TopBar } from '@/shared/ui/navigation/TopBar';
 import { usePullToRefresh } from '@/shared/ui/usePullToRefresh';
@@ -16,6 +16,8 @@ import { ReviewCard } from '../components/ReviewCard';
 
 /** Todas as reviews de um título: populares (mais curtidas), recentes ou só de quem você segue. */
 export function TitleReviewsScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social.community;
   const params = useLocalSearchParams<{ titleId: string; name?: string }>();
   const titleId = Number(params.titleId);
@@ -60,7 +62,7 @@ export function TitleReviewsScreen() {
             <ErrorState onRetry={() => reviews.refetch()} />
           ) : (
             <PeopleEmpty
-              icon={<ChatText size={28} color={palette.ink500} />}
+              icon={<ChatText size={28} color={colors.ink500} />}
               text={sort === 'FRIENDS' ? s.friendsReviewsEmpty : s.reviewsEmpty}
             />
           )
@@ -84,9 +86,9 @@ export function TitleReviewsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: space.screenX, paddingTop: space.md },
   gap: { height: space.md },
   name: { textAlign: 'center', marginTop: -space.sm, marginBottom: space.md },
-});
+}));

@@ -1,12 +1,13 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { formatNumber, strings } from '@/shared/i18n';
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, makeStyles } from '@/shared/theme';
 import { Text } from '@/shared/ui';
 import type { UserStats } from '../../domain/stats';
 
 /** 3 cards do PE-01: Filmes, Séries e Nota média. */
 export function StatCards({ stats }: { stats: UserStats }) {
+  const styles = useStyles();
   const t = strings.stats;
   const items: [string, string][] = [
     [t.movies, formatNumber(stats.totalMoviesWatched)],
@@ -27,16 +28,16 @@ export function StatCards({ stats }: { stats: UserStats }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   row: { flexDirection: 'row', gap: space.sm },
   card: {
     flex: 1,
     alignItems: 'center',
     padding: space.md,
     borderRadius: radius.md,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
-  value: { fontFamily: 'Fraunces_600SemiBold', fontSize: 26, lineHeight: 32, color: palette.ink900 },
-});
+  value: { fontFamily: 'Fraunces_600SemiBold', fontSize: 26, lineHeight: 32, color: c.ink900 },
+}));

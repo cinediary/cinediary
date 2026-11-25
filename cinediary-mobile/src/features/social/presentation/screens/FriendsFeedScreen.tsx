@@ -7,7 +7,7 @@ import { useHidesSpoiler } from '@/features/diary/application/useHidesSpoiler';
 import { scopeLabel } from '@/features/diary/presentation/scopeLabel';
 import { analytics } from '@/shared/analytics/analytics';
 import { strings, timeAgo } from '@/shared/i18n';
-import { fonts, palette, semantic, space } from '@/shared/theme';
+import { fonts, space, makeStyles, useColors } from '@/shared/theme';
 import { Avatar, ErrorState, PosterArt, SkeletonRows, StarRating, Text } from '@/shared/ui';
 import { TopBar } from '@/shared/ui/navigation/TopBar';
 import { usePullToRefresh } from '@/shared/ui/usePullToRefresh';
@@ -18,6 +18,8 @@ import { PeopleEmpty } from '../components/PeopleCard';
 
 /** "Ver tudo" das novidades dos amigos: o feed inteiro, carregando 20 por vez conforme você rola. */
 export function FriendsFeedScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social;
   const insets = useSafeAreaInsets();
   const feed = useFriendsFeed();
@@ -43,7 +45,7 @@ export function FriendsFeedScreen() {
           ) : feed.isError ? (
             <ErrorState onRetry={() => feed.refetch()} />
           ) : (
-            <PeopleEmpty icon={<ChatText size={28} color={palette.ink500} />} text={s.feedEmpty} />
+            <PeopleEmpty icon={<ChatText size={28} color={colors.ink500} />} text={s.feedEmpty} />
           )
         }
         ListFooterComponent={
@@ -75,6 +77,8 @@ export function FriendsFeedScreen() {
 
 /** Um registro no feed: quem (abre o perfil), há quanto tempo, o pôster, o título, a nota e o trecho da review. */
 function FeedRow({ item, position }: { item: FeedItem; position: number }) {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social;
   const { entry, author } = item;
   const hideReview = useHidesSpoiler(entry);
@@ -108,7 +112,7 @@ function FeedRow({ item, position }: { item: FeedItem; position: number }) {
           </Text>
           <View style={styles.signals}>
             {entry.rating ? <StarRating value={entry.rating} size="mini" /> : null}
-            {entry.liked ? <Heart size={13} weight="fill" color={semantic.liked} /> : null}
+            {entry.liked ? <Heart size={13} weight="fill" color={colors.liked} /> : null}
           </View>
           {entry.reviewText ? (
             <Text variant="caption" tone="secondary" numberOfLines={3} style={styles.review}>
@@ -121,18 +125,18 @@ function FeedRow({ item, position }: { item: FeedItem; position: number }) {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: space.screenX },
   more: { paddingTop: space.md, paddingBottom: space.xl },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: palette.border, marginVertical: space.lg },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: space.lg },
   row: { gap: space.md },
   byline: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   flex: { flex: 1 },
-  name: { fontFamily: fonts.bodyHeavy, color: palette.ink900 },
+  name: { fontFamily: fonts.bodyHeavy, color: c.ink900 },
   body: { flexDirection: 'row', gap: space.md },
   pressed: { opacity: 0.75 },
   texts: { flex: 1, gap: 4 },
   signals: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   review: { fontStyle: 'italic' },
-});
+}));

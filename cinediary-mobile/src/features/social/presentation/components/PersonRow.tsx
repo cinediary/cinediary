@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import { Avatar, Text } from '@/shared/ui';
 import type { Person } from '../../domain/social';
 import { openProfile } from '../navigation';
@@ -11,6 +11,7 @@ import { FollowButton } from './FollowButton';
 
 /** Uma pessoa numa lista: foto, nome, @ e, à direita, o botão de seguir (ou outra ação, ex.: aprovar pedido). */
 export function PersonRow({ person, action, onOpen }: { person: Person; action?: ReactNode; onOpen?: () => void }) {
+  const colors = useColors();
   const self = person.relationship === 'SELF';
   return (
     <Pressable
@@ -32,7 +33,7 @@ export function PersonRow({ person, action, onOpen }: { person: Person; action?:
             @{person.username}
             {self ? ` · ${strings.social.you}` : ''}
           </Text>
-          {person.isPrivate ? <LockSimple size={12} color={palette.ink500} /> : null}
+          {person.isPrivate ? <LockSimple size={12} color={colors.ink500} /> : null}
         </View>
       </View>
       {action ?? <FollowButton person={person} size="sm" />}
