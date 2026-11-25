@@ -6,7 +6,7 @@ import Animated, { FadeOut } from 'react-native-reanimated';
 import { useFavorites } from '@/features/auth/application/favoritesMutations';
 import { useUpdateTitleState } from '@/features/diary/application/titleStateMutations';
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import { Chip, IconButton, useToast } from '@/shared/ui';
 import type { SeriesStatus, TitleDetail } from '../../domain/title';
 import type { TrailerSlot } from '../trailerPlacement';
@@ -20,6 +20,7 @@ const STATUSES: SeriesStatus[] = ['WATCHING', 'COMPLETED', 'DROPPED'];
  * com as 4 ocupadas, pergunta qual sai, e o novo entra no lugar dele.
  */
 export function TitleActions({ title, trailer }: { title: TitleDetail; trailer?: TrailerSlot }) {
+  const colors = useColors();
   const t = strings.catalog;
   const toast = useToast();
   const update = useUpdateTitleState(title);
@@ -69,7 +70,7 @@ export function TitleActions({ title, trailer }: { title: TitleDetail; trailer?:
               accessibilityLabel={t.watched}
               active={s.watched}
               variant="filled"
-              icon={<Check size={22} weight={s.watched ? 'bold' : 'regular'} color={s.watched ? semantic.watched : palette.ink700} />}
+              icon={<Check size={22} weight={s.watched ? 'bold' : 'regular'} color={s.watched ? colors.watched : colors.ink700} />}
               onPress={() => save({ watched: !s.watched })}
             />
           </Slot>
@@ -80,7 +81,7 @@ export function TitleActions({ title, trailer }: { title: TitleDetail; trailer?:
             accessibilityLabel={s.liked ? t.liked : t.like}
             active={s.liked}
             variant="filled"
-            icon={<Heart size={22} weight={s.liked ? 'fill' : 'regular'} color={s.liked ? semantic.liked : palette.ink700} />}
+            icon={<Heart size={22} weight={s.liked ? 'fill' : 'regular'} color={s.liked ? colors.liked : colors.ink700} />}
             onPress={() => save({ liked: !s.liked })}
           />
         </Slot>
@@ -90,7 +91,7 @@ export function TitleActions({ title, trailer }: { title: TitleDetail; trailer?:
             accessibilityLabel={s.inWatchlist ? t.inWatchlist : t.watchlist}
             active={s.inWatchlist}
             variant="filled"
-            icon={<BookmarkSimple size={22} weight={s.inWatchlist ? 'fill' : 'regular'} color={palette.ink700} />}
+            icon={<BookmarkSimple size={22} weight={s.inWatchlist ? 'fill' : 'regular'} color={colors.ink700} />}
             onPress={() => save({ inWatchlist: !s.inWatchlist })}
           />
         </Slot>
@@ -100,7 +101,7 @@ export function TitleActions({ title, trailer }: { title: TitleDetail; trailer?:
             accessibilityLabel={favorite ? t.favorited : t.favorite}
             active={favorite}
             variant="filled"
-            icon={<Medal size={22} weight={favorite ? 'fill' : 'regular'} color={favorite ? semantic.primary : palette.ink700} />}
+            icon={<Medal size={22} weight={favorite ? 'fill' : 'regular'} color={favorite ? colors.primary : colors.ink700} />}
             onPress={toggleFavorite}
           />
         </Slot>
@@ -113,7 +114,7 @@ export function TitleActions({ title, trailer }: { title: TitleDetail; trailer?:
               accessibilityLabel={t.trailerPlay(title.title)}
               variant="filled"
               disabled={trailer.status === 'loading'}
-              icon={<Play size={22} weight="fill" color={palette.ink700} />}
+              icon={<Play size={22} weight="fill" color={colors.ink700} />}
               onPress={trailer.onPress}
             />
           </Slot>

@@ -2,11 +2,11 @@ import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import { CaretRight } from 'phosphor-react-native';
 import { useEffect, useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { formatFullDate, parseIsoDate, strings } from '@/shared/i18n';
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, makeStyles, useColors } from '@/shared/theme';
 import { Avatar, Rail, SectionHeader, Text, useRailItemWidth, useToast } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import type { TitleExtras } from '../../domain/extras';
@@ -33,6 +33,8 @@ export function WatchProvidersSection({
   mediaType: MediaType;
   tmdbId: number;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.catalog;
   const toast = useToast();
   const watch = extras.watchProviders;
@@ -80,7 +82,7 @@ export function WatchProvidersSection({
                 p.logoUrl ? (
                   <Image key={p.id} source={{ uri: p.logoUrl }} style={styles.providerLogo} contentFit="cover" />
                 ) : (
-                  <Avatar key={p.id} name={p.name} size={PROVIDER_LOGO} background={palette.salvia300} />
+                  <Avatar key={p.id} name={p.name} size={PROVIDER_LOGO} background={colors.salvia300} />
                 ),
               )}
             </ScrollView>
@@ -90,7 +92,7 @@ export function WatchProvidersSection({
           <Text variant="caption" tone="muted">
             {t.watchCredit}
           </Text>
-          {link ? <CaretRight size={12} color={palette.ink500} /> : null}
+          {link ? <CaretRight size={12} color={colors.ink500} /> : null}
         </View>
       </Pressable>
     </View>
@@ -109,6 +111,8 @@ export function CrewSection({
   tmdbId: number;
   titleName: string;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.catalog;
   const itemWidth = useRailItemWidth(4.4);
   if (extras.crew.length === 0) return null;
@@ -125,7 +129,7 @@ export function CrewSection({
             onPress={() => openPerson(c.personId)}
             style={({ pressed }) => [styles.person, { width: itemWidth }, pressed && styles.pressed]}
           >
-            <Avatar name={c.name} imageUrl={c.photoUrl} size={64} background={palette.salvia300} />
+            <Avatar name={c.name} imageUrl={c.photoUrl} size={64} background={colors.salvia300} />
             <Text variant="caption" style={styles.personName} numberOfLines={2}>
               {c.name}
             </Text>
@@ -144,6 +148,8 @@ export function CrewSection({
 
 /** "Sobre": lançamento, país e produtoras (cada produtora abre a página com os filmes dela). */
 export function AboutSection({ extras, mediaType }: { extras: TitleExtras; mediaType: MediaType }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.catalog;
   const rows: [string, string][] = [];
   if (extras.releaseDate)
@@ -180,7 +186,7 @@ export function AboutSection({ extras, mediaType }: { extras: TitleExtras; media
                   <Text variant="caption" style={styles.chipText}>
                     {c.name}
                   </Text>
-                  <CaretRight size={12} color={palette.ink500} />
+                  <CaretRight size={12} color={colors.ink500} />
                 </Pressable>
               ))}
             </View>
@@ -204,19 +210,19 @@ export function RelatedSections({ extras }: { extras: TitleExtras }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   section: { gap: space.md },
   person: { alignItems: 'center', gap: space.xs },
-  personName: { textAlign: 'center', fontFamily: 'Nunito_700Bold', color: palette.ink900 },
+  personName: { textAlign: 'center', fontFamily: 'Nunito_700Bold', color: c.ink900 },
   center: { textAlign: 'center' },
   pressed: { opacity: 0.7 },
   card: {
     gap: space.md,
     padding: space.lg,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   row: { flexDirection: 'row', gap: space.md },
   label: { width: 88, paddingTop: 2 },
@@ -230,9 +236,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     paddingVertical: 6,
     borderRadius: radius.pill,
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
   },
-  chipText: { color: palette.ink900, fontFamily: 'Nunito_700Bold' },
+  chipText: { color: c.ink900, fontFamily: 'Nunito_700Bold' },
   watchRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   watchLabel: { width: 72 },
   providers: { gap: space.sm },
@@ -241,7 +247,7 @@ const styles = StyleSheet.create({
     height: PROVIDER_LOGO,
     borderRadius: PROVIDER_LOGO / 2,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   watchFooter: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-});
+}));

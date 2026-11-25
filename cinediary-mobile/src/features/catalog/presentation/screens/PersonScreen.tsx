@@ -1,9 +1,9 @@
 import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { semantic, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Avatar, ErrorState, PosterCard, SectionHeader, Text, useGridItemWidth } from '@/shared/ui';
 import { usePerson } from '../../application/catalogQueries';
 import { directsFirst } from '../../domain/person';
@@ -14,6 +14,7 @@ import { openTitle } from '../navigation';
 
 /** Filmografia de alguém do elenco/direção: foto, nome e grades "Atuou em" / "Dirigiu". */
 export function PersonScreen() {
+  const styles = useStyles();
   const t = strings.catalog;
   const insets = useSafeAreaInsets();
   const backInset = useFloatingBackInset();
@@ -77,6 +78,7 @@ export function PersonScreen() {
 }
 
 function TitleGrid({ items }: { items: TitleSummary[] }) {
+  const styles = useStyles();
   const width = useGridItemWidth(3);
   return (
     <View style={styles.grid}>
@@ -98,12 +100,12 @@ function TitleGrid({ items }: { items: TitleSummary[] }) {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   center: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: semantic.background,
+    backgroundColor: c.background,
   },
   content: {
     paddingHorizontal: space.screenX,
@@ -114,4 +116,4 @@ const styles = StyleSheet.create({
   textCenter: { textAlign: 'center' },
   section: { gap: space.md },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
-});
+}));

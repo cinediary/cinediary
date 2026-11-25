@@ -6,7 +6,7 @@ import Animated, { Easing, interpolate, useAnimatedStyle, useReducedMotion, useS
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { strings } from '@/shared/i18n';
-import { poster, radius, semantic } from '@/shared/theme';
+import { poster, radius, makeStyles } from '@/shared/theme';
 import { PosterArt } from '@/shared/ui';
 
 /** Onde o pôster está na tela antes de ampliar (medido no toque), para o zoom sair dele. */
@@ -46,6 +46,7 @@ export function PosterLightbox({
   onShown?: () => void;
   onClose: () => void;
 }) {
+  const styles = useStyles();
   const { width: screenW, height: screenH } = useWindowDimensions();
   const reduce = useReducedMotion();
   const progress = useSharedValue(0);
@@ -130,15 +131,15 @@ export function PosterLightbox({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   dim: { backgroundColor: 'rgba(20,16,14,0.82)' },
   poster: {
     position: 'absolute',
     overflow: 'hidden',
-    borderColor: semantic.background,
-    backgroundColor: semantic.background,
+    borderColor: c.background,
+    backgroundColor: c.background,
     shadowColor: '#000',
     shadowRadius: 28,
     shadowOffset: { width: 0, height: 14 },
   },
-});
+}));

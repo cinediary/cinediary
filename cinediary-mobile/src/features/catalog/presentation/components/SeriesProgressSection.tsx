@@ -2,14 +2,14 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { CaretDown, CaretUp, Check, NotePencil, Play } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 
 import { useTitleEntries } from '@/features/diary/application/diaryQueries';
 import { useUpdateEpisodes, useUpdateTitleState } from '@/features/diary/application/titleStateMutations';
 import { latestSeasonRatings } from '@/features/diary/domain/diary';
 import { analytics, useFlagEnabled } from '@/shared/analytics/analytics';
 import { formatFullDate, parseIsoDate, strings, toIsoDate } from '@/shared/i18n';
-import { palette, radius, semantic, space, touch } from '@/shared/theme';
+import { radius, space, touch, makeStyles, useColors } from '@/shared/theme';
 import { Button, Card, formatRating, ProgressBar, Skeleton, StarRating, Text, Title, useToast } from '@/shared/ui';
 import {
   applyEpisodes,
@@ -31,6 +31,8 @@ import { TrailerPlayer } from './TrailerPlayer';
  * o card de nota ao terminar e o "Abandonar série".
  */
 export function SeriesProgressSection({ title, embedded = false }: { title: TitleDetail; embedded?: boolean }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.catalog;
   const toast = useToast();
   const episodes = useUpdateEpisodes(title);
@@ -146,7 +148,7 @@ export function SeriesProgressSection({ title, embedded = false }: { title: Titl
                     style={[
                       styles.miniFill,
                       { width: `${season.episodeCount ? (watched / season.episodeCount) * 100 : 0}%` },
-                      done && { backgroundColor: palette.salvia700 },
+                      done && { backgroundColor: colors.salvia700 },
                     ]}
                   />
                 </View>
@@ -159,10 +161,10 @@ export function SeriesProgressSection({ title, embedded = false }: { title: Titl
                 style={styles.checkHit}
               >
                 <View style={[styles.circle, done && styles.circleOn]}>
-                  {done && <Check size={14} weight="bold" color={palette.surface} />}
+                  {done && <Check size={14} weight="bold" color={colors.surface} />}
                 </View>
               </Pressable>
-              {expanded ? <CaretUp size={16} color={palette.ink500} /> : <CaretDown size={16} color={palette.ink500} />}
+              {expanded ? <CaretUp size={16} color={colors.ink500} /> : <CaretDown size={16} color={colors.ink500} />}
             </Pressable>
 
             {/* Registrar a temporada e ver o trailer dela; dentro do registro rápido não aparecem. */}
@@ -173,7 +175,7 @@ export function SeriesProgressSection({ title, embedded = false }: { title: Titl
                   onPress={() => openQuickLog(title, { season: season.number })}
                   style={styles.seasonAction}
                 >
-                  <NotePencil size={18} color={palette.terracota700} />
+                  <NotePencil size={18} color={colors.terracota700} />
                   <Text variant="bodyStrong" tone="link">
                     {strings.diary.logSeason(season.name)}
                   </Text>
@@ -185,7 +187,7 @@ export function SeriesProgressSection({ title, embedded = false }: { title: Titl
                   </View>
                 ) : seasonTrailer.data ? (
                   <Pressable accessibilityRole="button" onPress={() => setTrailer(seasonTrailer.data ?? null)} style={styles.seasonAction}>
-                    <Play size={16} weight="fill" color={palette.terracota700} />
+                    <Play size={16} weight="fill" color={colors.terracota700} />
                     <Text variant="bodyStrong" tone="link">
                       {t.seasonTrailer}
                     </Text>
@@ -224,11 +226,11 @@ export function SeriesProgressSection({ title, embedded = false }: { title: Titl
                         hitSlop={6}
                         style={styles.logEpisode}
                       >
-                        <NotePencil size={20} color={palette.ink500} />
+                        <NotePencil size={20} color={colors.ink500} />
                       </Pressable>
                     ) : null}
                     <View style={[styles.circle, seen && styles.circleOn]}>
-                      {seen && <Check size={14} weight="bold" color={palette.surface} />}
+                      {seen && <Check size={14} weight="bold" color={colors.surface} />}
                     </View>
                   </Pressable>
                 );
@@ -264,6 +266,7 @@ function EpisodeInfo({
   today: string;
   withStill: boolean;
 }) {
+  const styles = useStyles();
   const t = strings.catalog;
   if (loading) {
     return (
@@ -305,9 +308,9 @@ function EpisodeInfo({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.md },
-  still: { width: 64, height: 36, borderRadius: 6, backgroundColor: palette.surfaceSunken },
+  still: { width: 64, height: 36, borderRadius: 6, backgroundColor: c.surfaceSunken },
   epTexts: { flex: 1, gap: 2, paddingVertical: space.sm },
   dim: { opacity: 0.55 },
   seasonActions: {
@@ -315,41 +318,41 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     columnGap: space.lg,
     borderTopWidth: 1,
-    borderTopColor: palette.border,
+    borderTopColor: c.border,
   },
   seasonAction: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: touch.minTarget },
   season: {
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
     paddingHorizontal: space.lg,
   },
   seasonHeader: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: touch.buttonHeight },
   seasonTitle: { flex: 1, gap: space.xs, paddingVertical: space.md },
   seasonName: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
   seasonNameText: { flexShrink: 1 },
-  miniTrack: { height: 4, borderRadius: 2, backgroundColor: palette.surfaceSunken, overflow: 'hidden' },
-  miniFill: { height: '100%', backgroundColor: palette.salvia500 },
+  miniTrack: { height: 4, borderRadius: 2, backgroundColor: c.surfaceSunken, overflow: 'hidden' },
+  miniFill: { height: '100%', backgroundColor: c.salvia500 },
   checkHit: { width: touch.minTarget, height: touch.minTarget, alignItems: 'center', justifyContent: 'center' },
   circle: {
     width: 28,
     height: 28,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: palette.borderStrong,
+    borderColor: c.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  circleOn: { backgroundColor: semantic.watched, borderColor: semantic.watched },
+  circleOn: { backgroundColor: c.watched, borderColor: c.watched },
   episode: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.md,
     minHeight: touch.minTarget,
     borderTopWidth: 1,
-    borderTopColor: palette.border,
+    borderTopColor: c.border,
   },
-  epNumber: { width: 28, fontFamily: 'Fraunces_600SemiBold', color: palette.ink700 },
+  epNumber: { width: 28, fontFamily: 'Fraunces_600SemiBold', color: c.ink700 },
   logEpisode: { width: touch.minTarget, height: touch.minTarget, alignItems: 'center', justifyContent: 'center' },
-});
+}));
