@@ -37,9 +37,6 @@ function SettingIcon({ Icon }: { Icon: typeof UserCircle }) {
 
 const icon = (Icon: typeof UserCircle) => <SettingIcon Icon={Icon} />;
 
-/** Aparência só aparece em desenvolvimento enquanto as telas passam para o tema escuro (#61, por etapas). */
-const SHOW_APPEARANCE = __DEV__;
-
 function useSections(openReplyPicker: () => void, openAppearancePicker: () => void): SettingSection[] {
   const a = strings.account;
   const t = strings.stats;
@@ -72,18 +69,14 @@ function useSections(openReplyPicker: () => void, openAppearancePicker: () => vo
       key: 'preferences',
       title: a.sectionPreferences,
       rows: [
-        ...(SHOW_APPEARANCE
-          ? [
-              {
-                // Do aparelho (não da conta): cada celular guarda a sua
-                key: 'appearance',
-                icon: icon(CircleHalf),
-                label: a.appearance,
-                hint: a.appearances[preference],
-                onPress: openAppearancePicker,
-              },
-            ]
-          : []),
+        {
+          // Do aparelho (não da conta): cada celular guarda a sua
+          key: 'appearance',
+          icon: icon(CircleHalf),
+          label: a.appearance,
+          hint: a.appearances[preference],
+          onPress: openAppearancePicker,
+        },
         {
           key: 'spoilers',
           icon: icon(Eye),

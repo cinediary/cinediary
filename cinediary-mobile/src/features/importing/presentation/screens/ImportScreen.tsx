@@ -1,11 +1,11 @@
 import * as WebBrowser from 'expo-web-browser';
 import { ArrowSquareOut, CheckCircle, FilmReel, LockSimple, WarningCircle } from 'phosphor-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
-import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
-import { palette, radius, semantic, space } from '@/shared/theme';
+import { radius, space, makeStyles, useColors } from '@/shared/theme';
 import { Button, Card, Text, Title } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useImportFlow } from '../../application/useImportFlow';
@@ -31,6 +31,8 @@ export interface ImportOnboarding {
  * Voltar (ou falhar) dentro do onboarding volta para a pergunta do Letterboxd.
  */
 export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } = {}) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.importing;
   const flow = useImportFlow();
   const job = flow.job;
@@ -57,7 +59,7 @@ export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } =
           </>
         }
       >
-        <Badge tone="error" icon={<WarningCircle size={40} color={palette.error} weight="duotone" />} />
+        <Badge tone="error" icon={<WarningCircle size={40} color={colors.error} weight="duotone" />} />
         <Title parts={['', t.failed, '']} align="center" />
         <Text tone="secondary" style={styles.textCenter}>
           {t.failedHint}
@@ -131,7 +133,7 @@ export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } =
           )
         }
       >
-        <Badge tone="success" icon={<CheckCircle size={44} color={semantic.success} weight="duotone" />} />
+        <Badge tone="success" icon={<CheckCircle size={44} color={colors.success} weight="duotone" />} />
         <Title parts={t.doneTitle(job.matchedCount)} align="center" />
         <Text tone="secondary" style={styles.textCenter}>
           {t.doneSummary(job.diaryEntriesCreated ?? job.diaryEntriesCount, job.reviewsCount)}
@@ -156,7 +158,7 @@ export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } =
       }
     >
       <View style={styles.hero}>
-        <Badge tone="brand" icon={<FilmReel size={40} color={palette.terracota500} weight="duotone" />} />
+        <Badge tone="brand" icon={<FilmReel size={40} color={colors.terracota500} weight="duotone" />} />
         <Title parts={t.title} />
         <Text tone="secondary">{t.subtitle}</Text>
       </View>
@@ -200,7 +202,7 @@ export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } =
                     <Text variant="bodyStrong" tone="link">
                       {t.openLetterboxd}
                     </Text>
-                    <ArrowSquareOut size={16} color={palette.terracota700} />
+                    <ArrowSquareOut size={16} color={colors.terracota700} />
                   </Pressable>
                 ) : null}
               </View>
@@ -210,7 +212,7 @@ export function ImportScreen({ onboarding }: { onboarding?: ImportOnboarding } =
       </Card>
 
       <View style={styles.trust}>
-        <LockSimple size={18} color={palette.ink700} />
+        <LockSimple size={18} color={colors.ink700} />
         <Text variant="caption" tone="secondary" style={styles.flex}>
           {t.trust}
         </Text>
@@ -223,12 +225,16 @@ const validationMessage = (e: ZipValidationError) => (e === 'NOT_ZIP' ? strings.
 
 /** Ícone grande num círculo colorido: dá um ponto focal para cada passo. */
 function Badge({ icon, tone }: { icon: ReactNode; tone: 'brand' | 'success' | 'error' }) {
-  const background = tone === 'success' ? palette.salvia100 : tone === 'error' ? palette.rosa100 : palette.terracota100;
+  const styles = useStyles();
+  const colors = useColors();
+  const background = tone === 'success' ? colors.salvia100 : tone === 'error' ? colors.rosa100 : colors.terracota100;
   return <View style={[styles.badge, { backgroundColor: background }]}>{icon}</View>;
 }
 
 /** Rolo de filme girando enquanto processa (parado com "Reduzir movimento"). */
 function SpinningReel() {
+  const styles = useStyles();
+  const colors = useColors();
   const reduce = useReducedMotion();
   const turn = useSharedValue(0);
   useEffect(() => {
@@ -236,28 +242,28 @@ function SpinningReel() {
   }, [reduce, turn]);
   const spin = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.value * 360}deg` }] }));
   return (
-    <View style={[styles.badge, styles.badgeLarge, { backgroundColor: palette.terracota100 }]}>
+    <View style={[styles.badge, styles.badgeLarge, { backgroundColor: colors.terracota100 }]}>
       <Animated.View style={spin}>
-        <FilmReel size={56} color={palette.terracota500} weight="duotone" />
+        <FilmReel size={56} color={colors.terracota500} weight="duotone" />
       </Animated.View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   textCenter: { textAlign: 'center' },
   flex: { flex: 1 },
   hero: { gap: space.md },
   section: { gap: space.md },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
-  chip: { paddingHorizontal: space.md, paddingVertical: space.xs, borderRadius: radius.pill, backgroundColor: palette.surfaceSunken },
-  chipText: { color: palette.ink900, fontFamily: 'Nunito_700Bold' },
+  chip: { paddingHorizontal: space.md, paddingVertical: space.xs, borderRadius: radius.pill, backgroundColor: c.surfaceSunken },
+  chipText: { color: c.ink900, fontFamily: 'Nunito_700Bold' },
   step: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
   stepNumber: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: semantic.primary,
+    backgroundColor: c.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -265,4 +271,4 @@ const styles = StyleSheet.create({
   trust: { flexDirection: 'row', gap: space.sm, alignItems: 'center' },
   badge: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center' },
   badgeLarge: { width: 112, height: 112, borderRadius: 56 },
-});
+}));

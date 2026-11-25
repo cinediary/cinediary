@@ -1,10 +1,10 @@
 import { BookmarkSimple, Heart, Notebook, Star, type Icon } from 'phosphor-react-native';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { usePopularTitles } from '@/features/catalog/application/catalogQueries';
 import { strings } from '@/shared/i18n';
-import { palette, poster, shadow, space } from '@/shared/theme';
+import { poster, shadow, space, makeStyles, useColors } from '@/shared/theme';
 import { PosterArt, Skeleton, Text } from '@/shared/ui';
 
 const CENTER_W = poster.md.width;
@@ -22,6 +22,8 @@ const ICONS: Icon[] = [Notebook, Star, BookmarkSimple, Heart];
  * que a importação traz. Enquanto os pôsteres carregam, esqueletos do mesmo tamanho (nada pula).
  */
 export function LetterboxdImportPreview() {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.onboarding;
   const popular = usePopularTitles('MOVIE');
   const titles = (popular.data?.items ?? []).filter((title) => title.posterUrl).slice(0, 3);
@@ -53,7 +55,7 @@ export function LetterboxdImportPreview() {
           const ItemIcon = ICONS[i] ?? Star;
           return (
             <Animated.View key={label} entering={FadeInDown.duration(300).delay(150 + i * 60)} style={styles.item}>
-              <ItemIcon size={22} color={palette.terracota600} weight="duotone" />
+              <ItemIcon size={22} color={colors.terracota600} weight="duotone" />
               <Text>{label}</Text>
             </Animated.View>
           );
@@ -63,13 +65,13 @@ export function LetterboxdImportPreview() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space['2xl'], paddingTop: space.lg },
   fan: { height: Math.round(CENTER_W / poster.ratio) + 24, flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start' },
   // Fundo sólido (coberto pelo pôster): sem ele, o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
-  poster: { borderRadius: poster.radius, backgroundColor: palette.surfaceSunken, ...shadow.e2 },
+  poster: { borderRadius: poster.radius, backgroundColor: c.surfaceSunken, ...shadow.e2 },
   // O do meio por cima dos outros (no Android, quem decide a ordem é a elevação).
   front: { zIndex: 1, elevation: 8 },
   list: { gap: space.md, alignSelf: 'center' },
   item: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-});
+}));

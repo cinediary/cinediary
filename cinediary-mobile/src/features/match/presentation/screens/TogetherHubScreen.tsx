@@ -4,7 +4,7 @@ import { Keyboard, StyleSheet, View } from 'react-native';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { strings } from '@/shared/i18n';
-import { palette, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import { Button, Card, EmptyState, ErrorState, Screen, SectionHeader, SkeletonRows, TextField, Title, useToast } from '@/shared/ui';
 import { useRefetchOnFocus } from '@/shared/ui/navigation/useRefetchOnFocus';
 import { useCreateMatch, useMatches } from '../../application/matchQueries';
@@ -15,6 +15,7 @@ import { openInvite } from '../navigation';
 
 /** MA-01 · Aba Juntos: criar convite, entrar por código e lista de Matches. */
 export function TogetherHubScreen() {
+  const colors = useColors();
   const t = strings.match;
   const toast = useToast();
   const me = useMe();
@@ -60,7 +61,7 @@ export function TogetherHubScreen() {
         <ErrorState onRetry={() => matches.refetch()} />
       ) : list.length === 0 && !created ? (
         <EmptyState
-          illustration={<Popcorn size={56} color={palette.terracota500} weight="duotone" />}
+          illustration={<Popcorn size={56} color={colors.terracota500} weight="duotone" />}
           title={t.emptyTitle}
           description={t.emptyText}
           actionLabel={t.create}

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { requireOptionalNativeModule } from 'expo';
 import { Image } from 'expo-image';
 import {
   createContext,
@@ -12,7 +13,7 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
-import { Appearance, Dimensions, StyleSheet, useColorScheme, View } from 'react-native';
+import { Appearance, Dimensions, processColor, StyleSheet, useColorScheme, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { captureRef } from 'react-native-view-shot';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -25,10 +26,12 @@ export type AppearancePreference = 'system' | 'light' | 'dark';
 const STORAGE_KEY = 'cinediary.appearance';
 
 /**
- * Enquanto as telas passam para as cores do tema (#61, por etapas), "Automático" fica no claro: só quem escolhe
- * Escuro (em desenvolvimento) vê o tema escuro. A última etapa liga isto e o `userInterfaceStyle: automatic`.
+ * O fundo da janela nativa, do expo-system-ui. Opcional: só existe num app gerado depois de ele entrar (build novo);
+ * num build antigo, o fundo nativo fica o do app.json e o resto do tema funciona igual.
  */
-const FOLLOW_SYSTEM = false;
+const SystemUI = requireOptionalNativeModule<{ setBackgroundColorAsync(color: ReturnType<typeof processColor>): Promise<void> }>(
+  'ExpoSystemUI',
+);
 
 /** Quanto dura o esmaecer entre os temas. */
 const CROSSFADE_MS = 420;
@@ -48,7 +51,7 @@ const ThemeContext = createContext<ThemeValue>({
 });
 
 const resolve = (p: AppearancePreference, system: string | null | undefined): 'light' | 'dark' =>
-  p === 'light' || p === 'dark' ? p : FOLLOW_SYSTEM && system === 'dark' ? 'dark' : 'light';
+  p === 'light' || p === 'dark' ? p : system === 'dark' ? 'dark' : 'light';
 
 /**
  * O tema do app (#61): a escolha (guardada no aparelho), as cores em uso (`useColors`, `makeStyles`), o aviso ao
@@ -84,11 +87,18 @@ export function ThemeProvider({ children }: PropsWithChildren) {
 
   const scheme = preference ? resolve(preference, system) : 'light';
 
-  // O tema do sistema acompanha a escolha
+  // O tema do sistema acompanha a escolha ("Automático" devolve ao aparelho)
   useLayoutEffect(() => {
     if (!preference) return;
-    Appearance.setColorScheme(preference !== 'system' ? preference : FOLLOW_SYSTEM ? 'unspecified' : 'light');
+    Appearance.setColorScheme(preference === 'system' ? 'unspecified' : preference);
   }, [preference]);
+
+  // O fundo da janela nativa (aparece atrás das telas nas transições e ao abrir o teclado)
+  useEffect(() => {
+    SystemUI?.setBackgroundColorAsync(processColor(scheme === 'dark' ? darkColors.background : lightColors.background)).catch(
+      () => undefined,
+    );
+  }, [scheme]);
 
   // As telas já redesenharam com o tema novo por baixo da foto: no quadro seguinte, ela esmaece
   useEffect(() => {

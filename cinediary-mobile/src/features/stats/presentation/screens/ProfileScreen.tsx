@@ -1,6 +1,5 @@
 import { CaretRight, UserPlus } from 'phosphor-react-native';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { openTitle } from '@/features/catalog/presentation/navigation';
 import { ProfileListsSection } from '@/features/lists/presentation/components/ProfileListsSection';
@@ -23,6 +22,7 @@ import {
   Text,
   Title,
   useGridItemWidth,
+  useStableTopInset,
   useWorkingImageUrl,
   VerticalBars,
 } from '@/shared/ui';
@@ -42,7 +42,7 @@ export function ProfileScreen() {
   // Contadores de seguidores/seguindo e pedidos pendentes vêm do perfil público (o mesmo que os outros veem).
   const social = usePublicProfile(me.data?.username ?? '');
   const diary = useDiaryEntries();
-  const insets = useSafeAreaInsets();
+  const topInset = useStableTopInset();
   // A capa que vale para o layout: sem capa, ou com uma que não carregou, o topo fica como antes.
   const headerUrl = useWorkingImageUrl(me.data?.headerUrl);
   const onScrollCover = useCoverStatusBar(me.data?.headerUrl);
@@ -68,7 +68,7 @@ export function ProfileScreen() {
   // Com capa, a tela não reserva o topo (relógio) e a capa sobe até a borda da tela. No iOS o ScrollView
   // continua recuando o conteúdo sozinho (em cima e embaixo, para a barra de abas); no Android o recuo de
   // cima fica por conta do padding.
-  const coverTop = insets.top + space.lg;
+  const coverTop = topInset + space.lg;
   const coverPadding = Platform.OS === 'ios' ? null : { paddingTop: coverTop };
 
   return (

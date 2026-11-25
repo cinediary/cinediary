@@ -40,3 +40,4 @@ export * from './SwipeRow';
 export * from './TextEditSheet';
 export * from './UnderlineTabs';
 export * from './brokenImages';
+export { useStableTopInset } from './useStableTopInset';

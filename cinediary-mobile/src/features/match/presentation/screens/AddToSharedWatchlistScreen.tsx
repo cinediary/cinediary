@@ -1,11 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { BookmarkSimple, X } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { CatalogSearchPanel } from '@/features/catalog/presentation/components/CatalogSearchPanel';
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space, touch } from '@/shared/theme';
+import { space, touch, makeStyles, useColors } from '@/shared/theme';
 import { Screen, Title, useToast } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useAddToSharedWatchlist, useRemoveFromSharedWatchlist, useSharedWatchlist } from '../../application/matchQueries';
@@ -18,6 +18,8 @@ import { useAddToSharedWatchlist, useRemoveFromSharedWatchlist, useSharedWatchli
  *   então não dava para saber se tinha adicionado.
  */
 export function AddToSharedWatchlistScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.match;
   const toast = useToast();
   const { matchId } = useLocalSearchParams<{ matchId: string }>();
@@ -51,15 +53,15 @@ export function AddToSharedWatchlistScreen() {
           <Title parts={t.addTitle} />
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel={strings.common.close} onPress={() => nav.back()} style={styles.close}>
-          <X size={22} color={palette.ink900} />
+          <X size={22} color={colors.ink900} />
         </Pressable>
       </View>
       <CatalogSearchPanel
         context="shared_watchlist"
         onOpen={(title) => toggle(title.id)}
         onAction={(title) => toggle(title.id)}
-        actionIcon={<BookmarkSimple size={22} weight="bold" color={semantic.primary} />}
-        activeActionIcon={<BookmarkSimple size={22} weight="fill" color={semantic.primary} />}
+        actionIcon={<BookmarkSimple size={22} weight="bold" color={colors.primary} />}
+        activeActionIcon={<BookmarkSimple size={22} weight="fill" color={colors.primary} />}
         isActionActive={(title) => inShared(title.id)}
         actionLabel={(title) => (inShared(title.id) ? t.removeConfirm(title.title) : `${t.add}: ${title.title}`)}
       />
@@ -67,7 +69,7 @@ export function AddToSharedWatchlistScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   flex: { flex: 1 },
   close: {
@@ -76,6 +78,6 @@ const styles = StyleSheet.create({
     borderRadius: touch.minTarget / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
   },
-});
+}));

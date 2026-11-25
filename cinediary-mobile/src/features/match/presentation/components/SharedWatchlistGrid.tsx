@@ -2,7 +2,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 
 import type { TitleSummary } from '@/features/catalog/domain/title';
 import { strings } from '@/shared/i18n';
-import { palette, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import { Avatar, AvatarPair, ErrorState, PosterCard, SkeletonRows, Text, useGridItemWidth, useToast } from '@/shared/ui';
 import { useRemoveFromSharedWatchlist, useSharedWatchlist } from '../../application/matchQueries';
 import type { Person, SharedWatchlistItem } from '../../domain/match';
@@ -69,12 +69,13 @@ export function SharedWatchlistGrid({
 }
 
 function AddedBy({ item, people }: { item: SharedWatchlistItem; people: Person[] }) {
+  const colors = useColors();
   const [a, b] = people;
   if (item.addedByBoth && a && b) {
     return <AvatarPair a={{ name: a.name, imageUrl: a.avatarUrl }} b={{ name: b.name, imageUrl: b.avatarUrl }} size={CORNER} />;
   }
   const who = people.find((p) => p.id === item.addedByUserId);
-  return <Avatar name={who?.name ?? item.addedByName} imageUrl={who?.avatarUrl} size={CORNER} background={palette.pipoca300} />;
+  return <Avatar name={who?.name ?? item.addedByName} imageUrl={who?.avatarUrl} size={CORNER} background={colors.pipoca300} />;
 }
 
 const styles = StyleSheet.create({

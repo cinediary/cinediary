@@ -1,9 +1,9 @@
 import { CaretLeft } from 'phosphor-react-native';
 import type { PropsWithChildren, ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, radius, semantic, space, touch } from '@/shared/theme';
+import { radius, space, touch, makeStyles, useColors } from '@/shared/theme';
 import { Screen, Text, Title, type TitleParts } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 
@@ -21,6 +21,8 @@ export interface OnboardingFrameProps extends PropsWithChildren {
 
 /** Barra comum do onboarding: 3 segmentos de progresso (quando tem `step`), voltar e rodapé fixo. */
 export function OnboardingFrame({ step, title, caption, footer, topAction, canGoBack = (step ?? 0) > 1, children }: OnboardingFrameProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.onboarding;
   return (
     <Screen scroll footer={footer}>
@@ -35,7 +37,7 @@ export function OnboardingFrame({ step, title, caption, footer, topAction, canGo
               hitSlop={10}
               style={styles.back}
             >
-              <CaretLeft size={22} color={palette.ink900} />
+              <CaretLeft size={22} color={colors.ink900} />
             </Pressable>
           ) : (
             <View style={styles.back} />
@@ -69,12 +71,12 @@ export function OnboardingFrame({ step, title, caption, footer, topAction, canGo
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   top: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   back: { minWidth: touch.minTarget, minHeight: touch.minTarget, justifyContent: 'center' },
   // Somado ao espaço entre os itens da tela (16): 32 acima do título, metade do que a faixa do topo ocupa.
   topSpacer: { height: space.lg },
   bars: { flex: 1, flexDirection: 'row', gap: space.xs },
-  bar: { flex: 1, height: 4, borderRadius: radius.pill, backgroundColor: palette.surfaceSunken },
-  barOn: { backgroundColor: semantic.primary },
-});
+  bar: { flex: 1, height: 4, borderRadius: radius.pill, backgroundColor: c.surfaceSunken },
+  barOn: { backgroundColor: c.primary },
+}));
