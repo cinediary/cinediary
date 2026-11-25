@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { fonts, palette, space } from '@/shared/theme';
+import { fonts, space, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
 
 const SLIDE = { duration: 260, easing: Easing.bezier(0.25, 0.1, 0.25, 1) };
@@ -20,6 +20,7 @@ export function UnderlineTabs<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
+  const styles = useStyles();
   const reduce = useReducedMotion();
   const layouts = useRef(new Map<T, { x: number; width: number }>());
   const x = useSharedValue(0);
@@ -73,17 +74,17 @@ export function UnderlineTabs<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { flexDirection: 'row', gap: space.xl, paddingBottom: space.sm },
-  label: { fontFamily: fonts.bodyHeavy, fontSize: 15, lineHeight: 20, color: palette.ink500 },
-  labelOn: { color: palette.ink900 },
+  label: { fontFamily: fonts.bodyHeavy, fontSize: 15, lineHeight: 20, color: c.ink500 },
+  labelOn: { color: c.ink900 },
   indicator: {
     position: 'absolute',
     left: 0,
     bottom: 0,
     height: 2,
     borderRadius: 1,
-    backgroundColor: palette.terracota500,
+    backgroundColor: c.terracota500,
     zIndex: 1,
   },
   hairline: {
@@ -92,6 +93,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: palette.border,
+    backgroundColor: c.border,
   },
-});
+}));

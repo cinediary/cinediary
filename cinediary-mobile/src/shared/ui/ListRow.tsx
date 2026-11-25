@@ -2,7 +2,7 @@ import { CaretRight } from 'phosphor-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
-import { palette, semantic, space, touch } from '@/shared/theme';
+import { space, touch, useColors } from '@/shared/theme';
 import { Text } from './Text';
 
 export interface ListRowProps {
@@ -20,6 +20,7 @@ export interface ListRowProps {
 
 /** Linha de configuração (Perfil): ação com chevron ou chave liga/desliga. */
 export function ListRow({ label, hint, hintLines, icon, onPress, switchValue, onSwitchChange, danger }: ListRowProps) {
+  const colors = useColors();
   const isSwitch = switchValue !== undefined;
   const content = (
     <View style={styles.row}>
@@ -38,11 +39,11 @@ export function ListRow({ label, hint, hintLines, icon, onPress, switchValue, on
         <Switch
           value={switchValue}
           onValueChange={onSwitchChange}
-          trackColor={{ true: semantic.primary, false: palette.borderStrong }}
+          trackColor={{ true: colors.primary, false: colors.borderStrong }}
           accessibilityLabel={label}
         />
       ) : onPress ? (
-        <CaretRight size={16} color={palette.ink500} />
+        <CaretRight size={16} color={colors.ink500} />
       ) : null}
     </View>
   );

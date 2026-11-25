@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
-import { palette } from '@/shared/theme';
+import { useColors } from '@/shared/theme';
 import { BrandStar } from '../splash/BrandGlyphs';
 import { STAR_REST_ROTATION } from '../splash/brandMark';
 
@@ -23,7 +23,9 @@ export const STAR_SPIN_MS = 700;
  * A estrela do logo girando: carregando. Gira e dá uma pausa a cada volta (acelera e desacelera).
  * Com "Reduzir movimento": a estrela fica parada.
  */
-export function StarSpinner({ size = 40, color = palette.terracota600 }: { size?: number; color?: string }) {
+export function StarSpinner({ size = 40, color: colorProp }: { size?: number; color?: string }) {
+  const colors = useColors();
+  const color = colorProp ?? colors.terracota600;
   const reduceMotion = useReducedMotion();
   const spin = useSharedValue(0);
 

@@ -63,6 +63,13 @@ export const account = {
   sectionPreferences: 'Preferências',
   approveCompanions: 'Aprovar marcações',
   approveCompanionsHint: 'Quando alguém marcar você em um registro, você decide se aparece.',
+  appearance: 'Aparência',
+  appearances: { system: 'Automático', light: 'Claro', dark: 'Escuro' } as Record<'system' | 'light' | 'dark', string>,
+  appearanceHints: {
+    system: 'Segue o aparelho: claro de dia, escuro à noite.',
+    light: 'Sempre o fundo creme.',
+    dark: 'Sempre o fundo escuro, bom para registrar depois do filme.',
+  } as Record<'system' | 'light' | 'dark', string>,
   showSpoilers: 'Mostrar spoilers',
   showSpoilersHint: 'Reviews e respostas de outras pessoas aparecem sem desfoque.',
   replyPolicy: 'Quem pode responder',

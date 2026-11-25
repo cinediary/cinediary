@@ -2,7 +2,7 @@ import { CaretRight } from 'phosphor-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, useColors } from '@/shared/theme';
 import { Text } from './Text';
 
 export interface BannerProps {
@@ -14,7 +14,11 @@ export interface BannerProps {
 
 /** Faixa de aviso clicável (ex.: importação em andamento, Match pronto). */
 export function Banner({ message, icon, onPress, tone = 'success' }: BannerProps) {
-  const colors = tone === 'success' ? { bg: palette.salvia100, fg: palette.salvia700 } : { bg: palette.pipoca100, fg: palette.pipoca700 };
+  const themeColors = useColors();
+  const colors =
+    tone === 'success'
+      ? { bg: themeColors.salvia100, fg: themeColors.salvia700 }
+      : { bg: themeColors.pipoca100, fg: themeColors.pipoca700 };
   const content = (
     <View style={[styles.root, { backgroundColor: colors.bg }]}>
       {icon}

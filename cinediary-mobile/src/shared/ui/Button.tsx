@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 
-import { palette, radius, semantic, space, touch } from '@/shared/theme';
+import { radius, space, touch, useColors, type Colors } from '@/shared/theme';
 import { Text } from './Text';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -17,12 +17,13 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> 
   fullWidth?: boolean;
 }
 
-const variantStyle = {
-  primary: { bg: semantic.primary, pressedBg: palette.terracota700, border: 'transparent', tone: 'onPrimary' },
-  secondary: { bg: palette.surface, pressedBg: palette.surfaceSunken, border: palette.ink900, tone: 'primary' },
-  ghost: { bg: 'transparent', pressedBg: palette.terracota100, border: 'transparent', tone: 'link' },
-  danger: { bg: 'transparent', pressedBg: palette.rosa100, border: 'transparent', tone: 'danger' },
-} as const;
+const variantStyle = (c: Colors) =>
+  ({
+    primary: { bg: c.primary, pressedBg: c.terracota700, border: 'transparent', tone: 'onPrimary' },
+    secondary: { bg: c.surface, pressedBg: c.surfaceSunken, border: c.ink900, tone: 'primary' },
+    ghost: { bg: 'transparent', pressedBg: c.terracota100, border: 'transparent', tone: 'link' },
+    danger: { bg: 'transparent', pressedBg: c.rosa100, border: 'transparent', tone: 'danger' },
+  }) as const;
 
 export function Button({
   label,
@@ -35,7 +36,8 @@ export function Button({
   fullWidth = true,
   ...rest
 }: ButtonProps) {
-  const v = variantStyle[variant];
+  const colors = useColors();
+  const v = variantStyle(colors)[variant];
   const isDisabled = disabled || loading;
 
   return (
@@ -58,7 +60,7 @@ export function Button({
         {...rest}
       >
         {loading ? (
-          <ActivityIndicator color={variant === 'primary' ? semantic.onPrimary : semantic.primary} />
+          <ActivityIndicator color={variant === 'primary' ? colors.onPrimary : colors.primary} />
         ) : (
           <>
             {icon}

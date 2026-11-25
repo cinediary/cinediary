@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space, touch } from '@/shared/theme';
+import { space, touch, useColors, makeStyles } from '@/shared/theme';
 import { nav } from './nav';
 import { Text } from '../Text';
 
@@ -15,6 +15,8 @@ import { Text } from '../Text';
  * {@code scrolled}: mostra o fio de baixo quando a lista já saiu do topo.
  */
 export function TopBar({ title, children, scrolled = false }: { title: string; children?: ReactNode; scrolled?: boolean }) {
+  const styles = useStyles();
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.bar, { paddingTop: insets.top + space.xs }, scrolled && styles.scrolled]}>
@@ -26,7 +28,7 @@ export function TopBar({ title, children, scrolled = false }: { title: string; c
           hitSlop={8}
           style={({ pressed }) => [styles.back, pressed && styles.pressed]}
         >
-          <CaretLeft size={22} color={palette.ink900} />
+          <CaretLeft size={22} color={colors.ink900} />
         </Pressable>
         <Text variant="h3" accessibilityRole="header" numberOfLines={1} style={styles.title}>
           {title}
@@ -38,15 +40,15 @@ export function TopBar({ title, children, scrolled = false }: { title: string; c
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   bar: {
-    backgroundColor: semantic.background,
+    backgroundColor: c.background,
     paddingHorizontal: space.screenX,
     paddingBottom: space.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'transparent',
   },
-  scrolled: { borderBottomColor: palette.border },
+  scrolled: { borderBottomColor: c.border },
   row: { flexDirection: 'row', alignItems: 'center', minHeight: touch.minTarget },
   back: {
     width: touch.minTarget,
@@ -55,7 +57,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pressed: { backgroundColor: palette.surface },
+  pressed: { backgroundColor: c.surface },
   title: { flex: 1, textAlign: 'center' },
   below: { paddingTop: space.md },
-});
+}));

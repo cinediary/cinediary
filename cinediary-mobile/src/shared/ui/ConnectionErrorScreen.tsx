@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
-import { fonts, palette, party, radius, semantic, space, touch } from '@/shared/theme';
+import { fonts, party, radius, space, touch, useColors, type Colors, makeStyles } from '@/shared/theme';
 import { Button } from './Button';
 import { BrandC, BrandStar, starRestRect } from './splash/BrandGlyphs';
 import { STAR_REST_ROTATION } from './splash/brandMark';
@@ -37,9 +37,9 @@ const FALL_X = MARK * 0.13;
 const FALL_Y = FLOOR_Y - rest.size * 0.42 - (rest.top + rest.size / 2);
 const FALLEN_ROTATION = STAR_REST_ROTATION + 120; // tombada
 
-const THEMES = {
+const THEMES = (c: Colors) => ({
   dark: {
-    background: palette.terracota600,
+    background: c.terracota600,
     mark: party.cream,
     star: party.butter,
     shadow: 'rgba(42,33,28,0.22)',
@@ -48,15 +48,15 @@ const THEMES = {
     statusBar: 'light' as const,
   },
   light: {
-    background: semantic.background,
-    mark: palette.terracota600,
-    star: palette.pipoca500,
+    background: c.background,
+    mark: c.terracota600,
+    star: c.pipoca500,
     shadow: 'rgba(42,33,28,0.12)',
-    title: palette.ink900,
-    body: palette.ink700,
-    statusBar: 'dark' as const,
+    title: c.ink900,
+    body: c.ink700,
+    statusBar: c.scheme === 'dark' ? ('light' as const) : ('dark' as const),
   },
-};
+});
 
 /**
  * Tela de "sem conexão": a estrela do ícone se solta do "c", cai no chão e fica balançando, como quem
@@ -79,8 +79,10 @@ export function ConnectionErrorScreen({
   retrying?: boolean;
   onSignOut?: () => void;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.common.connection;
-  const theme = THEMES[variant];
+  const theme = THEMES(colors)[variant];
   const reduceMotion = useReducedMotion();
   const loosen = useSharedValue(0); // a estrela "se solta": treme no lugar
   const fall = useSharedValue(reduceMotion ? 1 : 0); // 0 = no lugar do ícone, 1 = no chão
@@ -172,7 +174,7 @@ export function ConnectionErrorScreen({
             onPress={onRetry}
             style={({ pressed }) => [styles.creamButton, pressed && styles.pressed]}
           >
-            {retrying ? <ActivityIndicator color={palette.terracota700} /> : null}
+            {retrying ? <ActivityIndicator color={colors.terracota700} /> : null}
             <Text style={styles.creamButtonText}>{retrying ? t.retrying : t.retry}</Text>
           </Pressable>
         ) : (
@@ -180,7 +182,7 @@ export function ConnectionErrorScreen({
         )}
         {onSignOut && problem === 'server' ? (
           <Pressable accessibilityRole="button" onPress={onSignOut} hitSlop={8} style={styles.signOut}>
-            <Text variant="bodyStrong" style={{ color: variant === 'dark' ? party.cream : palette.terracota700 }}>
+            <Text variant="bodyStrong" style={{ color: variant === 'dark' ? party.cream : colors.terracota700 }}>
               {t.signOut}
             </Text>
           </Pressable>
@@ -190,7 +192,7 @@ export function ConnectionErrorScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.xl, gap: space.xl },
   mark: { width: MARK, height: MARK },
   star: { position: 'absolute' },
@@ -209,7 +211,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: space.sm,
   },
-  creamButtonText: { fontFamily: fonts.bodyHeavy, color: palette.terracota700, fontSize: 16 },
+  creamButtonText: { fontFamily: fonts.bodyHeavy, color: c.terracota700, fontSize: 16 },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   signOut: { minHeight: 44, justifyContent: 'center' },
-});
+}));

@@ -4,7 +4,7 @@ import { DotsThree } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { palette, semantic } from '@/shared/theme';
+import { useColors } from '@/shared/theme';
 import type { NativeMoreMenuProps } from './types';
 
 /**
@@ -13,6 +13,7 @@ import type { NativeMoreMenuProps } from './types';
  * O toque é do `Pressable`; o `Host` não recebe toques, e o menu abre numa janela própria por cima de tudo.
  */
 export function NativeMoreMenu({ options, accessibilityLabel }: NativeMoreMenuProps) {
+  const colors = useColors();
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -25,13 +26,13 @@ export function NativeMoreMenu({ options, accessibilityLabel }: NativeMoreMenuPr
       style={({ pressed }) => [styles.fill, pressed && styles.pressed]}
     >
       <Host pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <DropdownMenu expanded={open} onDismissRequest={close} color={palette.surface} modifiers={[fillMaxSize()]}>
+        <DropdownMenu expanded={open} onDismissRequest={close} color={colors.surface} modifiers={[fillMaxSize()]}>
           <DropdownMenu.Trigger>
             <Box modifiers={[fillMaxSize()]} />
           </DropdownMenu.Trigger>
           <DropdownMenu.Items>
             {options.map((o) => {
-              const color = o.destructive ? semantic.danger : palette.ink900;
+              const color = o.destructive ? colors.danger : colors.ink900;
               return (
                 <DropdownMenuItem
                   key={o.key}
@@ -55,7 +56,7 @@ export function NativeMoreMenu({ options, accessibilityLabel }: NativeMoreMenuPr
           </DropdownMenu.Items>
         </DropdownMenu>
       </Host>
-      <DotsThree size={24} weight="bold" color={palette.ink900} />
+      <DotsThree size={24} weight="bold" color={colors.ink900} />
     </Pressable>
   );
 }

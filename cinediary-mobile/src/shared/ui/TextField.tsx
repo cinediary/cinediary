@@ -1,8 +1,8 @@
 import { CheckCircle, Eye, EyeSlash } from 'phosphor-react-native';
 import { useState, type ComponentRef, type Ref } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { ActivityIndicator, Pressable, TextInput, View, type TextInputProps } from 'react-native';
 
-import { palette, radius, semantic, space, touch, type as typeScale } from '@/shared/theme';
+import { radius, space, touch, type as typeScale, useColors, makeStyles } from '@/shared/theme';
 import { strings } from '@/shared/i18n';
 import { Text } from './Text';
 
@@ -22,6 +22,8 @@ export interface TextFieldProps extends Omit<TextInputProps, 'style' | 'ref'> {
 }
 
 export function TextField({ label, error, hint, success, checking = false, secure = false, ref, ...input }: TextFieldProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const [hidden, setHidden] = useState(secure);
   const ok = !error && !!success;
   const helper = error ?? (ok ? success : hint);
@@ -35,7 +37,7 @@ export function TextField({ label, error, hint, success, checking = false, secur
         <TextInput
           ref={ref}
           style={styles.input}
-          placeholderTextColor={palette.ink500}
+          placeholderTextColor={colors.ink500}
           accessibilityLabel={label}
           accessibilityHint={helper ?? undefined}
           secureTextEntry={hidden}
@@ -43,10 +45,10 @@ export function TextField({ label, error, hint, success, checking = false, secur
           {...input}
         />
         {checking ? (
-          <ActivityIndicator style={styles.toggle} color={palette.ink500} />
+          <ActivityIndicator style={styles.toggle} color={colors.ink500} />
         ) : ok ? (
           <View style={styles.toggle}>
-            <CheckCircle size={22} weight="fill" color={semantic.success} />
+            <CheckCircle size={22} weight="fill" color={colors.success} />
           </View>
         ) : null}
         {secure && (
@@ -57,7 +59,7 @@ export function TextField({ label, error, hint, success, checking = false, secur
             style={styles.toggle}
             hitSlop={8}
           >
-            {hidden ? <Eye size={22} color={palette.ink700} /> : <EyeSlash size={22} color={palette.ink700} />}
+            {hidden ? <Eye size={22} color={colors.ink700} /> : <EyeSlash size={22} color={colors.ink700} />}
           </Pressable>
         )}
       </View>
@@ -74,7 +76,7 @@ export function TextField({ label, error, hint, success, checking = false, secur
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.xs },
   box: {
     flexDirection: 'row',
@@ -82,11 +84,11 @@ const styles = StyleSheet.create({
     minHeight: touch.buttonHeight,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: palette.borderStrong,
-    backgroundColor: palette.surface,
+    borderColor: c.borderStrong,
+    backgroundColor: c.surface,
   },
-  boxError: { borderColor: palette.error },
-  boxSuccess: { borderColor: semantic.success },
-  input: { ...typeScale.body, flex: 1, paddingHorizontal: space.lg, color: palette.ink900, minHeight: touch.buttonHeight },
+  boxError: { borderColor: c.error },
+  boxSuccess: { borderColor: c.success },
+  input: { ...typeScale.body, flex: 1, paddingHorizontal: space.lg, color: c.ink900, minHeight: touch.buttonHeight },
   toggle: { width: touch.minTarget, height: touch.minTarget, alignItems: 'center', justifyContent: 'center' },
-});
+}));

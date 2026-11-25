@@ -4,7 +4,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -14,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-import { semantic, space } from '@/shared/theme';
+import { space, useColors, makeStyles } from '@/shared/theme';
 import { useKeepAboveKeyboard, type KeyboardTargetRef } from './useKeepAboveKeyboard';
 import { usePullToRefresh } from './usePullToRefresh';
 
@@ -53,6 +52,8 @@ export function Screen({
   keyboardTarget,
   onScroll,
 }: ScreenProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const scrollRef = useRef<ScrollViewInstance>(null);
   const keyboard = useKeepAboveKeyboard(scrollRef, keyboardTarget);
   // O spinner vem do gesto, não da query; com tempo mínimo (ver usePullToRefresh).
@@ -81,7 +82,7 @@ export function Screen({
           }}
           scrollEventThrottle={32}
           refreshControl={
-            onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={semantic.primary} /> : undefined
+            onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} /> : undefined
           }
         >
           {children}
@@ -97,9 +98,9 @@ export function Screen({
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   fill: { flex: 1 },
   content: { paddingHorizontal: space.screenX, paddingVertical: space.lg, gap: space.lg },
   footer: { paddingHorizontal: space.screenX, paddingBottom: space.lg, paddingTop: space.md, gap: space.sm },
-});
+}));

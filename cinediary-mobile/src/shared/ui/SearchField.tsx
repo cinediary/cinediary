@@ -1,8 +1,8 @@
 import { MagnifyingGlass, XCircle } from 'phosphor-react-native';
-import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, radius, space, touch, type as typeScale } from '@/shared/theme';
+import { radius, space, touch, type as typeScale, useColors, makeStyles } from '@/shared/theme';
 
 export interface SearchFieldProps extends Omit<TextInputProps, 'style' | 'value' | 'onChangeText'> {
   value: string;
@@ -12,15 +12,17 @@ export interface SearchFieldProps extends Omit<TextInputProps, 'style' | 'value'
 }
 
 export function SearchField({ value, onChangeText, onPressAsButton, placeholder, ...input }: SearchFieldProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const body = (
     <View style={styles.box} pointerEvents={onPressAsButton ? 'none' : 'auto'}>
-      <MagnifyingGlass size={20} color={palette.ink500} />
+      <MagnifyingGlass size={20} color={colors.ink500} />
       <TextInput
         style={styles.input}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={palette.ink500}
+        placeholderTextColor={colors.ink500}
         accessibilityLabel={placeholder}
         returnKeyType="search"
         autoCorrect={false}
@@ -30,7 +32,7 @@ export function SearchField({ value, onChangeText, onPressAsButton, placeholder,
       />
       {value.length > 0 && !onPressAsButton ? (
         <Pressable accessibilityRole="button" accessibilityLabel={strings.common.close} onPress={() => onChangeText('')} hitSlop={8}>
-          <XCircle size={20} weight="fill" color={palette.ink400} />
+          <XCircle size={20} weight="fill" color={colors.ink400} />
         </Pressable>
       ) : null}
     </View>
@@ -43,7 +45,7 @@ export function SearchField({ value, onChangeText, onPressAsButton, placeholder,
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   box: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -51,7 +53,7 @@ const styles = StyleSheet.create({
     minHeight: touch.buttonHeight - 4,
     paddingHorizontal: space.lg,
     borderRadius: radius.pill,
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
   },
-  input: { ...typeScale.body, flex: 1, color: palette.ink900, paddingVertical: space.sm },
-});
+  input: { ...typeScale.body, flex: 1, color: c.ink900, paddingVertical: space.sm },
+}));

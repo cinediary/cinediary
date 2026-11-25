@@ -61,6 +61,13 @@ export const account: Strings['account'] = {
   sectionPreferences: 'Preferences',
   approveCompanions: 'Approve tags',
   approveCompanionsHint: 'When someone tags you in an entry, you decide whether it shows.',
+  appearance: 'Appearance',
+  appearances: { system: 'Automatic', light: 'Light', dark: 'Dark' } as Record<'system' | 'light' | 'dark', string>,
+  appearanceHints: {
+    system: 'Follows your device: light by day, dark at night.',
+    light: 'Always the cream background.',
+    dark: 'Always the dark background, nice for logging right after the film.',
+  } as Record<'system' | 'light' | 'dark', string>,
   showSpoilers: 'Show spoilers',
   showSpoilersHint: "Other people's reviews and replies show without blur.",
   replyPolicy: 'Who can reply',

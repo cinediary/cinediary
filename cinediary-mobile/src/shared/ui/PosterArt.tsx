@@ -1,8 +1,8 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 
-import { palette, poster } from '@/shared/theme';
+import { alpha, poster, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
 
 /** Degradês de reserva do protótipo (pôster sem imagem). */
@@ -37,6 +37,7 @@ export interface PosterArtProps {
 
 /** Imagem do pôster ou, sem imagem, o degradê com o título em Fraunces. */
 export function PosterArt({ title, posterUrl, width, height, radius = poster.radius, fontSize, style }: PosterArtProps) {
+  const styles = useStyles();
   const h = height ?? Math.round(width / poster.ratio);
   const colors = FALLBACK_GRADIENTS[hashIndex(title)] ?? FALLBACK_GRADIENTS[0];
   return (
@@ -68,9 +69,9 @@ export function PosterArt({ title, posterUrl, width, height, radius = poster.rad
   );
 }
 
-const styles = StyleSheet.create({
-  frame: { overflow: 'hidden', backgroundColor: palette.surfaceSunken },
-  outline: { borderWidth: 1, borderColor: 'rgba(42,33,28,0.08)' },
+const useStyles = makeStyles((c) => ({
+  frame: { overflow: 'hidden', backgroundColor: c.surfaceSunken },
+  outline: { borderWidth: 1, borderColor: alpha(c.ink900, 0.08) },
   fallback: { flex: 1, padding: 7, justifyContent: 'flex-end' },
   fallbackText: {
     fontFamily: 'Fraunces_600SemiBold',
@@ -80,4 +81,4 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
     textShadowOffset: { width: 0, height: 1 },
   },
-});
+}));

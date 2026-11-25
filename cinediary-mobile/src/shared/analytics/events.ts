@@ -119,7 +119,10 @@ export interface AnalyticsEvents {
   people_searched: { query_length: number; results_count: number };
   /** Mudou uma preferência nas Configurações. */
   /** `default_reply_policy`: `value` true = ficou mais fechado que "qualquer pessoa". */
-  setting_changed: { key: 'show_spoilers' | 'private_profile' | 'default_reply_policy' | 'approve_companions'; value: boolean };
+  /** `appearance`: `value` é a escolha (automático, claro ou escuro). */
+  setting_changed:
+    | { key: 'show_spoilers' | 'private_profile' | 'default_reply_policy' | 'approve_companions'; value: boolean }
+    | { key: 'appearance'; value: 'system' | 'light' | 'dark' };
   entry_liked: { own_entry: boolean; liked: boolean };
   entry_replied: { own_entry: boolean; length: number };
   entry_reply_deleted: { own_reply: boolean };

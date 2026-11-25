@@ -1,9 +1,9 @@
 import { CaretLeft } from 'phosphor-react-native';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { palette, space, touch } from '@/shared/theme';
+import { space, touch, useColors, makeStyles } from '@/shared/theme';
 import { nav } from './nav';
 
 /** Distância do voltar até o topo da área segura. */
@@ -28,6 +28,8 @@ export function useFloatingBackInset() {
  * Renderize como último filho da tela, por cima do ScrollView.
  */
 export function FloatingBackButton() {
+  const styles = useStyles();
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   return (
     <Pressable
@@ -37,12 +39,12 @@ export function FloatingBackButton() {
       hitSlop={8}
       style={({ pressed }) => [styles.back, { top: insets.top + BACK_TOP }, pressed && styles.pressed]}
     >
-      <CaretLeft size={22} color={palette.ink900} />
+      <CaretLeft size={22} color={colors.ink900} />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   back: {
     position: 'absolute',
     left: space.screenX,
@@ -50,7 +52,7 @@ const styles = StyleSheet.create({
     height: touch.minTarget,
     borderRadius: touch.minTarget / 2,
     // Opaco: com fundo translúcido o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
     // Sombra leve para o botão continuar visível por cima de pôsteres e textos.
@@ -61,4 +63,4 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   pressed: { opacity: 0.7 },
-});
+}));

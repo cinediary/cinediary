@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
-import { palette, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import { Text } from './Text';
 
 export interface RecentItem {
@@ -31,6 +31,7 @@ export function RecentList({
   onRemove: (id: string) => void;
   onClear: () => void;
 }) {
+  const colors = useColors();
   const c = strings.common;
   if (items.length === 0) return null;
   return (
@@ -82,7 +83,7 @@ export function RecentList({
             hitSlop={8}
             style={({ pressed }) => [styles.remove, pressed && styles.pressed]}
           >
-            <X size={16} color={palette.ink500} />
+            <X size={16} color={colors.ink500} />
           </Pressable>
         </Animated.View>
       ))}

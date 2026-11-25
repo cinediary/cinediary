@@ -4,7 +4,7 @@ import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, useAnimatedStyle 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
 import { useKeyboardHeight } from './useKeyboardHeight';
 
@@ -48,6 +48,7 @@ export function OverlaySheet({
    */
   fixedHeight?: boolean;
 }) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const keyboard = useKeyboardHeight();
@@ -104,6 +105,7 @@ export function OverlaySheet({
 
 /** Rodapé com dois botões lado a lado, do mesmo tamanho (ex.: Cancelar e Salvar). */
 export function OverlaySheetActions({ children }: { children: ReactNode }) {
+  const styles = useStyles();
   return <View style={styles.actions}>{children}</View>;
 }
 
@@ -111,8 +113,8 @@ export function OverlaySheetActions({ children }: { children: ReactNode }) {
 const CHROME = 200;
 const MIN_CONTENT = 140;
 
-const styles = StyleSheet.create({
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(42,33,28,0.4)' },
+const useStyles = makeStyles((c) => ({
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: c.backdrop },
   sheet: {
     position: 'absolute',
     left: 0,
@@ -124,8 +126,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     borderCurve: 'continuous',
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
   },
   content: { gap: space.sm },
   actions: { flexDirection: 'row', gap: space.sm },
-});
+}));

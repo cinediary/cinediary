@@ -1,6 +1,6 @@
 import { useAuth } from '@clerk/expo';
-import { Stack } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ConnectionErrorScreen } from '@/shared/ui';
@@ -8,7 +8,7 @@ import { useIsOffline } from '@/shared/api/network';
 import { OfflineBanner } from '@/shared/ui/navigation/OfflineBanner';
 import { pendingImport } from '@/features/importing/presentation/incomingImport';
 import { AnimatedSplash } from '@/shared/ui/splash/AnimatedSplash';
-import { semantic } from '@/shared/theme';
+import { useColors } from '@/shared/theme';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useMe } from '../../application/profileQueries';
 import { useConnectionGate } from '../../application/useConnectionGate';
@@ -29,6 +29,7 @@ import { SessionErrorScreen, SessionLoadingScreen } from '../components/SessionG
  * O link de convite (match/invite/[code]) funciona em qualquer estado.
  */
 export function RootNavigator() {
+  const colors = useColors();
   const { isLoaded, isSignedIn } = useAuth();
   const me = useMe();
   const signedIn = !!isSignedIn;
@@ -79,104 +80,123 @@ export function RootNavigator() {
     if (matchId) nav.push({ pathname: '/match/[matchId]/story', params: { matchId, intro: 'accepted', then: 'room' } });
   }, [inApp]);
 
+  // Barras de título e fundos da navegação com as cores do tema (#61)
+  const navTheme = useMemo(() => {
+    const base = colors.scheme === 'dark' ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.background,
+        text: colors.ink900,
+        border: colors.border,
+        notification: colors.primary,
+      },
+    };
+  }, [colors]);
+
   return (
-    <View style={styles.root}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: semantic.background } }}>
-        <Stack.Protected guard={inApp}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="title/[mediaType]/[tmdbId]" />
-          {/* Página do título: todas as reviews; elenco e equipe completos. */}
-          <Stack.Screen name="title-reviews/[titleId]" />
-          <Stack.Screen name="title-credits/[mediaType]/[tmdbId]" />
-          <Stack.Screen name="person/[personId]" />
-          <Stack.Screen name="company/[companyId]" />
-          <Stack.Screen name="diary" />
-          <Stack.Screen name="profile/favorites" />
-          <Stack.Screen name="profile/edit" />
-          {/* Escolher a capa: busca → cenas → prévia (folha por cima, arrastar para baixo volta às cenas). */}
-          <Stack.Screen name="profile/header/index" />
-          <Stack.Screen name="profile/header/[mediaType]/[tmdbId]" />
-          <Stack.Screen name="profile/header/preview" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="settings" />
-          {/* Social: perfil de outra pessoa, listas, entrada dela (só leitura) e pedidos para seguir. */}
-          <Stack.Screen name="u/[username]/index" />
-          <Stack.Screen name="u/[username]/followers" />
-          <Stack.Screen name="u/[username]/following" />
-          <Stack.Screen name="u/[username]/diary" />
-          <Stack.Screen name="u/[username]/entry/[entryId]" />
-          <Stack.Screen name="u/[username]/lists" />
-          <Stack.Screen name="follow-requests" />
-          {/* Listas (#17): a lista, criar e editar. */}
-          <Stack.Screen name="lists/[listId]/index" />
-          <Stack.Screen name="lists/[listId]/edit" />
-          {/* Adicionar títulos de dentro da lista: folha por cima dela. */}
-          <Stack.Screen name="lists/[listId]/add" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="lists/new" />
-          {/* Feed de amigos ("Ver tudo") e o sino. */}
-          <Stack.Screen name="friends" />
-          <Stack.Screen name="notifications" />
-          {/*
+    <ThemeProvider value={navTheme}>
+      <View style={styles.root}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+          <Stack.Protected guard={inApp}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="title/[mediaType]/[tmdbId]" />
+            {/* Página do título: todas as reviews; elenco e equipe completos. */}
+            <Stack.Screen name="title-reviews/[titleId]" />
+            <Stack.Screen name="title-credits/[mediaType]/[tmdbId]" />
+            <Stack.Screen name="person/[personId]" />
+            <Stack.Screen name="company/[companyId]" />
+            <Stack.Screen name="diary" />
+            <Stack.Screen name="profile/favorites" />
+            <Stack.Screen name="profile/edit" />
+            {/* Escolher a capa: busca → cenas → prévia (folha por cima, arrastar para baixo volta às cenas). */}
+            <Stack.Screen name="profile/header/index" />
+            <Stack.Screen name="profile/header/[mediaType]/[tmdbId]" />
+            <Stack.Screen name="profile/header/preview" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="settings" />
+            {/* Social: perfil de outra pessoa, listas, entrada dela (só leitura) e pedidos para seguir. */}
+            <Stack.Screen name="u/[username]/index" />
+            <Stack.Screen name="u/[username]/followers" />
+            <Stack.Screen name="u/[username]/following" />
+            <Stack.Screen name="u/[username]/diary" />
+            <Stack.Screen name="u/[username]/entry/[entryId]" />
+            <Stack.Screen name="u/[username]/lists" />
+            <Stack.Screen name="follow-requests" />
+            {/* Listas (#17): a lista, criar e editar. */}
+            <Stack.Screen name="lists/[listId]/index" />
+            <Stack.Screen name="lists/[listId]/edit" />
+            {/* Adicionar títulos de dentro da lista: folha por cima dela. */}
+            <Stack.Screen name="lists/[listId]/add" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="lists/new" />
+            {/* Feed de amigos ("Ver tudo") e o sino. */}
+            <Stack.Screen name="friends" />
+            <Stack.Screen name="notifications" />
+            {/*
             Registro rápido: modal transparente e o sheet desenhado pelo app (BottomSheet), preso embaixo.
             O formSheet nativo do iOS 26 flutuava afastado da borda e ficava com a base quadrada.
           */}
-          <Stack.Screen
-            name="quick-log/[mediaType]/[tmdbId]"
-            options={{ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } }}
-          />
-          {/* Entrada do diário: a tela, a edição (sheet do app, como o registro rápido) e a prévia dos Stories. */}
-          <Stack.Screen name="entry/[entryId]/index" />
-          <Stack.Screen
-            name="entry/[entryId]/edit"
-            options={{ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } }}
-          />
-          <Stack.Screen name="entry/[entryId]/share" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-          {/* Tela inteira (não modal): a importação tem 4 passos e precisa de espaço. */}
-          <Stack.Screen name="import" />
-          <Stack.Screen name="match/[matchId]/index" />
-          <Stack.Screen name="match/[matchId]/add" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="match/[matchId]/story" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-          {/* Prévia de um slide antes de compartilhar nos Stories, por cima do Story (que fica pausado). */}
-          <Stack.Screen name="match/[matchId]/share" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-        </Stack.Protected>
-        <Stack.Protected guard={needsOnboarding}>
-          <Stack.Screen name="(onboarding)" />
-        </Stack.Protected>
-        <Stack.Protected guard={showAuth}>
-          <Stack.Screen name="(auth)" />
-        </Stack.Protected>
-        <Stack.Screen name="match/invite/[code]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-        <Stack.Protected guard={__DEV__ && inApp}>
-          <Stack.Screen name="_dev/design-system" options={{ headerShown: true, title: 'Design System' }} />
-          <Stack.Screen name="_dev/match" options={{ headerShown: true, title: 'Design System · Match' }} />
-          <Stack.Screen name="_dev/profile" options={{ headerShown: true, title: 'Design System · Perfil' }} />
-          <Stack.Screen name="_dev/diary" options={{ headerShown: true, title: 'Design System · Filtros do diário' }} />
-          <Stack.Screen name="_dev/lists" options={{ headerShown: true, title: 'Design System · Listas' }} />
-          <Stack.Screen name="_dev/profile-layout" options={{ headerShown: true, title: 'Design System · Estrutura do perfil' }} />
-        </Stack.Protected>
-      </Stack>
+            <Stack.Screen
+              name="quick-log/[mediaType]/[tmdbId]"
+              options={{ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } }}
+            />
+            {/* Entrada do diário: a tela, a edição (sheet do app, como o registro rápido) e a prévia dos Stories. */}
+            <Stack.Screen name="entry/[entryId]/index" />
+            <Stack.Screen
+              name="entry/[entryId]/edit"
+              options={{ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } }}
+            />
+            <Stack.Screen name="entry/[entryId]/share" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+            {/* Tela inteira (não modal): a importação tem 4 passos e precisa de espaço. */}
+            <Stack.Screen name="import" />
+            <Stack.Screen name="match/[matchId]/index" />
+            <Stack.Screen name="match/[matchId]/add" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="match/[matchId]/story" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+            {/* Prévia de um slide antes de compartilhar nos Stories, por cima do Story (que fica pausado). */}
+            <Stack.Screen name="match/[matchId]/share" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+          </Stack.Protected>
+          <Stack.Protected guard={needsOnboarding}>
+            <Stack.Screen name="(onboarding)" />
+          </Stack.Protected>
+          <Stack.Protected guard={showAuth}>
+            <Stack.Screen name="(auth)" />
+          </Stack.Protected>
+          <Stack.Screen name="match/invite/[code]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+          <Stack.Protected guard={__DEV__ && inApp}>
+            <Stack.Screen name="_dev/design-system" options={{ headerShown: true, title: 'Design System' }} />
+            <Stack.Screen name="_dev/match" options={{ headerShown: true, title: 'Design System · Match' }} />
+            <Stack.Screen name="_dev/profile" options={{ headerShown: true, title: 'Design System · Perfil' }} />
+            <Stack.Screen name="_dev/diary" options={{ headerShown: true, title: 'Design System · Filtros do diário' }} />
+            <Stack.Screen name="_dev/lists" options={{ headerShown: true, title: 'Design System · Listas' }} />
+            <Stack.Screen name="_dev/profile-layout" options={{ headerShown: true, title: 'Design System · Estrutura do perfil' }} />
+          </Stack.Protected>
+        </Stack>
 
-      {connection.problem ? (
-        <View style={StyleSheet.absoluteFill}>
-          <ConnectionErrorScreen
-            problem={connection.problem}
-            onRetry={connection.retry}
-            retrying={connection.retrying}
-            onSignOut={signedIn ? signOut : undefined}
-          />
-        </View>
-      ) : isLoaded && resolvingProfile ? (
-        <View style={StyleSheet.absoluteFill}>
-          {/* Erro que não é de conexão (ex.: o servidor recusou o /me): tela simples com "Sair". */}
-          {me.isError ? <SessionErrorScreen onRetry={() => void me.refetch()} retrying={me.isFetching} /> : <SessionLoadingScreen />}
-        </View>
-      ) : null}
+        {connection.problem ? (
+          <View style={StyleSheet.absoluteFill}>
+            <ConnectionErrorScreen
+              problem={connection.problem}
+              onRetry={connection.retry}
+              retrying={connection.retrying}
+              onSignOut={signedIn ? signOut : undefined}
+            />
+          </View>
+        ) : isLoaded && resolvingProfile ? (
+          <View style={StyleSheet.absoluteFill}>
+            {/* Erro que não é de conexão (ex.: o servidor recusou o /me): tela simples com "Sair". */}
+            {me.isError ? <SessionErrorScreen onRetry={() => void me.refetch()} retrying={me.isFetching} /> : <SessionLoadingScreen />}
+          </View>
+        ) : null}
 
-      {/* Internet caiu durante o uso (a tela de conexão da abertura já cobre o "sem internet" dela). */}
-      <OfflineBanner visible={offline && splashDone && !connection.problem} />
+        {/* Internet caiu durante o uso (a tela de conexão da abertura já cobre o "sem internet" dela). */}
+        <OfflineBanner visible={offline && splashDone && !connection.problem} />
 
-      {/* Splash animada na abertura: por cima de tudo, sai sozinha quando o app está pronto. */}
-      {!splashDone ? <AnimatedSplash ready={ready || connection.problem !== null} onFinish={() => setSplashDone(true)} /> : null}
-    </View>
+        {/* Splash animada na abertura: por cima de tudo, sai sozinha quando o app está pronto. */}
+        {!splashDone ? <AnimatedSplash ready={ready || connection.problem !== null} onFinish={() => setSplashDone(true)} /> : null}
+      </View>
+    </ThemeProvider>
   );
 }
 
