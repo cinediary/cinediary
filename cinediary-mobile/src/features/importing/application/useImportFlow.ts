@@ -59,7 +59,7 @@ const applied = new Set<string>();
 /**
  * A importação terminou de gravar no diário: registra uma vez e recarrega o que ela mudou. me: favoritos do
  * perfil do Letterboxd; recommendations: o que foi importado sai das sugestões e passa a pesar no "Para você";
- * catalog: selos de visto/nota nas listas.
+ * catalog: selos de visto/nota nas listas; lists: as listas importadas do Letterboxd.
  */
 function onImportApplied(job: ImportJob, startedAt: number | null) {
   if (applied.has(job.jobId)) return;
@@ -78,6 +78,8 @@ function onImportApplied(job: ImportJob, startedAt: number | null) {
     sharedKeys.me,
     sharedKeys.recommendations,
     sharedKeys.catalog,
+    // As listas do Letterboxd (#55): sem isto, o perfil seguia sem elas até reabrir o app.
+    sharedKeys.lists,
   ]) {
     void queryClient.invalidateQueries({ queryKey: key });
   }

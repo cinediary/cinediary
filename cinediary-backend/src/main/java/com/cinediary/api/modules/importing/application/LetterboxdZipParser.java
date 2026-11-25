@@ -2,6 +2,7 @@ package com.cinediary.api.modules.importing.application;
 
 import com.cinediary.api.modules.importing.domain.ImportLimits;
 import com.cinediary.api.modules.importing.domain.LetterboxdExport;
+import com.cinediary.api.modules.importing.domain.LetterboxdList;
 import com.cinediary.api.modules.importing.domain.InvalidImportFileException;
 import com.cinediary.api.modules.importing.domain.LetterboxdParsedItem;
 import java.io.ByteArrayInputStream;
@@ -38,8 +39,8 @@ public class LetterboxdZipParser
     private static final String URI = "Letterboxd URI";
     /**
      * Subpastas da própria exportação: deleted/ e orphaned/ (registros apagados ou sem filme), likes/
-     * (o que você curtiu de OUTRAS pessoas: likes/reviews.csv são reviews alheias) e lists/. Nenhuma delas
-     * é a pasta da exportação; likes/films.csv é reconhecido pelo caminho completo.
+     * (o que você curtiu de OUTRAS pessoas: likes/reviews.csv são reviews alheias) e lists/ (lidas à parte, ver
+     * isListFile). Nenhuma delas é a pasta da exportação; likes/films.csv é reconhecido pelo caminho completo.
      */
     private static final java.util.Set<String> IGNORED_FOLDERS = java.util.Set.of("deleted", "orphaned", "likes", "lists");
 
@@ -57,22 +58,29 @@ public class LetterboxdZipParser
         if (zip.length > limits.maxZipBytes()) {
             throw new InvalidImportFileException("O ZIP pode ter no máximo " + limits.maxZipBytes() / (1024 * 1024) + " MB");
         }
-        Map<String, List<Map<String, String>>> files = readCsvFiles(zip, limits);
+        List<LetterboxdList> lists = new ArrayList<>();
+        Map<String, List<Map<String, String>>> files = readCsvFiles(zip, limits, lists);
         if (files.isEmpty()) {
             throw new InvalidImportFileException(
                     "Não encontramos os arquivos do Letterboxd (watched.csv, ratings.csv, diary.csv...) no ZIP");
         }
         List<LetterboxdExport.UnresolvedFavorite> unresolved = new ArrayList<>();
         List<LetterboxdParsedItem> items = consolidate(files, unresolved);
-        if (items.size() > limits.maxItems()) {
+        // O limite vale para os títulos distintos de tudo: os dos CSVs e os que só aparecem nas listas (cada um é
+        // uma busca no catálogo).
+        java.util.Set<String> distinct = new java.util.HashSet<>();
+        items.forEach(i -> distinct.add(i.key()));
+        lists.forEach(l -> l.entries().forEach(e -> distinct.add(e.key())));
+        if (distinct.size() > limits.maxItems()) {
             throw new InvalidImportFileException("A exportação tem mais de " + limits.maxItems() + " filmes");
         }
-        return new LetterboxdExport(items, unresolved);
+        return new LetterboxdExport(items, unresolved, lists);
     }
 
     // --- ZIP ------------------------------------------------------------------------------------
 
-    private Map<String, List<Map<String, String>>> readCsvFiles(byte[] zip, ImportLimits limits)
+    /** Os CSVs conhecidos, por nome; as listas ({@code lists/*.csv}) vão para {@code lists}. */
+    private Map<String, List<Map<String, String>>> readCsvFiles(byte[] zip, ImportLimits limits, List<LetterboxdList> lists)
     {
         Map<String, List<Map<String, String>>> files = new HashMap<>();
         long totalUncompressed = 0;
@@ -92,6 +100,11 @@ public class LetterboxdZipParser
                 // O primeiro vale: nada que venha depois no ZIP substitui um CSV já lido.
                 if (known != null) {
                     files.putIfAbsent(known, Csv.parse(new String(stripBom(content), StandardCharsets.UTF_8)));
+                } else if (isListFile(entry.getName())) {
+                    LetterboxdList list = parseList(new String(stripBom(content), StandardCharsets.UTF_8));
+                    if (list != null) {
+                        lists.add(list);
+                    }
                 }
             }
         } catch (ZipException e) {
@@ -124,6 +137,67 @@ public class LetterboxdZipParser
             }
         }
         return null;
+    }
+
+    /** {@code lists/x.csv} na raiz ou dentro de UMA pasta de exportação ({@code letterboxd-fulano/lists/x.csv}). */
+    static boolean isListFile(String entryName)
+    {
+        String[] parts = entryName.replace('\\', '/').toLowerCase(Locale.ROOT).split("/");
+        int n = parts.length;
+        return n >= 2 && n <= 3 && parts[n - 2].equals("lists") && parts[n - 1].endsWith(".csv")
+                && !parts[n - 1].startsWith("._");
+    }
+
+    /**
+     * Um arquivo de lista ("Letterboxd list export v7") tem duas partes: os dados da lista
+     * ({@code Date, Name, Tags, URL, Description}) e, depois de uma linha em branco, os títulos
+     * ({@code Position, Name, Year, URL, Description}); a Description do título é a nota dele na lista.
+     * Título repetido na lista entra uma vez (a primeira). Sem nome, a lista é ignorada.
+     * Ranking: a exportação numera as posições em toda lista, com ou sem ranking no Letterboxd (conferido numa
+     * exportação real), então não dá para saber. Toda lista entra sem ranking, na ordem de lá; a pessoa liga o
+     * ranking ao editar, se for o caso (os números saem na mesma ordem).
+     */
+    static LetterboxdList parseList(String text)
+    {
+        List<List<String>> rows = Csv.rows(text);
+        int meta = -1;
+        int items = -1;
+        for (int i = 0; i < rows.size(); i++) {
+            String first = rows.get(i).getFirst().strip();
+            if (meta < 0 && first.equals("Date")) {
+                meta = i;
+            } else if (first.equals("Position")) {
+                items = i;
+                break;
+            }
+        }
+        if (meta < 0 || meta + 1 >= rows.size()) {
+            return null;
+        }
+        Map<String, String> info = Csv.row(rows.get(meta), rows.get(meta + 1));
+        String name = blankToNull(info.get("Name"));
+        if (name == null) {
+            return null;
+        }
+        List<LetterboxdList.Entry> entries = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        if (items >= 0) {
+            for (List<String> r : rows.subList(items + 1, rows.size())) {
+                if (r.size() == 1 && r.getFirst().isBlank()) {
+                    continue;
+                }
+                Map<String, String> item = Csv.row(rows.get(items), r);
+                String title = blankToNull(item.get("Name"));
+                if (title == null) {
+                    continue;
+                }
+                LetterboxdList.Entry e = new LetterboxdList.Entry(title, year(item.get("Year")), blankToNull(item.get("Description")));
+                if (seen.add(e.key())) {
+                    entries.add(e);
+                }
+            }
+        }
+        return new LetterboxdList(name, blankToNull(info.get("Description")), false, entries);
     }
 
     private static byte[] readLimited(InputStream in, long remaining) throws IOException
@@ -329,6 +403,33 @@ public class LetterboxdZipParser
 
         static List<Map<String, String>> parse(String text)
         {
+            List<List<String>> rows = rows(text);
+            if (rows.isEmpty()) {
+                return List.of();
+            }
+            List<Map<String, String>> out = new ArrayList<>();
+            for (List<String> r : rows.subList(1, rows.size())) {
+                if (r.size() == 1 && r.getFirst().isBlank()) {
+                    continue;
+                }
+                out.add(row(rows.getFirst(), r));
+            }
+            return out;
+        }
+
+        /** Uma linha como mapa, pelo cabeçalho (sem espaços nas pontas dos nomes das colunas). */
+        static Map<String, String> row(List<String> header, List<String> r)
+        {
+            Map<String, String> m = new HashMap<>();
+            for (int i = 0; i < header.size() && i < r.size(); i++) {
+                m.put(header.get(i).strip(), r.get(i));
+            }
+            return m;
+        }
+
+        /** As linhas cruas (sem cabeçalho), respeitando aspas, vírgulas e quebras dentro de campos. */
+        static List<List<String>> rows(String text)
+        {
             List<List<String>> rows = new ArrayList<>();
             List<String> row = new ArrayList<>();
             StringBuilder field = new StringBuilder();
@@ -365,22 +466,7 @@ public class LetterboxdZipParser
                 row.add(field.toString());
                 rows.add(row);
             }
-            if (rows.isEmpty()) {
-                return List.of();
-            }
-            List<String> header = rows.getFirst().stream().map(String::strip).toList();
-            List<Map<String, String>> out = new ArrayList<>();
-            for (List<String> r : rows.subList(1, rows.size())) {
-                if (r.size() == 1 && r.getFirst().isBlank()) {
-                    continue;
-                }
-                Map<String, String> m = new HashMap<>();
-                for (int i = 0; i < header.size() && i < r.size(); i++) {
-                    m.put(header.get(i), r.get(i));
-                }
-                out.add(m);
-            }
-            return out;
+            return rows;
         }
     }
 }

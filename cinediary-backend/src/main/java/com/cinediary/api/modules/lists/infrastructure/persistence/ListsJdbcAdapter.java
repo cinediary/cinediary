@@ -85,6 +85,50 @@ class ListsJdbcAdapter implements ListsRepositoryPort
     }
 
     @Override
+    public Optional<UserList> findImported(UUID ownerId, String source, String name)
+    {
+        return jdbc.sql("SELECT " + COLUMNS + " FROM lists WHERE user_id = :u AND source = :s AND lower(name) = lower(:n) FOR UPDATE")
+                .param("u", ownerId).param("s", source).param("n", name)
+                .query(ListsJdbcAdapter::toList)
+                .optional();
+    }
+
+    @Override
+    public UserList createImported(UserList list, String source)
+    {
+        return jdbc.sql("""
+                        INSERT INTO lists (user_id, name, description, ranked, visibility, source)
+                        VALUES (:u, :name, :description, :ranked, :visibility, :source)
+                        RETURNING """ + " " + COLUMNS)
+                .param("u", list.ownerId())
+                .param("name", list.name())
+                .param("description", list.description())
+                .param("ranked", list.ranked())
+                .param("visibility", list.visibility().name())
+                .param("source", source)
+                .query(ListsJdbcAdapter::toList)
+                .single();
+    }
+
+    @Override
+    public void replaceItems(UUID listId, List<ListItem> items)
+    {
+        jdbc.sql("DELETE FROM list_items WHERE list_id = :l").param("l", listId).update();
+        if (items.isEmpty()) {
+            return;
+        }
+        jdbc.sql("""
+                        INSERT INTO list_items (list_id, title_id, position, note)
+                        SELECT :l, i.title_id, i.pos, i.note
+                          FROM unnest(CAST(:ids AS bigint[]), CAST(:notes AS text[])) WITH ORDINALITY AS i(title_id, note, pos)
+                        ON CONFLICT DO NOTHING""")
+                .param("l", listId)
+                .param("ids", items.stream().map(ListItem::titleId).toArray(Long[]::new))
+                .param("notes", items.stream().map(ListItem::note).toArray(String[]::new))
+                .update();
+    }
+
+    @Override
     public List<UserList> listsOf(UUID ownerId, boolean includePrivate)
     {
         return jdbc.sql("SELECT " + COLUMNS + " FROM lists WHERE user_id = :u"

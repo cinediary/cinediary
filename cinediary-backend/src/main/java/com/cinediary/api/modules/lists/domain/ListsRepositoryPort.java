@@ -19,6 +19,15 @@ public interface ListsRepositoryPort
     /** Lê e trava a lista até o fim da transação. */
     Optional<UserList> findForUpdate(UUID listId);
 
+    /** Uma lista importada de {@code source} com esse nome (sem diferenciar maiúsculas), travada. */
+    Optional<UserList> findImported(UUID ownerId, String source, String name);
+
+    /** Cria uma lista marcada como vinda de {@code source}. */
+    UserList createImported(UserList list, String source);
+
+    /** Troca todos os títulos da lista pelos dados, nessa ordem (posição 1, 2, 3…). */
+    void replaceItems(UUID listId, List<ListItem> items);
+
     /** As listas de alguém, das atualizadas por último; {@code includePrivate} só para o próprio dono. */
     List<UserList> listsOf(UUID ownerId, boolean includePrivate);
 

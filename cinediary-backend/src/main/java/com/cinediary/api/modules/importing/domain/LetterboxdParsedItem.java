@@ -20,4 +20,15 @@ public record LetterboxdParsedItem(String name, Integer year, boolean watched, B
     {
         return year == null ? name : name + " (" + year + ")";
     }
+
+    /** O mesmo filme em CSVs diferentes (e nas listas): nome sem diferenciar maiúsculas + ano. */
+    public static String key(String name, Integer year)
+    {
+        return (name == null ? "" : name.toLowerCase(java.util.Locale.ROOT)) + "|" + year;
+    }
+
+    public String key()
+    {
+        return key(name, year);
+    }
 }

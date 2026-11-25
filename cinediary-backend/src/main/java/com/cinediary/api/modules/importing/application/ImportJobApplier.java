@@ -4,6 +4,8 @@ import com.cinediary.api.modules.diary.api.DiaryModulePort;
 import com.cinediary.api.modules.diary.api.ImportApplyResult;
 import com.cinediary.api.modules.diary.api.ImportedItemCommand;
 import com.cinediary.api.modules.importing.api.ImportConfirmedEvent;
+import com.cinediary.api.modules.lists.api.ImportedList;
+import com.cinediary.api.modules.lists.api.ListsModulePort;
 import com.cinediary.api.modules.importing.domain.FavoritesMode;
 import com.cinediary.api.modules.importing.domain.ImportJobModel;
 import com.cinediary.api.modules.importing.domain.ImportJobRepositoryPort;
@@ -34,14 +36,16 @@ public class ImportJobApplier
     private final ImportJobRepositoryPort jobs;
     private final DiaryModulePort diary;
     private final ApplicationEventPublisher events;
+    private final ListsModulePort listsModule;
     private final TransactionTemplate tx;
 
     ImportJobApplier(ImportJobRepositoryPort jobs, DiaryModulePort diary, ApplicationEventPublisher events,
-                     PlatformTransactionManager transactionManager)
+                     ListsModulePort listsModule, PlatformTransactionManager transactionManager)
     {
         this.jobs = jobs;
         this.diary = diary;
         this.events = events;
+        this.listsModule = listsModule;
         this.tx = new TransactionTemplate(transactionManager);
     }
 
@@ -66,6 +70,11 @@ public class ImportJobApplier
                 if (favorites != null) {
                     diary.setFavorites(userId, favorites);
                 }
+                // As listas do Letterboxd (#55): novas nascem privadas; reimportar atualiza as que já vieram de lá.
+                listsModule.importLists(userId, ImportJobModel.LETTERBOXD, job.stagedLists().stream()
+                        .map(l -> new ImportedList(l.name(), l.description(), l.ranked(),
+                                l.items().stream().map(i -> new ImportedList.Item(i.titleId(), i.note())).toList()))
+                        .toList());
                 jobs.save(job.completed(result.diaryEntriesCreated(), result.diaryEntriesSkipped()));
                 events.publishEvent(new ImportConfirmedEvent(userId, jobId));
                 log.info("Importação {}: {} entradas gravadas, {} já existiam", jobId, result.diaryEntriesCreated(),

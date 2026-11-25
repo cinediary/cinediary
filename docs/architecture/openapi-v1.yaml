@@ -2756,6 +2756,9 @@ components:
           type: integer
         reviewsCount:
           type: integer
+        listsCount:
+          type: integer
+          description: As listas do Letterboxd que entram com a importação (novas nascem privadas; reimportar atualiza)
         diaryEntriesCount:
           type: integer
         diaryEntriesCreated:

@@ -15,7 +15,8 @@ public record ImportJobResponse(UUID jobId, String status, int totalItemsRead, i
                                 int reviewsCount, int diaryEntriesCount, Integer diaryEntriesCreated,
                                 Integer diaryEntriesSkipped, String errorMessage,
                                 List<TitleSummaryView> preview, int ratedCount, int likedCount,
-                                List<TitleSummaryView> favoritesInApp, List<TitleSummaryView> favoritesFromImport)
+                                List<TitleSummaryView> favoritesInApp, List<TitleSummaryView> favoritesFromImport,
+                                /** As listas do Letterboxd que entram com a importação (#55). */ int listsCount)
 {
     public static ImportJobResponse from(ImportJobModel j)
     {
@@ -29,6 +30,6 @@ public record ImportJobResponse(UUID jobId, String status, int totalItemsRead, i
         return new ImportJobResponse(j.id(), j.status().name(), j.totalItemsRead(), j.matchedItemsCount(),
                 j.unmatchedItemsCount(), p.unmatchedTitlesSample(), p.watchlistCount(), p.reviewsCount(),
                 p.diaryEntriesCount(), p.diaryEntriesCreated(), p.diaryEntriesSkipped(), j.errorMessage(),
-                r.preview(), r.ratedCount(), r.likedCount(), r.favoritesInApp(), r.favoritesFromImport());
+                r.preview(), r.ratedCount(), r.likedCount(), r.favoritesInApp(), r.favoritesFromImport(), p.listsCount());
     }
 }
