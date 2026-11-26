@@ -22,14 +22,20 @@ export function useFinishOnboarding() {
   // Ainda dá para pedir (ou não deu tempo de saber): passa pela tela de notificações, que confere de novo
   const asksNotifications = permission.data !== 'granted' && permission.data !== 'blocked';
 
-  /** `afterSuccess`: o que mais fazer quando o onboarding foi salvo (ex.: limpar a importação concluída). */
-  const finish = (afterSuccess?: () => void) =>
+  /**
+   * `afterSuccess`: o que mais fazer quando o onboarding foi salvo (ex.: limpar a importação concluída).
+   * `onFailure`: quando não deu para salvar, para a tela liberar uma nova tentativa.
+   */
+  const finish = (afterSuccess?: () => void, onFailure?: () => void) =>
     complete.mutate(undefined, {
       onSuccess: ({ activatedMatchId }) => {
         afterSuccess?.();
         if (!activatedMatchId) toast(strings.onboarding.welcomeToast);
       },
-      onError: () => toast(strings.onboarding.submitError),
+      onError: () => {
+        toast(strings.onboarding.submitError);
+        onFailure?.();
+      },
     });
 
   /**
@@ -42,13 +48,13 @@ export function useFinishOnboarding() {
     nav.push('/(onboarding)/notifications');
   };
 
-  /** Na tela de notificações: conclui com o que o caminho deixou para depois. */
-  const finishPending = () => {
+  /** Na tela de notificações: conclui com o que o caminho deixou para depois (guardado até salvar de fato). */
+  const finishPending = (onFailure?: () => void) => {
     const afterSuccess = pendingAfterSuccess;
     finish(() => {
       pendingAfterSuccess = undefined;
       afterSuccess?.();
-    });
+    }, onFailure);
   };
 
   return { finish, next, finishPending, asksNotifications, isPending: complete.isPending };

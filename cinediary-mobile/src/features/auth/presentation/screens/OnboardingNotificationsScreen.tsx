@@ -56,7 +56,11 @@ export function OnboardingNotificationsScreen() {
   const conclude = () => {
     if (done.current) return;
     done.current = true;
-    finishPending();
+    // Se não der para salvar, libera os botões para tentar de novo (o pedido do sistema não se repete)
+    finishPending(() => {
+      done.current = false;
+      setAsking(false);
+    });
   };
 
   useEffect(() => {
