@@ -83,4 +83,13 @@ export const onboarding: Strings['onboarding'] = {
   favoritesCount: (n: number) => `${n} sur 4`,
   submitError: 'Impossible d’enregistrer pour le moment. Réessaie.',
   welcomeToast: 'Bienvenue ! Ton journal est prêt.',
+  notificationsTitle: title('Sache quand tes ', 'amis', ' passent par ici'),
+  notificationsCaption: 'On te prévient quand quelqu’un aime, répond ou commence à te suivre. Tu peux changer ça quand tu veux.',
+  notificationsAllow: 'Activer les notifications',
+  notificationsLater: 'Pas maintenant',
+  notificationsExamples: [
+    { when: 'maintenant', text: 'Julia a aimé ton journal de Je suis toujours là ❤️' },
+    { when: '5 min', text: 'Bruno a répondu à ta critique : « Trop vrai ! »' },
+    { when: '1 h', text: 'Marina a commencé à te suivre 🍿' },
+  ],
 };

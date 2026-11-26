@@ -17,7 +17,7 @@ export function OnboardingFavoritesScreen() {
   const colors = useColors();
   const t = strings.onboarding;
   const { draft, toggleFavorite } = useOnboardingDraft();
-  const { finish, isPending } = useFinishOnboarding();
+  const { next, asksNotifications, isPending } = useFinishOnboarding();
   const { code } = usePendingInvite();
   const itemWidth = useGridItemWidth(3);
   const full = draft.favoriteIds.length >= MAX_FAVORITES;
@@ -27,7 +27,7 @@ export function OnboardingFavoritesScreen() {
       <Text variant="caption" tone="muted" style={styles.center} accessibilityLiveRegion="polite">
         {t.favoritesCount(draft.favoriteIds.length)}
       </Text>
-      <Button label={code ? t.seeOurMatch : t.finish} loading={isPending} onPress={() => finish()} />
+      <Button label={asksNotifications ? t.continue : code ? t.seeOurMatch : t.finish} loading={isPending} onPress={() => next()} />
     </>
   );
 
@@ -37,7 +37,7 @@ export function OnboardingFavoritesScreen() {
       title={t.favoritesTitle}
       caption={t.favoritesCaption}
       footer={footer}
-      topAction={{ label: t.skip, onPress: () => finish() }}
+      topAction={{ label: t.skip, onPress: () => next() }}
     >
       <View style={styles.grid}>
         {draft.seen.map((title) => {

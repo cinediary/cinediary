@@ -82,4 +82,13 @@ export const onboarding = {
   favoritesCount: (n: number) => `${n} de 4`,
   submitError: 'Não deu para salvar agora. Tente de novo.',
   welcomeToast: 'Bem-vindo(a)! Seu diário está pronto.',
+  notificationsTitle: title('Saiba quando seus ', 'amigos', ' passarem por aqui'),
+  notificationsCaption: 'Avisamos quando alguém curtir, responder ou começar a seguir você. Dá para mudar quando quiser.',
+  notificationsAllow: 'Ativar notificações',
+  notificationsLater: 'Agora não',
+  notificationsExamples: [
+    { when: 'agora', text: 'Julia curtiu seu registro de Ainda Estou Aqui ❤️' },
+    { when: '5 min', text: 'Bruno respondeu sua review: “Concordo demais!”' },
+    { when: '1 h', text: 'Marina começou a seguir você 🍿' },
+  ],
 };

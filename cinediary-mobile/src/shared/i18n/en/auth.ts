@@ -83,4 +83,13 @@ export const onboarding: Strings['onboarding'] = {
   favoritesCount: (n: number) => `${n} of 4`,
   submitError: "Couldn't save right now. Try again.",
   welcomeToast: 'Welcome! Your diary is ready.',
+  notificationsTitle: title('Know when your ', 'friends', ' stop by'),
+  notificationsCaption: 'We let you know when someone likes, replies to or starts following you. You can change this anytime.',
+  notificationsAllow: 'Turn on notifications',
+  notificationsLater: 'Not now',
+  notificationsExamples: [
+    { when: 'now', text: 'Julia liked your log of I’m Still Here ❤️' },
+    { when: '5m', text: 'Ben replied to your review: “So true!”' },
+    { when: '1h', text: 'Marina started following you 🍿' },
+  ],
 };

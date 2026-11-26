@@ -16,6 +16,8 @@ export default function OnboardingLayout() {
       <Stack.Screen name="genres" />
       <Stack.Screen name="seen" />
       <Stack.Screen name="favorites" />
+      {/* O último passo dos dois caminhos: pedir as notificações antes de concluir (#14). */}
+      <Stack.Screen name="notifications" />
     </Stack>
   );
 }

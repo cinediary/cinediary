@@ -43,6 +43,8 @@ export interface AnalyticsEvents {
   };
   /** A pergunta do Letterboxd no onboarding: importar agora ou depois. */
   onboarding_import_choice: { choice: 'import' | 'later' };
+  /** O pedido de notificações no fim do onboarding (#14): ativar ou agora não, e se o sistema permitiu. */
+  onboarding_notifications: { choice: 'allow' | 'later'; granted: boolean };
   title_logged: {
     tmdb_id: number;
     media_type: MediaType;

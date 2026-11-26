@@ -25,7 +25,7 @@ function prioritizeByGenres(items: TitleSummary[], genreNames: string[]) {
 export function OnboardingSeenScreen() {
   const t = strings.onboarding;
   const { draft, toggleSeen, setAddToHistory } = useOnboardingDraft();
-  const { finish, isPending } = useFinishOnboarding();
+  const { next: complete, isPending } = useFinishOnboarding();
   const [query, setQuery] = useState('');
   const popular = usePopularPaged('MOVIE', draft.genreIds);
   const search = useCatalogSearch(query, 'MOVIE');
@@ -45,7 +45,7 @@ export function OnboardingSeenScreen() {
   const count = draft.seen.length;
   const isSelected = (id: number) => draft.seen.some((s) => s.id === id);
 
-  const next = () => (shouldShowFavorites(draft) ? nav.push('/(onboarding)/favorites') : finish());
+  const next = () => (shouldShowFavorites(draft) ? nav.push('/(onboarding)/favorites') : complete());
 
   const footer = (
     <>
