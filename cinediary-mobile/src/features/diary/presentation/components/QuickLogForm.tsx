@@ -24,6 +24,7 @@ import {
 import { nav } from '@/shared/ui/navigation/nav';
 import { useQuickLog } from '../../application/useQuickLog';
 import { REVIEW_MAX, type EntryScope } from '../../domain/diary';
+import { TagField } from './TagField';
 import { WatchedDateField } from './WatchedDateField';
 
 const STATUSES: SeriesStatus[] = ['WATCHING', 'COMPLETED', 'DROPPED'];
@@ -226,6 +227,7 @@ export function QuickLogForm({
                 onSwitchChange={(containsSpoilers) => update({ containsSpoilers })}
               />
             ) : null}
+            <TagField tags={draft.tags} onChange={(tags) => update({ tags })} />
           </>
         )}
 

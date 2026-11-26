@@ -73,6 +73,7 @@ const e = (title: TitleSummary, date: string, rating: number | null, extra: Part
   scope: null,
   containsSpoilers: false,
   replyPolicy: null,
+  tags: [],
   ...extra,
 });
 

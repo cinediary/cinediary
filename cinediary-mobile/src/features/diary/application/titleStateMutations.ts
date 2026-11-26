@@ -87,6 +87,7 @@ export function useUpdateTitleState(title: TitleRef) {
           touch_count: 1,
           scope: 'title',
           companions_count: 0,
+          has_tags: false,
         });
       }
       if (change.liked !== undefined) {

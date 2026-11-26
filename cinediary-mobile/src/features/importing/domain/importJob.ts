@@ -20,6 +20,8 @@ export interface ImportJob {
   preview: TitleSummary[];
   ratedCount: number;
   likedCount: number;
+  /** Quantas tags diferentes vêm nos registros do Letterboxd (#58). */
+  tagsCount: number;
   favoritesInApp: TitleSummary[];
   favoritesFromImport: TitleSummary[];
 }

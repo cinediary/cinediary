@@ -2,7 +2,6 @@ import { CaretRight, UserPlus } from 'phosphor-react-native';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { openTitle } from '@/features/catalog/presentation/navigation';
-import { ProfileListsSection } from '@/features/lists/presentation/components/ProfileListsSection';
 import { useDiaryEntries } from '@/features/diary/application/diaryQueries';
 import { usePublicProfile } from '@/features/social/application/socialQueries';
 import { OwnProfileActions } from '@/features/social/presentation/components/ProfileActions';
@@ -28,6 +27,7 @@ import {
 } from '@/shared/ui';
 import { refreshProfile, useMyStats } from '../../application/useMyStats';
 import { CHART_MIN_SCALE, hasAnyStats, isSparse, lastTwelveMonths, topFive } from '../../domain/stats';
+import { ProfileCollections } from '../components/ProfileCollections';
 import { StatCards } from '../components/StatCards';
 
 /**
@@ -184,8 +184,7 @@ export function ProfileScreen() {
         </>
       )}
 
-      {/* Coleções (opção C do Design System): por enquanto, as listas; marcados e tags entram depois. */}
-      <ProfileListsSection username={profile.username} mine />
+      <ProfileCollections username={profile.username} />
     </Screen>
   );
 }

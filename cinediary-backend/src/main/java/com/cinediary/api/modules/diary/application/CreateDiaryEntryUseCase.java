@@ -5,8 +5,10 @@ import com.cinediary.api.modules.catalog.api.SeasonView;
 import com.cinediary.api.modules.catalog.api.TitleView;
 import com.cinediary.api.modules.diary.domain.DiaryEntryModel;
 import com.cinediary.api.modules.diary.domain.DiaryRepositoryPort;
+import com.cinediary.api.modules.diary.domain.DiaryTagsPort;
 import com.cinediary.api.modules.diary.domain.TitleStateModel;
 import com.cinediary.api.shared.domain.DomainValidationException;
+import com.cinediary.api.shared.domain.EntryTags;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -32,6 +34,7 @@ public class CreateDiaryEntryUseCase
     private final CatalogModulePort catalog;
     private final ApplicationEventPublisher events;
     private final UpdateSeriesEpisodesUseCase seriesEpisodes;
+    private final DiaryTagsPort tagsPort;
 
     @Transactional
     public DiaryEntryResult execute(UUID userId, CreateDiaryEntryCommand cmd)
@@ -41,10 +44,12 @@ public class CreateDiaryEntryUseCase
         EntryRules.date(cmd.watchedDate());
         BigDecimal rating = EntryRules.rating(cmd.rating());
         String review = EntryRules.review(cmd.reviewText());
+        List<String> tags = EntryTags.validate(cmd.tags());
 
         DiaryEntryModel saved = repository.saveEntry(new DiaryEntryModel(null, userId, cmd.titleId(), cmd.watchedDate(),
                 rating, cmd.liked(), cmd.rewatch(), review, null, null, cmd.seasonNumber(), cmd.episodeNumber(),
                 review != null && cmd.containsSpoilers(), cmd.replyPolicy()));
+        tagsPort.replace(saved.id(), userId, tags);
         if (saved.isScoped()) {
             // Registrar um episódio/temporada também é ter visto: entra no progresso (e no status da série).
             seriesEpisodes.execute(userId, cmd.titleId(), new UpdateSeriesEpisodesCommand(cmd.seasonNumber(),
@@ -56,7 +61,7 @@ public class CreateDiaryEntryUseCase
             events.publishEvent(new TitleInteractionUpdatedEvent(userId, cmd.titleId()));
         }
 
-        return new DiaryEntryResult(saved, catalog.summaries(List.of(cmd.titleId()), userId).getFirst());
+        return new DiaryEntryResult(saved, catalog.summaries(List.of(cmd.titleId()), userId).getFirst(), tags);
     }
 
     /** Temporada/episódio só em séries, e precisam existir no catálogo. */

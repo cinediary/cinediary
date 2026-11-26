@@ -31,11 +31,12 @@ import {
   type EntryChanges,
   type EntryReplyChoice,
 } from '../../domain/diary';
+import { TagField } from './TagField';
 import { WatchedDateField } from './WatchedDateField';
 import { scopeLabel } from '../scopeLabel';
 
 /**
- * Editar uma entrada: data, nota, curtida, rever, review e "Contém spoiler". Mesma estrutura do
+ * Editar uma entrada: data, nota, curtida, rever, review, "Contém spoiler" e tags. Mesma estrutura do
  * registro rápido: o conteúdo rola e "Salvar alterações" fica fixo embaixo, logo acima do teclado.
  */
 export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
@@ -53,6 +54,7 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
     reviewText: entry.reviewText ?? '',
     containsSpoilers: entry.containsSpoilers,
     replyPolicy: entry.replyPolicy ?? 'DEFAULT',
+    tags: entry.tags,
   }));
   const me = useMe();
   const [pickingReplies, setPickingReplies] = useState(false);
@@ -169,6 +171,7 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
             onSwitchChange={(containsSpoilers) => set({ containsSpoilers })}
           />
         ) : null}
+        <TagField tags={draft.tags} onChange={(tags) => set({ tags })} />
         <ListRow
           icon={<ChatCircle size={20} color={colors.ink700} />}
           label={ac.replyPolicy}

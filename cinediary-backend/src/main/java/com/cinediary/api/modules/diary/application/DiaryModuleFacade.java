@@ -11,9 +11,11 @@ import com.cinediary.api.modules.diary.api.InteractionView;
 import com.cinediary.api.modules.diary.api.OnboardingSignalsCommand;
 import com.cinediary.api.modules.diary.domain.DiaryEntryModel;
 import com.cinediary.api.modules.diary.domain.DiaryRepositoryPort;
+import com.cinediary.api.modules.diary.domain.DiaryTagsPort;
 import com.cinediary.api.modules.diary.domain.Interaction;
 import com.cinediary.api.modules.diary.domain.TitleStateModel;
 import com.cinediary.api.shared.domain.DomainValidationException;
+import com.cinediary.api.shared.domain.EntryTags;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Collection;
@@ -39,11 +41,13 @@ public class DiaryModuleFacade implements DiaryModulePort
 
     private final DiaryRepositoryPort repository;
     private final CatalogModulePort catalog;
+    private final DiaryTagsPort tagsPort;
 
-    public DiaryModuleFacade(DiaryRepositoryPort repository, CatalogModulePort catalog)
+    public DiaryModuleFacade(DiaryRepositoryPort repository, CatalogModulePort catalog, DiaryTagsPort tagsPort)
     {
         this.repository = repository;
         this.catalog = catalog;
+        this.tagsPort = tagsPort;
     }
 
     @Override
@@ -128,6 +132,12 @@ public class DiaryModuleFacade implements DiaryModulePort
                     created++;
                 } else {
                     skipped++;
+                }
+                List<String> tags = EntryTags.lenient(item.tags());
+                if (!tags.isEmpty()) {
+                    // Também numa entrada já importada antes: ela ganha as tags que faltam.
+                    repository.findEntryIdByImportHash(hash)
+                            .ifPresent(id -> tagsPort.add(id, userId, tags, EntryTags.MAX_PER_ENTRY));
                 }
             }
         }

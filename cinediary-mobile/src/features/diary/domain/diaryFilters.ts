@@ -7,7 +7,8 @@ import type { DiaryEntry } from './diary';
  * - minRating: nota a partir de (ex.: 4.5);
  * - rewatch / withReview: só revistos / só com review;
  * - type: filme ou série;
- * - query: parte do título.
+ * - query: parte do título;
+ * - tag: uma tag dos registros (#58), escolhida tocando nela.
  */
 export interface DiaryFilters {
   year: number | null;
@@ -18,6 +19,7 @@ export interface DiaryFilters {
   withReview: boolean;
   type: 'ALL' | 'MOVIE' | 'SERIES';
   query: string;
+  tag: string | null;
 }
 
 export const NO_FILTERS: DiaryFilters = {
@@ -29,6 +31,7 @@ export const NO_FILTERS: DiaryFilters = {
   withReview: false,
   type: 'ALL',
   query: '',
+  tag: null,
 };
 
 /** As opções dos filtros: só o que existe no diário (anos, gêneros dos mais registrados, se há filmes e séries). */
@@ -48,7 +51,8 @@ export function sheetFilterCount(f: DiaryFilters): number {
 }
 
 /** Algum filtro valendo (inclusive o ano e a busca)? */
-export const isFiltered = (f: DiaryFilters) => f.year !== null || sheetFilterCount(f) > 0 || f.query.trim() !== '';
+export const isFiltered = (f: DiaryFilters) =>
+  f.year !== null || sheetFilterCount(f) > 0 || f.query.trim() !== '' || f.tag !== null;
 
 /** Tira só os filtros do botão: o ano e a busca continuam. */
 export const clearSheetFilters = (f: DiaryFilters): DiaryFilters => ({
@@ -56,6 +60,7 @@ export const clearSheetFilters = (f: DiaryFilters): DiaryFilters => ({
   year: f.year,
   month: f.month,
   query: f.query,
+  tag: f.tag,
 });
 
 /** Os parâmetros da listagem no servidor (só os que valem; a busca sem espaços nas pontas). */
@@ -70,6 +75,7 @@ export function filtersToQuery(f: DiaryFilters) {
     ...(f.withReview ? { withReview: true } : {}),
     ...(f.type !== 'ALL' ? { mediaType: f.type } : {}),
     ...(q ? { q } : {}),
+    ...(f.tag ? { tag: f.tag } : {}),
   };
 }
 
@@ -91,6 +97,7 @@ export function applyDiaryFilters(entries: DiaryEntry[], f: DiaryFilters): Diary
     if (f.rewatch && !e.isRewatch) return false;
     if (f.withReview && !e.reviewText) return false;
     if (f.type !== 'ALL' && e.title.mediaType !== f.type) return false;
+    if (f.tag && !e.tags.includes(f.tag)) return false;
     if (q && !normalize(e.title.title).includes(q) && !normalize(e.title.originalTitle).includes(q)) return false;
     return true;
   });

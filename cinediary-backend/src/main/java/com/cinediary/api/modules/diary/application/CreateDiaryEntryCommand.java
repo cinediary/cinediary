@@ -6,6 +6,7 @@ import java.time.LocalDate;
 /** {@code seasonNumber}/{@code episodeNumber}: só em séries, para registrar uma temporada ou um episódio. */
 public record CreateDiaryEntryCommand(long titleId, LocalDate watchedDate, BigDecimal rating, boolean liked,
                                       boolean rewatch, String reviewText, Integer seasonNumber, Integer episodeNumber,
-                                      boolean containsSpoilers, com.cinediary.api.shared.domain.ReplyPolicy replyPolicy)
+                                      boolean containsSpoilers, com.cinediary.api.shared.domain.ReplyPolicy replyPolicy,
+                                      java.util.List<String> tags)
 {
 }

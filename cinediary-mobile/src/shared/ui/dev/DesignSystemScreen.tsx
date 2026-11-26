@@ -76,6 +76,7 @@ export function DesignSystemScreen() {
         <Button label="Abrir o Design System do Match" variant="secondary" onPress={() => nav.push('/_dev/match')} />
         <Button label="Abrir o Design System do Perfil" variant="secondary" onPress={() => nav.push('/_dev/profile')} />
         <Button label="Abrir os filtros do diário" variant="secondary" onPress={() => nav.push('/_dev/diary')} />
+        <Button label="Abrir as tags" variant="secondary" onPress={() => nav.push('/_dev/tags')} />
         <Button label="Abrir as listas" variant="secondary" onPress={() => nav.push('/_dev/lists')} />
         <Button label="Abrir a estrutura do perfil" variant="secondary" onPress={() => nav.push('/_dev/profile-layout')} />
         {tab === 'screens' ? (

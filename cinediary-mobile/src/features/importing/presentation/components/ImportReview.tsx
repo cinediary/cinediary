@@ -33,6 +33,7 @@ export function ImportReview({
       [t.statReviews, job.reviewsCount],
       [t.statWatchlist, job.watchlistCount],
       [t.statLists, job.listsCount],
+      [t.statTags, job.tagsCount],
     ] as [string, number][]
   ).filter(([, n]) => n > 0);
 

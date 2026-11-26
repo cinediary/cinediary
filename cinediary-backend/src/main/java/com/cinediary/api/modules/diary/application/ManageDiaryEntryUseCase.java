@@ -4,7 +4,9 @@ import com.cinediary.api.modules.catalog.api.CatalogModulePort;
 import com.cinediary.api.modules.diary.api.TitleInteractionUpdatedEvent;
 import com.cinediary.api.modules.diary.domain.DiaryEntryModel;
 import com.cinediary.api.modules.diary.domain.DiaryRepositoryPort;
+import com.cinediary.api.modules.diary.domain.DiaryTagsPort;
 import com.cinediary.api.modules.diary.domain.TitleStateModel;
+import com.cinediary.api.shared.domain.EntryTags;
 import com.cinediary.api.shared.domain.NotFoundException;
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +27,7 @@ public class ManageDiaryEntryUseCase
     private final DiaryRepositoryPort repository;
     private final CatalogModulePort catalog;
     private final ApplicationEventPublisher events;
+    private final DiaryTagsPort tagsPort;
 
     @Transactional(readOnly = true)
     public DiaryEntryResult get(UUID userId, UUID entryId)
@@ -36,6 +39,9 @@ public class ManageDiaryEntryUseCase
     public DiaryEntryResult update(UUID userId, UUID entryId, UpdateDiaryEntryCommand cmd)
     {
         DiaryEntryModel entry = owned(userId, entryId);
+        if (cmd.tags() != null) {
+            tagsPort.replace(entryId, userId, EntryTags.validate(cmd.tags()));
+        }
         DiaryEntryModel saved = repository.updateEntry(entry.edited(EntryRules.date(cmd.watchedDate()),
                 EntryRules.rating(cmd.rating()), cmd.liked(), cmd.rewatch(), EntryRules.review(cmd.reviewText(), entry.reviewText()),
                 cmd.containsSpoilers(), cmd.replyPolicy()));
@@ -70,6 +76,7 @@ public class ManageDiaryEntryUseCase
 
     private DiaryEntryResult result(DiaryEntryModel entry, UUID userId)
     {
-        return new DiaryEntryResult(entry, catalog.summaries(List.of(entry.titleId()), userId).getFirst());
+        return new DiaryEntryResult(entry, catalog.summaries(List.of(entry.titleId()), userId).getFirst(),
+                tagsPort.tagsOf(List.of(entry.id())).getOrDefault(entry.id(), List.of()));
     }
 }

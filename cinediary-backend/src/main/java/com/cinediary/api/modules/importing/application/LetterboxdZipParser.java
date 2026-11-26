@@ -5,6 +5,7 @@ import com.cinediary.api.modules.importing.domain.LetterboxdExport;
 import com.cinediary.api.modules.importing.domain.LetterboxdList;
 import com.cinediary.api.modules.importing.domain.InvalidImportFileException;
 import com.cinediary.api.modules.importing.domain.LetterboxdParsedItem;
+import com.cinediary.api.shared.domain.EntryTags;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -252,8 +254,9 @@ public class LetterboxdZipParser
             b.watched = true;
             LocalDate date = date(row.getOrDefault("Watched Date", row.get("Date")));
             if (date != null) {
+                LetterboxdParsedItem.Entry existing = b.entries.get(date);
                 b.entries.put(date, new LetterboxdParsedItem.Entry(date, rating(row.get("Rating")),
-                        "yes".equalsIgnoreCase(row.get("Rewatch")), null));
+                        "yes".equalsIgnoreCase(row.get("Rewatch")), null, mergeTags(existing, row.get("Tags"))));
             }
         }
         for (Map<String, String> row : files.getOrDefault("reviews.csv", List.of())) {
@@ -263,10 +266,11 @@ public class LetterboxdZipParser
             String review = blankToNull(row.get("Review"));
             if (date != null) {
                 LetterboxdParsedItem.Entry existing = b.entries.get(date);
+                List<String> tags = mergeTags(existing, row.get("Tags"));
                 b.entries.put(date, existing == null
                         ? new LetterboxdParsedItem.Entry(date, rating(row.get("Rating")),
-                                "yes".equalsIgnoreCase(row.get("Rewatch")), review)
-                        : new LetterboxdParsedItem.Entry(date, existing.rating(), existing.rewatch(), review));
+                                "yes".equalsIgnoreCase(row.get("Rewatch")), review, tags)
+                        : new LetterboxdParsedItem.Entry(date, existing.rating(), existing.rewatch(), review, tags));
             }
         }
         markFavorites(files.getOrDefault("profile.csv", List.of()), byUri, unresolved);
@@ -342,6 +346,14 @@ public class LetterboxdZipParser
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    /** "cinema, com a família": separadas por vírgula, somadas às que a entrada do mesmo dia já tinha. */
+    static List<String> mergeTags(LetterboxdParsedItem.Entry existing, String raw)
+    {
+        List<String> parsed = raw == null ? List.of() : Arrays.asList(raw.split(","));
+        return EntryTags.lenient(existing == null ? parsed
+                : java.util.stream.Stream.concat(existing.tags().stream(), parsed.stream()).toList());
     }
 
     private static LocalDate date(String raw)

@@ -2375,6 +2375,8 @@ export interface paths {
                     mediaType?: components["parameters"]["DiaryMediaType"];
                     /** @description Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres) */
                     q?: components["parameters"]["DiaryQuery"];
+                    /** @description Só os registros com esta tag (sem diferenciar maiúsculas nem espaços nas pontas) */
+                    tag?: components["parameters"]["DiaryTag"];
                     /** @description Só as entradas deste título (página do filme) */
                     titleId?: number;
                     page?: number;
@@ -2456,6 +2458,8 @@ export interface paths {
                     mediaType?: components["parameters"]["DiaryMediaType"];
                     /** @description Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres) */
                     q?: components["parameters"]["DiaryQuery"];
+                    /** @description Só os registros com esta tag (sem diferenciar maiúsculas nem espaços nas pontas) */
+                    tag?: components["parameters"]["DiaryTag"];
                 };
                 header?: never;
                 path?: never;
@@ -2470,6 +2474,42 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["DiaryCountResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As suas tags, das mais usadas para as menos (sugestões ao registrar) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Tags com em quantos registros aparecem */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TagResponse"][];
                     };
                 };
             };
@@ -4190,6 +4230,8 @@ export interface components {
              * @default false
              */
             containsSpoilers: boolean;
+            /** @description Tags livres do registro; ficam sem espaços nas pontas, em minúsculas e sem repetir */
+            tags?: string[];
         };
         UpdateDiaryEntryRequest: {
             /**
@@ -4205,10 +4247,20 @@ export interface components {
             /** @description Até 1200 caracteres. Uma review já salva maior que isso (importada do Letterboxd ou de antes do limite) pode ser reenviada sem mudança; se o texto mudar, precisa caber no limite. */
             reviewText?: string | null;
             containsSpoilers?: boolean;
+            /** @description Substitui as tags do registro; ausente = mantém as que estão */
+            tags?: string[] | null;
         };
         DiaryCountResponse: {
             /** Format: int64 */
             total: number;
+        };
+        TagResponse: {
+            tag: string;
+            /**
+             * Format: int64
+             * @description Em quantos registros a tag aparece
+             */
+            entries: number;
         };
         DiaryFiltersResponse: {
             years: number[];
@@ -4224,6 +4276,8 @@ export interface components {
             seriesCount: number;
         };
         DiaryEntryResponse: {
+            /** @description As tags do registro, em ordem alfabética (por enquanto só nas rotas do seu próprio diário) */
+            tags?: string[];
             /** @description Desta entrada; ausente = segue o padrão da conta */
             replyPolicy?: components["schemas"]["ReplyPolicy"] | null;
             /** Format: uuid */
@@ -4273,6 +4327,8 @@ export interface components {
             reviewsCount?: number;
             /** @description As listas do Letterboxd que entram com a importação (novas nascem privadas; reimportar atualiza) */
             listsCount?: number;
+            /** @description Quantas tags diferentes vêm nos registros do diário (só em AWAITING_CONFIRMATION) */
+            tagsCount?: number;
             diaryEntriesCount?: number;
             diaryEntriesCreated?: number | null;
             diaryEntriesSkipped?: number | null;
@@ -4402,6 +4458,8 @@ export interface components {
         DiaryMediaType: "MOVIE" | "SERIES";
         /** @description Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres) */
         DiaryQuery: string;
+        /** @description Só os registros com esta tag (sem diferenciar maiúsculas nem espaços nas pontas) */
+        DiaryTag: string;
     };
     requestBodies: never;
     headers: never;

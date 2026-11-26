@@ -124,6 +124,10 @@ class DiaryFilterSqlAdapter implements DiaryFilterQueryPort
         if (f.withReview()) {
             sql.append(" AND e.review_text IS NOT NULL AND btrim(e.review_text) <> ''");
         }
+        if (f.tag() != null) {
+            sql.append(" AND EXISTS (SELECT 1 FROM diary_entry_tags dt WHERE dt.entry_id = e.id AND dt.tag = :tag)");
+            params.put("tag", f.tag());
+        }
         if (f.query() != null) {
             sql.append(" AND (%1$s LIKE :q OR %2$s LIKE :q OR EXISTS (SELECT 1 FROM catalog_title_translations tr WHERE tr.title_id = t.id AND %3$s LIKE :q))"
                     .formatted(fold("t.title_pt"), fold("t.original_title"), fold("tr.title")));

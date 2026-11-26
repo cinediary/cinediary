@@ -10,6 +10,7 @@ import { makeStyles, useColors } from '@/shared/theme';
 import { ErrorState, MoreMenu, menuIcons, useToast } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { nav } from '@/shared/ui/navigation/nav';
+import { openDiaryWithTag } from '@/features/diary/presentation/navigation';
 import { EntryScreenFrame } from '../components/EntryScreenFrame';
 
 /**
@@ -67,6 +68,7 @@ export function EntryScreen() {
       ownEntry
       author={{ username: me.data?.username ?? '', name: me.data?.displayName ?? '', avatarUrl: me.data?.avatarUrl ?? null }}
       onAddReview={edit}
+      onTagPress={openDiaryWithTag}
       onShare={() => nav.push({ pathname: '/entry/[entryId]/share', params: { entryId } })}
       more={
         <MoreMenu

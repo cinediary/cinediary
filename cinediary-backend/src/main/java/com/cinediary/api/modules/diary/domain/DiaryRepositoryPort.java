@@ -37,6 +37,8 @@ public interface DiaryRepositoryPort
     /** Insere só se o import_hash ainda não existir. */
     boolean insertEntryIfAbsent(DiaryEntryModel entry);
 
+    Optional<UUID> findEntryIdByImportHash(String importHash);
+
     List<DiaryEntryModel> listEntries(UUID userId, int page, int size);
 
     /**

@@ -10,10 +10,11 @@ import java.util.List;
  * Só é preenchido enquanto o job espera confirmação (nas consultas durante o processamento, vazio).
  */
 public record ImportReview(ImportJobModel job, List<TitleSummaryView> preview, int ratedCount, int likedCount,
-                           List<TitleSummaryView> favoritesInApp, List<TitleSummaryView> favoritesFromImport)
+                           List<TitleSummaryView> favoritesInApp, List<TitleSummaryView> favoritesFromImport,
+                           int tagsCount)
 {
     public static ImportReview of(ImportJobModel job)
     {
-        return new ImportReview(job, List.of(), 0, 0, List.of(), List.of());
+        return new ImportReview(job, List.of(), 0, 0, List.of(), List.of(), 0);
     }
 }

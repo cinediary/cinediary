@@ -306,6 +306,52 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
     }
 
     @Test
+    void tagsComeWithTheEntriesAndReimportingDoesNotDuplicateThem() throws Exception
+    {
+        String clerkId = "user_" + UUID.randomUUID();
+        RequestPostProcessor me = user(clerkId);
+        // Uma importação de antes das tags: a próxima acrescenta as tags nos registros que já existem
+        importAndConfirm(me, zip(EXPORT));
+
+        Map<String, String> tagged = new java.util.HashMap<>(EXPORT);
+        tagged.put("letterboxd-cinefilo-2026/diary.csv", """
+                Date,Name,Year,Letterboxd URI,Rating,Rewatch,Tags,Watched Date
+                2024-01-05,The Matrix,1999,https://boxd.it/a1,4,,"Cinema, com a família",2024-01-04
+                2024-02-05,The Matrix,1999,https://boxd.it/a2,4.5,Yes,,2024-02-04
+                2024-03-01,Parasite,2019,https://boxd.it/b1,5,,cinema,2024-02-28
+                """);
+        tagged.put("letterboxd-cinefilo-2026/reviews.csv",
+                "Date,Name,Year,Letterboxd URI,Rating,Rewatch,Review,Tags,Watched Date\r\n"
+                        + "2024-03-01,Parasite,2019,https://boxd.it/b1,5,,Incrível,\"cinema, oscar\",2024-02-28\r\n");
+        String job = upload(me, zip(tagged));
+        awaitStatus(me, job, "AWAITING_CONFIRMATION");
+        mvc.perform(get("/api/v1/imports/{id}", job).with(me)).andExpect(jsonPath("$.tagsCount").value(3));
+        mvc.perform(post("/api/v1/imports/{id}/confirm", job).with(me)).andExpect(status().isOk());
+        awaitStatus(me, job, "COMPLETED");
+        importAndConfirm(me, zip(tagged));
+
+        String tags = """
+                SELECT COUNT(*) FROM diary_entry_tags t JOIN users u ON u.id = t.user_id WHERE u.clerk_id = ?""";
+        assertThat(count(tags, clerkId)).isEqualTo(4);
+        assertThat(count("SELECT COUNT(*) FROM diary_entries d JOIN users u ON u.id = d.user_id WHERE u.clerk_id = ?", clerkId)).isEqualTo(3);
+        mvc.perform(get("/api/v1/me/tags").with(me))
+                .andExpect(jsonPath("$[0].tag").value("cinema"))
+                .andExpect(jsonPath("$[0].entries").value(2));
+        mvc.perform(get("/api/v1/diary/entries").param("tag", "oscar").with(me))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].tags[0]").value("cinema"))
+                .andExpect(jsonPath("$[0].tags[1]").value("oscar"));
+    }
+
+    private void importAndConfirm(RequestPostProcessor me, byte[] zip) throws Exception
+    {
+        String job = upload(me, zip);
+        awaitStatus(me, job, "AWAITING_CONFIRMATION");
+        mvc.perform(post("/api/v1/imports/{id}/confirm", job).with(me)).andExpect(status().isOk());
+        awaitStatus(me, job, "COMPLETED");
+    }
+
+    @Test
     void invalidFilesAreRejected() throws Exception
     {
         RequestPostProcessor me = user("user_" + UUID.randomUUID());

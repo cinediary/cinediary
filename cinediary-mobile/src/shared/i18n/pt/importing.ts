@@ -28,6 +28,7 @@ export const importing = {
   statReviews: 'Reviews',
   statWatchlist: 'Na watchlist',
   statLists: 'Listas',
+  statTags: 'Tags',
   listsPrivate: 'Listas novas do Letterboxd entram privadas: só você vê. As que você já importou antes ficam com a visibilidade que você escolheu.',
   previewTitle: 'Alguns do seu Letterboxd',
   favoritesTitle: 'Seus favoritos',

@@ -15,6 +15,7 @@ export const diaryKeys = {
   filtered: (f: DiaryFilters) => [...sharedKeys.diary, 'entries', filtersToQuery(f)] as const,
   count: (f: DiaryFilters) => [...sharedKeys.diary, 'count', filtersToQuery(f)] as const,
   filterOptions: [...sharedKeys.diary, 'filters'] as const,
+  myTags: [...sharedKeys.diary, 'tags'] as const,
   // Debaixo de "diary": registrar uma data invalida o prefixo e o filme sai da lista sozinho.
   undated: [...sharedKeys.diary, 'undated'] as const,
   ofTitle: (titleId: number) => [...sharedKeys.diary, 'title', titleId] as const,
@@ -50,6 +51,11 @@ export function useDiaryCount(filters: DiaryFilters, enabled = true) {
 /** As opções dos filtros: muda pouco (só quando o diário ganha um ano ou um gênero novo). */
 export function useDiaryFilterOptions() {
   return useQuery({ queryKey: diaryKeys.filterOptions, queryFn: diaryApi.filterOptions, staleTime: 5 * 60_000 });
+}
+
+/** As suas tags, das mais usadas (sugestões ao registrar e editar). */
+export function useMyTags() {
+  return useQuery({ queryKey: diaryKeys.myTags, queryFn: diaryApi.myTags, staleTime: 5 * 60_000 });
 }
 
 /** Registros de um título (datas, notas e reviews). Sob "diary": registrar de novo atualiza sozinho. */
