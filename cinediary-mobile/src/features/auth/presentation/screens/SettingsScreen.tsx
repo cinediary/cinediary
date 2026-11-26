@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import { usePreventRemove } from 'expo-router';
 import {
+  Bell,
   BellSlash,
   ChatCircle,
   CircleHalf,
@@ -24,6 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { analytics } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
 import { usePushPreferences, useUpdatePushPreferences, type PushPreferences } from '@/shared/notifications/pushPreferences';
+import { scheduleTestPush } from '@/shared/notifications/opened';
 import { enablePush, usePushPermission, useRefreshPushPermissionOnForeground } from '@/shared/notifications/usePushPermission';
 import { radius, space, useTheme, useColors, makeStyles } from '@/shared/theme';
 import { ActionSheet, Button, ListRow, StarSpinner, Text, Title, useToast } from '@/shared/ui';
@@ -201,7 +203,21 @@ function useSections(openReplyPicker: () => void, openAppearancePicker: () => vo
         { key: 'version', icon: icon(Info), label: a.version, hint: Constants.expoConfig?.version ?? '–' },
         { key: 'tmdb', icon: icon(FilmSlate), label: a.tmdb, hint: strings.common.tmdbCredit },
         ...(__DEV__
-          ? [{ key: 'design', icon: icon(Palette), label: t.designSystem, onPress: () => nav.push('/_dev/design-system') }]
+          ? [
+              { key: 'design', icon: icon(Palette), label: t.designSystem, onPress: () => nav.push('/_dev/design-system') },
+              {
+                // Só em dev (#16): um "push" local em 8 s, com os dados de "começou a te seguir"; tocar abre o perfil
+                key: 'test-push',
+                icon: icon(Bell),
+                label: 'Testar push (8 s)',
+                hint: 'Feche o app para testar com ele fechado',
+                onPress: () =>
+                  void scheduleTestPush(`${me.data?.username ?? 'cinediary'} começou a te seguir`, {
+                    kind: 'FOLLOWED',
+                    username: me.data?.username,
+                  }),
+              },
+            ]
           : []),
       ],
     },
