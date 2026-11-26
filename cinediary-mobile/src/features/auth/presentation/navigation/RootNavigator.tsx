@@ -7,6 +7,10 @@ import { ConnectionErrorScreen } from '@/shared/ui';
 import { useIsOffline } from '@/shared/api/network';
 import { OfflineBanner } from '@/shared/ui/navigation/OfflineBanner';
 import { pendingImport } from '@/features/importing/presentation/incomingImport';
+import { feedKeys } from '@/features/social/application/feedQueries';
+import { openPushTarget } from '@/features/social/presentation/pushNavigation';
+import { queryClient } from '@/shared/api/queryClient';
+import { onPushOpened, showPushesInForeground } from '@/shared/notifications/opened';
 import { AnimatedSplash } from '@/shared/ui/splash/AnimatedSplash';
 import { useColors } from '@/shared/theme';
 import { nav } from '@/shared/ui/navigation/nav';
@@ -78,6 +82,19 @@ export function RootNavigator() {
     // intro=accepted: o Story abre com a animação "Calculando" de quem acabou de aceitar (MA-04).
     // then=room: ao terminar este primeiro Story, vai direto para a lista de vocês.
     if (matchId) nav.push({ pathname: '/match/[matchId]/story', params: { matchId, intro: 'accepted', then: 'room' } });
+  }, [inApp]);
+
+  // Push (#16), só dentro do app (logado e com o onboarding feito): tocar abre a tela do aviso, inclusive o toque
+  // que abriu o app fechado (guardado até aqui, depois do login se preciso). Com o app aberto, o push aparece e
+  // o sino se atualiza.
+  useEffect(() => {
+    if (!inApp) return;
+    const stopOpened = onPushOpened(openPushTarget);
+    const stopReceived = showPushesInForeground(() => void queryClient.invalidateQueries({ queryKey: feedKeys.notifications }));
+    return () => {
+      stopOpened();
+      stopReceived();
+    };
   }, [inApp]);
 
   // Barras de título e fundos da navegação com as cores do tema (#61)
