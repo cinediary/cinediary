@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.cinediary.api.FakeExpoPush.Sent;
@@ -139,5 +141,32 @@ class PushNotificationsIntegrationTest extends IntegrationTest
         assertThat(PUSH.sentTo(phone)).hasSize(1);
         assertThat(count("SELECT COUNT(*) FROM push_devices WHERE expo_token = ?", gone)).isZero();
         assertThat(count("SELECT COUNT(*) FROM push_devices WHERE expo_token = ?", phone)).isOne();
+    }
+
+    @Test
+    void aTypeTurnedOffInSettingsStopsOnlyThatPush() throws Exception
+    {
+        Person ana = person("ana");
+        Person bia = person("bia");
+        String phone = token("pt");
+        device(ana, phone, "pt-BR");
+        long title = TestTitles.movie(jdbc, "Filme sem push", 10, "18:Drama");
+        String entry = log(ana, title);
+
+        mvc.perform(get("/api/v1/me/push-preferences").with(ana.auth()))
+                .andExpect(jsonPath("$.followers").value(true)).andExpect(jsonPath("$.likes").value(true))
+                .andExpect(jsonPath("$.replies").value(true)).andExpect(jsonPath("$.companions").value(true));
+        mvc.perform(patch("/api/v1/me/push-preferences").with(ana.auth()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"likes\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.likes").value(false)).andExpect(jsonPath("$.followers").value(true));
+
+        mvc.perform(put("/api/v1/entries/{e}/like", entry).with(bia.auth())).andExpect(status().isOk());
+        mvc.perform(post("/api/v1/users/{u}/follow", ana.username()).with(bia.auth()));
+        awaitEvents(ana.id());
+
+        // Só o "começou a te seguir"; a curtida continua no sino
+        assertThat(PUSH.sentTo(phone)).singleElement().satisfies(s -> assertThat(s.data()).containsEntry("kind", "FOLLOWED"));
+        assertThat(count("SELECT COUNT(*) FROM notifications WHERE recipient_id = ? AND kind = 'ENTRY_LIKED'", ana.id())).isOne();
     }
 }

@@ -2,9 +2,11 @@ package com.cinediary.api.modules.social.application;
 
 import com.cinediary.api.modules.diary.api.DiaryEntryView;
 import com.cinediary.api.modules.diary.api.DiaryModulePort;
+import com.cinediary.api.modules.social.domain.NotificationKind;
 import com.cinediary.api.modules.social.domain.NotificationsPort;
 import com.cinediary.api.modules.social.domain.PushMessage;
 import com.cinediary.api.modules.social.domain.PushSenderPort;
+import com.cinediary.api.modules.users.api.PushCategory;
 import com.cinediary.api.modules.users.api.PushDeviceView;
 import com.cinediary.api.modules.users.api.UserView;
 import com.cinediary.api.modules.users.api.UsersModulePort;
@@ -25,8 +27,8 @@ import org.springframework.stereotype.Component;
 /**
  * Manda o push de um aviso novo do sino para os aparelhos da pessoa (#13), depois do commit e fora do pedido
  * (assíncrono, pelo Outbox). Cada aparelho recebe o texto no próprio idioma. Curtidas no mesmo registro ou lista
- * em poucos minutos mandam só o primeiro push (o sino continua mostrando todas). Os tokens que o serviço recusa
- * saem da lista de aparelhos.
+ * em poucos minutos mandam só o primeiro push (o sino continua mostrando todas). Os tipos desligados nas
+ * configurações (#15) não mandam push. Os tokens que o serviço recusa saem da lista de aparelhos.
  */
 @Component
 @RequiredArgsConstructor
@@ -44,8 +46,8 @@ class PushNotificationsListener
     void on(NotificationCreatedEvent event)
     {
         List<PushDeviceView> devices = users.pushDevices(event.recipientId());
-        if (devices.isEmpty() || isLikeBurst(event)) {
-            return;
+        if (devices.isEmpty() || !users.pushPreferences(event.recipientId()).allows(category(event.kind())) || isLikeBurst(event)) {
+            return; // sem aparelho, desligou esse tipo nas configurações (#15) ou já mandou o push dessa curtida
         }
         Optional<UserView> actor = users.findById(event.actorId());
         String list = event.listId() == null ? null : notifications.listName(event.listId()).orElse(null);
@@ -77,6 +79,16 @@ class PushNotificationsListener
         if (!rejected.isEmpty()) {
             users.removePushTokens(rejected);
         }
+    }
+
+    private static PushCategory category(NotificationKind kind)
+    {
+        return switch (kind) {
+            case FOLLOWED, FOLLOW_REQUESTED, FOLLOW_APPROVED -> PushCategory.FOLLOWERS;
+            case ENTRY_LIKED, LIST_LIKED -> PushCategory.LIKES;
+            case ENTRY_REPLIED -> PushCategory.REPLIES;
+            case ENTRY_COMPANION -> PushCategory.COMPANIONS;
+        };
     }
 
     private boolean isLikeBurst(NotificationCreatedEvent event)

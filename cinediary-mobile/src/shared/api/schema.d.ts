@@ -275,6 +275,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/push-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quais notificações push a pessoa quer receber (tudo ligado até mudar) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description As preferências */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PushPreferences"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Liga ou desliga tipos de push; o que não vier fica como está
+         * @description Desligar um tipo só para o push: o sino continua mostrando o aviso.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdatePushPreferencesRequest"];
+                };
+            };
+            responses: {
+                /** @description As preferências como ficaram */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PushPreferences"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/me/onboarding": {
         parameters: {
             query?: never;
@@ -4000,6 +4063,23 @@ export interface components {
                 /** @description A imagem pronta (1280 px) */
                 url: string;
             }[];
+        };
+        PushPreferences: {
+            /** @description Começou a te seguir, pediu para seguir, aceitou seu pedido */
+            followers: boolean;
+            /** @description Curtidas nos seus registros e listas */
+            likes: boolean;
+            /** @description Respostas nos seus registros */
+            replies: boolean;
+            /** @description Te marcaram num registro (vi com…) */
+            companions: boolean;
+        };
+        /** @description Só o que mudou; o que não vier fica como está. */
+        UpdatePushPreferencesRequest: {
+            followers?: boolean;
+            likes?: boolean;
+            replies?: boolean;
+            companions?: boolean;
         };
         RegisterDeviceRequest: {
             /** @description ExponentPushToken[...] (ou ExpoPushToken[...]) */

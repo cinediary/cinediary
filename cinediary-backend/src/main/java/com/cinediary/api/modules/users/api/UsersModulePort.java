@@ -37,4 +37,7 @@ public interface UsersModulePort
 
     /** Tira os tokens que o serviço de push recusou (o app foi desinstalado, por exemplo). */
     void removePushTokens(Collection<String> tokens);
+
+    /** Quais pushes a pessoa quer receber (#15). */
+    PushPreferencesView pushPreferences(UUID userId);
 }

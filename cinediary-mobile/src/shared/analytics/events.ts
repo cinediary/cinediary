@@ -124,7 +124,18 @@ export interface AnalyticsEvents {
   /** `default_reply_policy`: `value` true = ficou mais fechado que "qualquer pessoa". */
   /** `appearance`: `value` é a escolha (automático, claro ou escuro). */
   setting_changed:
-    | { key: 'show_spoilers' | 'private_profile' | 'default_reply_policy' | 'approve_companions'; value: boolean }
+    | {
+        key:
+          | 'show_spoilers'
+          | 'private_profile'
+          | 'default_reply_policy'
+          | 'approve_companions'
+          | 'push_followers'
+          | 'push_likes'
+          | 'push_replies'
+          | 'push_companions';
+        value: boolean;
+      }
     | { key: 'appearance'; value: 'system' | 'light' | 'dark' };
   entry_liked: { own_entry: boolean; liked: boolean };
   entry_replied: { own_entry: boolean; length: number };

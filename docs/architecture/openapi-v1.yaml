@@ -157,6 +157,35 @@ paths:
         '204':
           description: Aparelho removido (ou não existia)
 
+  /api/v1/me/push-preferences:
+    get:
+      tags: [Users & Onboarding]
+      summary: "Quais notificações push a pessoa quer receber (tudo ligado até mudar)"
+      responses:
+        '200':
+          description: As preferências
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushPreferences'
+    patch:
+      tags: [Users & Onboarding]
+      summary: "Liga ou desliga tipos de push; o que não vier fica como está"
+      description: "Desligar um tipo só para o push: o sino continua mostrando o aviso."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePushPreferencesRequest'
+      responses:
+        '200':
+          description: As preferências como ficaram
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushPreferences'
+
   /api/v1/me/onboarding:
     post:
       tags: [Users & Onboarding]
@@ -2088,6 +2117,24 @@ components:
             properties:
               path: { type: string, description: "O que se manda em PUT /me/header (ex.: /abc.jpg)" }
               url: { type: string, description: "A imagem pronta (1280 px)" }
+
+    PushPreferences:
+      type: object
+      required: [followers, likes, replies, companions]
+      properties:
+        followers: { type: boolean, description: "Começou a te seguir, pediu para seguir, aceitou seu pedido" }
+        likes: { type: boolean, description: "Curtidas nos seus registros e listas" }
+        replies: { type: boolean, description: "Respostas nos seus registros" }
+        companions: { type: boolean, description: "Te marcaram num registro (vi com…)" }
+
+    UpdatePushPreferencesRequest:
+      type: object
+      description: "Só o que mudou; o que não vier fica como está."
+      properties:
+        followers: { type: boolean }
+        likes: { type: boolean }
+        replies: { type: boolean }
+        companions: { type: boolean }
 
     RegisterDeviceRequest:
       type: object

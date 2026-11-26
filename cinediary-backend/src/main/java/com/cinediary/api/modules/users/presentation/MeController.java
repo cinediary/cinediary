@@ -1,10 +1,12 @@
 package com.cinediary.api.modules.users.presentation;
 
+import com.cinediary.api.modules.users.api.PushPreferencesView;
 import com.cinediary.api.modules.users.api.UserProfileView;
 import com.cinediary.api.modules.users.application.CompleteOnboardingUseCase;
 import com.cinediary.api.modules.users.application.GetCurrentUserUseCase;
 import com.cinediary.api.modules.users.application.OnboardingResult;
 import com.cinediary.api.modules.users.application.PushDevicesUseCase;
+import com.cinediary.api.modules.users.application.PushPreferencesUseCase;
 import com.cinediary.api.modules.users.application.UpdateProfileHeaderUseCase;
 import com.cinediary.api.modules.users.application.UpdateUserProfileUseCase;
 import com.cinediary.api.modules.users.presentation.dto.OnboardingRequest;
@@ -12,6 +14,7 @@ import com.cinediary.api.modules.users.presentation.dto.OnboardingResponse;
 import com.cinediary.api.modules.users.presentation.dto.RegisterDeviceRequest;
 import com.cinediary.api.modules.users.presentation.dto.UpdateHeaderRequest;
 import com.cinediary.api.modules.users.presentation.dto.UpdateProfileRequest;
+import com.cinediary.api.modules.users.presentation.dto.UpdatePushPreferencesRequest;
 import com.cinediary.api.shared.domain.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,6 +43,7 @@ public class MeController
     private final CompleteOnboardingUseCase completeOnboarding;
     private final UpdateProfileHeaderUseCase updateHeader;
     private final PushDevicesUseCase pushDevices;
+    private final PushPreferencesUseCase pushPreferences;
 
     @GetMapping
     @Operation(summary = "Perfil do usuário autenticado")
@@ -83,6 +87,20 @@ public class MeController
     public void unregisterDevice(CurrentUser user, @PathVariable String token)
     {
         pushDevices.unregister(user.id(), token);
+    }
+
+    @GetMapping("/push-preferences")
+    @Operation(summary = "Quais notificações push a pessoa quer receber (tudo ligado até mudar)")
+    public PushPreferencesView pushPreferences(CurrentUser user)
+    {
+        return pushPreferences.get(user.id());
+    }
+
+    @PatchMapping("/push-preferences")
+    @Operation(summary = "Liga ou desliga tipos de push; o que não vier fica como está (o sino continua mostrando tudo)")
+    public PushPreferencesView updatePushPreferences(CurrentUser user, @RequestBody UpdatePushPreferencesRequest request)
+    {
+        return pushPreferences.update(user.id(), request.followers(), request.likes(), request.replies(), request.companions());
     }
 
     @PostMapping("/onboarding")
