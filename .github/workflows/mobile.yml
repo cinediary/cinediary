@@ -24,7 +24,7 @@ jobs:
       mobile: ${{ steps.filter.outputs.mobile }}
       deps: ${{ steps.filter.outputs.deps }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -47,7 +47,7 @@ jobs:
     timeout-minutes: 15
     defaults: { run: { working-directory: cinediary-mobile } }
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -77,7 +77,7 @@ jobs:
     timeout-minutes: 10
     defaults: { run: { working-directory: cinediary-mobile } }
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -103,7 +103,7 @@ jobs:
     timeout-minutes: 15
     defaults: { run: { working-directory: cinediary-mobile } }
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 22
