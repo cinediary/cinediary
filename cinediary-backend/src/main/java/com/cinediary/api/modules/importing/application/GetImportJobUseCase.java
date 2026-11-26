@@ -41,8 +41,10 @@ public class GetImportJobUseCase
         List<Long> previewIds = staged.stream().map(StagedImportItem::titleId).distinct().limit(PREVIEW).toList();
         int rated = (int) staged.stream().filter(s -> s.item().rating() != null).count();
         int liked = (int) staged.stream().filter(s -> s.item().liked()).count();
+        int tags = (int) staged.stream().flatMap(s -> s.item().entries().stream())
+                .flatMap(e -> e.tags().stream()).distinct().count();
         return new ImportReview(job, catalog.summaries(previewIds, userId), rated, liked,
                 catalog.summaries(diary.favoriteTitleIds(userId), userId),
-                catalog.summaries(ImportJobApplier.importedFavorites(staged), userId));
+                catalog.summaries(ImportJobApplier.importedFavorites(staged), userId), tags);
     }
 }

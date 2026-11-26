@@ -12,8 +12,13 @@ import java.util.List;
 public record LetterboxdParsedItem(String name, Integer year, boolean watched, BigDecimal rating, boolean liked,
                                    boolean inWatchlist, List<Entry> entries, Integer favoriteRank)
 {
-    public record Entry(LocalDate watchedDate, BigDecimal rating, boolean rewatch, String review)
+    /** {@code tags}: a coluna Tags do diary.csv e do reviews.csv; null em jobs gravados antes do #58. */
+    public record Entry(LocalDate watchedDate, BigDecimal rating, boolean rewatch, String review, List<String> tags)
     {
+        public List<String> tags()
+        {
+            return tags == null ? List.of() : tags;
+        }
     }
 
     public String label()

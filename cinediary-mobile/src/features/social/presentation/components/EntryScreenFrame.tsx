@@ -31,12 +31,14 @@ export function EntryScreenFrame({
   onShare,
   more,
   onRefresh,
+  onTagPress,
 }: {
   entry: DiaryEntry;
   author: EntryAuthor;
   ownEntry: boolean;
   onAuthorPress?: () => void;
   onAddReview?: () => void;
+  onTagPress?: (tag: string) => void;
   onShare?: () => void;
   /** Só na sua entrada: o "⋯" do canto (um `MoreMenu`, com editar e excluir). Fica fixo no topo à direita. */
   more?: ReactNode;
@@ -99,6 +101,7 @@ export function EntryScreenFrame({
             author={author}
             onAuthorPress={onAuthorPress}
             onAddReview={onAddReview}
+            onTagPress={onTagPress}
             revealed={revealed}
             onReveal={() => setRevealed(true)}
           />

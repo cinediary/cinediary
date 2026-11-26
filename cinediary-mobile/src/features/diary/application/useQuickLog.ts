@@ -83,6 +83,7 @@ export function useQuickLog(
           isRewatch,
           reviewText: draft.reviewText.trim() || null,
           containsSpoilers: !!draft.reviewText.trim() && draft.containsSpoilers,
+          tags: draft.tags,
           scope,
         });
         return { cta: 'log', companionsSaved: await markCompanions(entry.id) };
@@ -102,6 +103,7 @@ export function useQuickLog(
           isRewatch,
           reviewText: draft.reviewText.trim() || null,
           containsSpoilers: !!draft.reviewText.trim() && draft.containsSpoilers,
+          tags: draft.tags,
         });
         return { cta, companionsSaved: await markCompanions(entry.id) };
       }
@@ -120,6 +122,7 @@ export function useQuickLog(
           touch_count: touches.current,
           scope: scope ? (scope.episode ? 'episode' : 'season') : 'title',
           companions_count: companions.length,
+          has_tags: draft.tags.length > 0,
         });
       }
       invalidateAfterLog();

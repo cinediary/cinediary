@@ -5,6 +5,7 @@ import com.cinediary.api.modules.diary.application.DiaryEntryResult;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -14,13 +15,13 @@ import java.util.UUID;
 public record DiaryEntryResponse(UUID id, UUID userId, TitleSummaryView title, LocalDate watchedDate, BigDecimal rating,
                                  boolean liked, boolean isRewatch, String reviewText, Instant createdAt,
                                  Integer seasonNumber, Integer episodeNumber, boolean containsSpoilers,
-                                 /** null = padrão da conta. */ String replyPolicy)
+                                 /** null = padrão da conta. */ String replyPolicy, List<String> tags)
 {
     public static DiaryEntryResponse from(DiaryEntryResult r)
     {
         var e = r.entry();
         return new DiaryEntryResponse(e.id(), e.userId(), r.title(), e.watchedDate(), e.rating(), e.liked(), e.rewatch(),
                 e.reviewText(), e.createdAt(), e.seasonNumber(), e.episodeNumber(), e.containsSpoilers(),
-                e.replyPolicy() == null ? null : e.replyPolicy().name());
+                e.replyPolicy() == null ? null : e.replyPolicy().name(), r.tags());
     }
 }

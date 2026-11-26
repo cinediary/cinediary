@@ -52,6 +52,9 @@ interface SpringDataDiaryEntryRepository extends JpaRepository<DiaryEntryJpaEnti
     /** Registros de um título, paginados; o id desempata como no diário. */
     List<DiaryEntryJpaEntity> findByUserIdAndTitleIdOrderByWatchedDateDescCreatedAtDescIdDesc(UUID userId, Long titleId, Pageable pageable);
 
+    @Query("SELECT e.id FROM DiaryEntryJpaEntity e WHERE e.importHash = :hash")
+    java.util.Optional<UUID> findIdByImportHash(@Param("hash") String hash);
+
     @Modifying
     @Query(value = """
             INSERT INTO diary_entries (user_id, title_id, watched_date, rating_snapshot, liked_snapshot,

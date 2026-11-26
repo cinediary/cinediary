@@ -21,6 +21,7 @@ const toJob = (dto: Schemas['ImportJobResponse']): ImportJob => ({
   diaryEntriesCreated: dto.diaryEntriesCreated ?? null,
   preview: (dto.preview ?? []).map(toTitleSummary),
   ratedCount: dto.ratedCount ?? 0,
+  tagsCount: dto.tagsCount ?? 0,
   likedCount: dto.likedCount ?? 0,
   favoritesInApp: (dto.favoritesInApp ?? []).map(toTitleSummary),
   favoritesFromImport: (dto.favoritesFromImport ?? []).map(toTitleSummary),

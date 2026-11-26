@@ -55,6 +55,7 @@ export interface AnalyticsEvents {
     scope: LogScope;
     /** Quantas pessoas foram marcadas no "Vi com…". */
     companions_count: number;
+    has_tags: boolean;
   };
   /** Abriu o registro rápido; junto com title_logged mostra quantos desistem no meio. */
   quick_log_opened: { entry_point: QuickLogEntryPoint; media_type: MediaType; scope: LogScope };

@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -47,7 +48,8 @@ export function DiaryScreen() {
   const insets = useSafeAreaInsets();
   const backInset = useFloatingBackInset();
   const overlay = useOverlay();
-  const [filters, setFilters] = useState<DiaryFilters>(NO_FILTERS);
+  const { tag } = useLocalSearchParams<{ tag?: string }>();
+  const [filters, setFilters] = useState<DiaryFilters>(() => ({ ...NO_FILTERS, tag: tag || null }));
   const query = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const applied = useMemo(() => ({ ...filters, query }), [filters, query]);
   const filtered = isFiltered(applied);

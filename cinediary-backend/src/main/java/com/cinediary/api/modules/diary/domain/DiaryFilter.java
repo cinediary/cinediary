@@ -1,6 +1,7 @@
 package com.cinediary.api.modules.diary.domain;
 
 import com.cinediary.api.shared.domain.DomainValidationException;
+import com.cinediary.api.shared.domain.EntryTags;
 import java.math.BigDecimal;
 
 /**
@@ -14,11 +15,12 @@ import java.math.BigDecimal;
  * @param withReview só com review
  * @param mediaType MOVIE ou SERIES; null = os dois
  * @param query     parte do título (sem diferenciar maiúsculas nem acentos)
+ * @param tag       uma tag do registro (#58)
  */
 public record DiaryFilter(Integer year, Integer month, Integer genreId, BigDecimal minRating, boolean rewatch,
-                          boolean withReview, String mediaType, String query)
+                          boolean withReview, String mediaType, String query, String tag)
 {
-    public static final DiaryFilter NONE = new DiaryFilter(null, null, null, null, false, false, null, null);
+    public static final DiaryFilter NONE = new DiaryFilter(null, null, null, null, false, false, null, null, null);
     private static final int MAX_QUERY = 100;
 
     public DiaryFilter
@@ -39,11 +41,12 @@ public record DiaryFilter(Integer year, Integer month, Integer genreId, BigDecim
         if (query != null && query.length() > MAX_QUERY) {
             throw new DomainValidationException("A busca pode ter no máximo " + MAX_QUERY + " caracteres");
         }
+        tag = tag == null || tag.isBlank() ? null : EntryTags.normalize(tag);
     }
 
     public boolean isEmpty()
     {
         return year == null && genreId == null && minRating == null && !rewatch && !withReview && mediaType == null
-                && query == null;
+                && query == null && tag == null;
     }
 }

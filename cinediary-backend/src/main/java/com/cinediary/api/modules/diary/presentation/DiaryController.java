@@ -18,6 +18,7 @@ import com.cinediary.api.modules.diary.presentation.dto.UpdateDiaryEntryRequest;
 import com.cinediary.api.modules.diary.presentation.dto.DiaryEntryResponse;
 import com.cinediary.api.modules.diary.presentation.dto.SeriesEpisodeProgressRequest;
 import com.cinediary.api.modules.diary.presentation.dto.SeriesProgressResponse;
+import com.cinediary.api.modules.diary.presentation.dto.TagResponse;
 import com.cinediary.api.modules.diary.presentation.dto.UpdateTitleStateRequest;
 import com.cinediary.api.shared.domain.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -89,9 +90,10 @@ public class DiaryController
                                             @RequestParam(defaultValue = "false") boolean rewatch,
                                             @RequestParam(defaultValue = "false") boolean withReview,
                                             @RequestParam(required = false) String mediaType,
-                                            @RequestParam(required = false) String q)
+                                            @RequestParam(required = false) String q,
+                                            @RequestParam(required = false) String tag)
     {
-        DiaryFilter filter = new DiaryFilter(year, month, genreId, minRating, rewatch, withReview, mediaType, q);
+        DiaryFilter filter = new DiaryFilter(year, month, genreId, minRating, rewatch, withReview, mediaType, q, tag);
         return listDiaryEntries.execute(user.id(), page, size, titleId, filter).stream().map(DiaryEntryResponse::from).toList();
     }
 
@@ -105,9 +107,10 @@ public class DiaryController
                                            @RequestParam(defaultValue = "false") boolean rewatch,
                                            @RequestParam(defaultValue = "false") boolean withReview,
                                            @RequestParam(required = false) String mediaType,
-                                           @RequestParam(required = false) String q)
+                                           @RequestParam(required = false) String q,
+                                           @RequestParam(required = false) String tag)
     {
-        DiaryFilter filter = new DiaryFilter(year, month, genreId, minRating, rewatch, withReview, mediaType, q);
+        DiaryFilter filter = new DiaryFilter(year, month, genreId, minRating, rewatch, withReview, mediaType, q, tag);
         return new DiaryCountResponse(listDiaryEntries.count(user.id(), filter));
     }
 
@@ -116,6 +119,13 @@ public class DiaryController
     public DiaryFiltersResponse filters(CurrentUser user)
     {
         return DiaryFiltersResponse.from(diaryFilters.execute(user.id()));
+    }
+
+    @GetMapping("/me/tags")
+    @Operation(summary = "As suas tags, das mais usadas para as menos (para sugerir ao registrar)")
+    public List<TagResponse> tags(CurrentUser user)
+    {
+        return listDiaryEntries.tagsOf(user.id()).stream().map(TagResponse::from).toList();
     }
 
     @PostMapping("/diary/entries")
@@ -134,7 +144,7 @@ public class DiaryController
     }
 
     @PutMapping("/diary/entries/{entryId}")
-    @Operation(summary = "Edita data, nota, curtida, rever, review e spoiler de uma entrada")
+    @Operation(summary = "Edita data, nota, curtida, rever, review, spoiler e tags de uma entrada")
     public DiaryEntryResponse updateEntry(CurrentUser user, @PathVariable UUID entryId,
                                           @Valid @RequestBody UpdateDiaryEntryRequest request)
     {

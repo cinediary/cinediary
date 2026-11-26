@@ -97,9 +97,12 @@ export function EntryBody({
   onAddReview,
   revealed,
   onReveal,
+  onTagPress,
 }: {
   entry: DiaryEntry;
   author: EntryAuthor;
+  /** Só na sua entrada: tocar numa tag abre o diário filtrado por ela. */
+  onTagPress?: (tag: string) => void;
   onAuthorPress?: () => void;
   /** Só na sua entrada: review vazia vira atalho para escrever. */
   onAddReview?: () => void;
@@ -152,6 +155,26 @@ export function EntryBody({
               </View>
             ) : null}
           </View>
+        </View>
+      ) : null}
+
+      {entry.tags.length > 0 ? (
+        <View style={styles.badges}>
+          {entry.tags.map((tag) => (
+            <Pressable
+              key={tag}
+              accessibilityRole={onTagPress ? 'button' : 'text'}
+              accessibilityLabel={onTagPress ? t.tagFilter(tag) : tag}
+              disabled={!onTagPress}
+              onPress={() => onTagPress?.(tag)}
+              hitSlop={6}
+              style={({ pressed }) => [styles.badge, pressed && styles.pressed]}
+            >
+              <Text variant="caption" style={styles.badgeText}>
+                #{tag}
+              </Text>
+            </Pressable>
+          ))}
         </View>
       ) : null}
 

@@ -18,6 +18,7 @@ export interface DiaryEntry {
   containsSpoilers: boolean;
   /** Quem pode responder esta entrada; null = o padrão da conta do dono. */
   replyPolicy: ReplyPolicy | null;
+  tags: string[];
 }
 
 /** Quem pode responder: só o dono, quem o dono segue ou qualquer pessoa que veja a entrada. */
@@ -47,6 +48,7 @@ export interface EntryChanges {
   reviewText: string | null;
   containsSpoilers: boolean;
   replyPolicy: EntryReplyChoice;
+  tags: string[];
 }
 
 /** Parte de uma série registrada: a temporada inteira ou um episódio. */
@@ -152,6 +154,7 @@ export interface QuickLogDraft {
   reviewText: string;
   /** A review conta o que acontece (só vale com texto). */
   containsSpoilers: boolean;
+  tags: string[];
   seriesStatus: SeriesStatus | null;
 }
 
@@ -182,6 +185,7 @@ export function initialDraft(state: TitleSummary['state'], isSeries: boolean, to
     isRewatch: !isSeries && state.watched && !undated,
     reviewText: '',
     containsSpoilers: false,
+    tags: [],
     seriesStatus: isSeries ? (state.seriesStatus ?? 'WATCHING') : null,
   };
 }
@@ -208,3 +212,23 @@ export function limitReview(next: string, previous: string): string {
 /** Texto acima do limite e diferente do salvo: o backend recusaria, então o app não deixa salvar. */
 export const reviewBlocksSave = (text: string, saved: string | null) =>
   text.trim().length > REVIEW_MAX && text.trim() !== (saved ?? '').trim();
+
+// ---------- Tags (#58) ----------
+
+export interface TagUsage {
+  tag: string;
+  entries: number;
+}
+
+export const TAG_MAX_LENGTH = 30;
+export const TAGS_MAX = 10;
+
+/** Igual ao backend: sem espaços nas pontas e em minúsculas ("Cinema " e "cinema" são a mesma tag). */
+export const normalizeTag = (raw: string) => raw.trim().replace(/\s+/g, ' ').toLowerCase();
+
+/** Junta uma tag digitada às que já estão; vazia, repetida, longa demais ou além do limite não entra. */
+export function addTag(tags: string[], raw: string): string[] {
+  const tag = normalizeTag(raw);
+  if (!tag || tag.length > TAG_MAX_LENGTH || tags.includes(tag) || tags.length >= TAGS_MAX) return tags;
+  return [...tags, tag];
+}

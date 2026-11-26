@@ -1064,6 +1064,7 @@ paths:
         - $ref: '#/components/parameters/DiaryWithReview'
         - $ref: '#/components/parameters/DiaryMediaType'
         - $ref: '#/components/parameters/DiaryQuery'
+        - $ref: '#/components/parameters/DiaryTag'
         - in: query
           name: titleId
           required: false
@@ -1120,6 +1121,7 @@ paths:
         - $ref: '#/components/parameters/DiaryWithReview'
         - $ref: '#/components/parameters/DiaryMediaType'
         - $ref: '#/components/parameters/DiaryQuery'
+        - $ref: '#/components/parameters/DiaryTag'
       responses:
         '200':
           description: Total de registros com esses filtros
@@ -1127,6 +1129,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiaryCountResponse'
+
+  /api/v1/me/tags:
+    get:
+      tags: [Diary & Series]
+      summary: As suas tags, das mais usadas para as menos (sugestões ao registrar)
+      responses:
+        '200':
+          description: Tags com em quantos registros aparecem
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TagResponse'
 
   /api/v1/diary/filters:
     get:
@@ -1751,6 +1767,12 @@ components:
       required: false
       description: Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres)
       schema: { type: string, maxLength: 100 }
+    DiaryTag:
+      in: query
+      name: tag
+      required: false
+      description: Só os registros com esta tag (sem diferenciar maiúsculas nem espaços nas pontas)
+      schema: { type: string, maxLength: 30 }
   schemas:
     ActivityResponse:
       type: object
@@ -2608,6 +2630,11 @@ components:
           type: boolean
           default: false
           description: "A review conta o que acontece (o app esconde até a pessoa escolher ver)"
+        tags:
+          type: array
+          maxItems: 10
+          items: { type: string, maxLength: 30 }
+          description: "Tags livres do registro; ficam sem espaços nas pontas, em minúsculas e sem repetir"
 
     UpdateDiaryEntryRequest:
       type: object
@@ -2635,12 +2662,24 @@ components:
             limite) pode ser reenviada sem mudança; se o texto mudar, precisa caber no limite.
         containsSpoilers:
           type: boolean
+        tags:
+          type: array
+          nullable: true
+          maxItems: 10
+          items: { type: string, maxLength: 30 }
+          description: "Substitui as tags do registro; ausente = mantém as que estão"
 
     DiaryCountResponse:
       type: object
       required: [total]
       properties:
         total: { type: integer, format: int64 }
+    TagResponse:
+      type: object
+      required: [tag, entries]
+      properties:
+        tag: { type: string }
+        entries: { type: integer, format: int64, description: Em quantos registros a tag aparece }
     DiaryFiltersResponse:
       type: object
       required: [years, genres, moviesCount, seriesCount]
@@ -2663,6 +2702,10 @@ components:
       type: object
       required: [id, userId, title, watchedDate, liked, isRewatch, createdAt]
       properties:
+        tags:
+          type: array
+          items: { type: string }
+          description: "As tags do registro, em ordem alfabética (por enquanto só nas rotas do seu próprio diário)"
         replyPolicy:
           allOf: [{ $ref: '#/components/schemas/ReplyPolicy' }]
           nullable: true
@@ -2759,6 +2802,9 @@ components:
         listsCount:
           type: integer
           description: As listas do Letterboxd que entram com a importação (novas nascem privadas; reimportar atualiza)
+        tagsCount:
+          type: integer
+          description: Quantas tags diferentes vêm nos registros do diário (só em AWAITING_CONFIRMATION)
         diaryEntriesCount:
           type: integer
         diaryEntriesCreated:

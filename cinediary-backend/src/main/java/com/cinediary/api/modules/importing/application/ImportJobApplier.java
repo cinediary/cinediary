@@ -108,10 +108,10 @@ public class ImportJobApplier
             LetterboxdParsedItem item = s.item();
             for (LetterboxdParsedItem.Entry e : item.entries()) {
                 out.add(new ImportedItemCommand(s.titleId(), true, e.rating(), false, false, e.watchedDate(),
-                        e.rewatch(), e.review()));
+                        e.rewatch(), e.review(), e.tags()));
             }
             out.add(new ImportedItemCommand(s.titleId(), item.watched(), item.rating(), item.liked(),
-                    item.inWatchlist(), null, false, null));
+                    item.inWatchlist(), null, false, null, List.of()));
         }
         return out;
     }

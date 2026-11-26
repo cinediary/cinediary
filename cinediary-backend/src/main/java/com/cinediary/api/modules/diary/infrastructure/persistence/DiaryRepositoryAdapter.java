@@ -109,7 +109,7 @@ class DiaryRepositoryAdapter implements DiaryRepositoryPort
         e.setEpisodeNumber(m.episodeNumber() == null ? null : m.episodeNumber().shortValue());
         e.setContainsSpoilers(m.containsSpoilers());
         e.setReplyPolicy(m.replyPolicy() == null ? null : m.replyPolicy().name());
-        return toModel(entries.save(e));
+        return toModel(entries.saveAndFlush(e));
     }
 
     @Override
@@ -143,6 +143,12 @@ class DiaryRepositoryAdapter implements DiaryRepositoryPort
     {
         return entries.insertIfAbsent(m.userId(), m.titleId(), m.watchedDate(), m.rating(), m.liked(), m.rewatch(),
                 m.reviewText(), m.importHash()) == 1;
+    }
+
+    @Override
+    public Optional<UUID> findEntryIdByImportHash(String importHash)
+    {
+        return entries.findIdByImportHash(importHash);
     }
 
     @Override

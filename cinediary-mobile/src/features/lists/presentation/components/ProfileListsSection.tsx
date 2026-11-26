@@ -18,20 +18,39 @@ const RAIL_MAX = 10;
  */
 export function ProfileListsSection({ username, mine }: { username: string; mine: boolean }) {
   const styles = useStyles();
-  const colors = useColors();
   const t = strings.lists;
   const lists = useUserLists(username);
   const all = lists.data ?? [];
+  const action = useProfileListsAction(username, mine);
 
   if (lists.isError || (!mine && !lists.isPending && all.length === 0)) return null;
 
   return (
     <View style={styles.root}>
-      <SectionHeader
-        title={t.section}
-        actionLabel={all.length > 0 ? t.seeAll : mine ? t.newList : undefined}
-        onAction={all.length > 0 ? () => openUserLists(username) : mine ? openNewList : undefined}
-      />
+      <SectionHeader title={t.section} actionLabel={action?.label} onAction={action?.onPress} />
+      <ProfileListsRail username={username} />
+    </View>
+  );
+}
+
+/** "Ver tudo" com listas; no seu perfil sem listas, "Nova lista". */
+export function useProfileListsAction(username: string, mine: boolean) {
+  const t = strings.lists;
+  const all = useUserLists(username).data ?? [];
+  if (all.length > 0) return { label: t.seeAll, onPress: () => openUserLists(username) };
+  return mine ? { label: t.newList, onPress: openNewList } : null;
+}
+
+/** O trilho das listas (ou o convite para criar a primeira), sem o título da seção. */
+export function ProfileListsRail({ username }: { username: string }) {
+  const styles = useStyles();
+  const colors = useColors();
+  const t = strings.lists;
+  const lists = useUserLists(username);
+  const all = lists.data ?? [];
+
+  return (
+    <>
       {lists.isPending ? (
         <View style={[styles.bleed, styles.rail]}>
           <Skeleton width={CARD} height={CARD} radius={radius.md} />
@@ -60,7 +79,7 @@ export function ProfileListsSection({ username, mine }: { username: string; mine
           ))}
         </ScrollView>
       )}
-    </View>
+    </>
   );
 }
 

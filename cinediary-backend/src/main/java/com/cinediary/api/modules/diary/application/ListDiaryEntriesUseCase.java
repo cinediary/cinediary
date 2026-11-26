@@ -6,6 +6,7 @@ import com.cinediary.api.modules.diary.domain.DiaryEntryModel;
 import com.cinediary.api.modules.diary.domain.DiaryFilter;
 import com.cinediary.api.modules.diary.domain.DiaryFilterQueryPort;
 import com.cinediary.api.modules.diary.domain.DiaryRepositoryPort;
+import com.cinediary.api.modules.diary.domain.DiaryTagsPort;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -22,6 +23,7 @@ public class ListDiaryEntriesUseCase
     private final DiaryRepositoryPort repository;
     private final CatalogModulePort catalog;
     private final DiaryFilterQueryPort filtered;
+    private final DiaryTagsPort tagsPort;
 
     @Transactional(readOnly = true)
     public List<DiaryEntryResult> execute(UUID userId, int page, int size)
@@ -50,7 +52,15 @@ public class ListDiaryEntriesUseCase
         List<Long> ids = entries.stream().map(DiaryEntryModel::titleId).distinct().toList();
         Map<Long, TitleSummaryView> titles = catalog.summaries(ids, userId).stream()
                 .collect(Collectors.toMap(TitleSummaryView::id, Function.identity()));
-        return entries.stream().map(e -> new DiaryEntryResult(e, titles.get(e.titleId()))).toList();
+        Map<UUID, List<String>> tags = tagsPort.tagsOf(entries.stream().map(DiaryEntryModel::id).toList());
+        return entries.stream().map(e -> new DiaryEntryResult(e, titles.get(e.titleId()), tags.getOrDefault(e.id(), List.of())))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<DiaryTagsPort.TagCount> tagsOf(UUID userId)
+    {
+        return tagsPort.tagsOfUser(userId, 200);
     }
 
     @Transactional(readOnly = true)

@@ -9,3 +9,8 @@ export function openEntry(entry: DiaryEntry) {
   analytics.track('entry_opened', { has_review: !!entry.reviewText, contains_spoilers: entry.containsSpoilers });
   nav.push({ pathname: '/entry/[entryId]', params: { entryId: entry.id } });
 }
+
+/** O diário filtrado por uma tag (#58). */
+export function openDiaryWithTag(tag: string) {
+  nav.push({ pathname: '/diary', params: { tag } });
+}

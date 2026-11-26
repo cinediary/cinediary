@@ -1,7 +1,7 @@
 import type { SeriesStatus, TitleState, TitleSummary } from '@/features/catalog/domain/title';
 import { toTitleState, toTitleStateDto, toTitleSummary } from '@/features/catalog/infrastructure/titleMapper';
 import { api, unwrap, unwrapVoid, type Schemas } from '@/shared/api/client';
-import type { DiaryEntry, EntryChanges, EntryScope } from '../domain/diary';
+import type { DiaryEntry, EntryChanges, EntryScope, TagUsage } from '../domain/diary';
 import { filtersToQuery, NO_FILTERS, type DiaryFilterOptions, type DiaryFilters } from '../domain/diaryFilters';
 
 export const toDiaryEntry = (dto: Schemas['DiaryEntryResponse']): DiaryEntry => ({
@@ -17,6 +17,7 @@ export const toDiaryEntry = (dto: Schemas['DiaryEntryResponse']): DiaryEntry => 
   scope: dto.seasonNumber ? { season: dto.seasonNumber, ...(dto.episodeNumber ? { episode: dto.episodeNumber } : {}) } : null,
   containsSpoilers: dto.containsSpoilers ?? false,
   replyPolicy: dto.replyPolicy ?? null,
+  tags: dto.tags ?? [],
 });
 
 export interface CreateEntryInput {
@@ -29,6 +30,7 @@ export interface CreateEntryInput {
   /** Séries: registrar uma temporada ou um episódio (sem isso, o título inteiro). */
   scope?: EntryScope | null;
   containsSpoilers?: boolean;
+  tags?: string[];
 }
 
 export interface SeriesProgressResult {
@@ -62,6 +64,12 @@ export const diaryApi = {
     };
   },
 
+  /** As suas tags, das mais usadas para as menos (sugestões ao registrar). */
+  async myTags(): Promise<TagUsage[]> {
+    const dto = await unwrap(api.GET('/api/v1/me/tags'));
+    return dto.map((t) => ({ tag: t.tag, entries: t.entries }));
+  },
+
   async entriesOfTitle(titleId: number): Promise<DiaryEntry[]> {
     const dto = await unwrap(api.GET('/api/v1/diary/entries', { params: { query: { titleId, page: 0, size: 100 } } }));
     return dto.map(toDiaryEntry);
@@ -83,6 +91,7 @@ export const diaryApi = {
           reviewText: changes.reviewText,
           containsSpoilers: !!changes.reviewText && changes.containsSpoilers,
           replyPolicy: changes.replyPolicy,
+          tags: changes.tags,
         },
       }),
     );
@@ -104,6 +113,7 @@ export const diaryApi = {
           seasonNumber: input.scope?.season ?? null,
           episodeNumber: input.scope?.episode ?? null,
           containsSpoilers: !!input.reviewText && !!input.containsSpoilers,
+          tags: input.tags ?? [],
         },
       }),
     );

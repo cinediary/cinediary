@@ -1,4 +1,4 @@
-import { Faders } from 'phosphor-react-native';
+import { Faders, X } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 import Animated, {
@@ -56,6 +56,7 @@ export function DiaryFilterBar({
   onOpenSheet: () => void;
 }) {
   const styles = useStyles();
+  const colors = useColors();
   const count = sheetFilterCount(filters);
   const summary = [
     filters.type === 'MOVIE' ? t.movies : filters.type === 'SERIES' ? t.series : null,
@@ -85,6 +86,22 @@ export function DiaryFilterBar({
       {filters.year !== null ? (
         <Animated.View entering={enter} exiting={leave}>
           <MonthPills month={filters.month} onChange={(month) => onChange({ month })} />
+        </Animated.View>
+      ) : null}
+      {filters.tag ? (
+        <Animated.View entering={enter} exiting={leave} style={styles.tagRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={strings.diary.tagFilterClear(filters.tag)}
+            onPress={() => onChange({ tag: null })}
+            hitSlop={6}
+            style={styles.tagPill}
+          >
+            <Text variant="caption" style={styles.tagText} numberOfLines={1}>
+              #{filters.tag}
+            </Text>
+            <X size={12} weight="bold" color={colors.ink900} />
+          </Pressable>
         </Animated.View>
       ) : null}
       {summary.length ? (
@@ -345,6 +362,18 @@ const useStyles = makeStyles((c) => ({
   flex: { flex: 1 },
   bar: { gap: space.md },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  tagRow: { flexDirection: 'row' },
+  tagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+    maxWidth: '100%',
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
+    borderRadius: radius.pill,
+    backgroundColor: c.terracota300,
+  },
+  tagText: { fontFamily: fonts.bodyHeavy, color: c.ink900, flexShrink: 1 },
   filterButton: {
     width: 48,
     height: 48,
