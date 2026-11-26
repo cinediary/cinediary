@@ -167,54 +167,61 @@ export function SettingsScreen() {
 
   return (
     <View style={styles.root}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: backInset, paddingBottom: insets.bottom + space.xl },
-        ]}
-        showsVerticalScrollIndicator={false}
+      {/* Excluindo: a tela de espera cobre tudo, e o leitor de tela (TalkBack e VoiceOver) também não alcança o fundo */}
+      <View
+        style={styles.fill}
+        importantForAccessibility={deleteAccount.isPending ? 'no-hide-descendants' : 'auto'}
+        accessibilityElementsHidden={deleteAccount.isPending}
       >
-        <Title parts={a.settingsTitle} />
-        {sections.map((section) => (
-          <View key={section.key} style={styles.section}>
-            <Text variant="overline" tone="secondary" accessibilityRole="header">
-              {section.title}
-            </Text>
-            <View style={styles.card}>
-              {section.rows.map((row, i) => (
-                <View key={row.key} style={[styles.row, i > 0 && styles.divider]}>
-                  <ListRow
-                    icon={row.icon}
-                    label={row.label}
-                    hint={row.hint}
-                    onPress={row.onPress}
-                    switchValue={row.switchValue}
-                    onSwitchChange={row.onSwitchChange}
-                    danger={row.danger}
-                  />
-                </View>
-              ))}
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: backInset, paddingBottom: insets.bottom + space.xl },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <Title parts={a.settingsTitle} />
+          {sections.map((section) => (
+            <View key={section.key} style={styles.section}>
+              <Text variant="overline" tone="secondary" accessibilityRole="header">
+                {section.title}
+              </Text>
+              <View style={styles.card}>
+                {section.rows.map((row, i) => (
+                  <View key={row.key} style={[styles.row, i > 0 && styles.divider]}>
+                    <ListRow
+                      icon={row.icon}
+                      label={row.label}
+                      hint={row.hint}
+                      onPress={row.onPress}
+                      switchValue={row.switchValue}
+                      onSwitchChange={row.onSwitchChange}
+                      danger={row.danger}
+                    />
+                  </View>
+                ))}
+              </View>
+            </View>
+          ))}
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <ListRow icon={<SignOut size={20} color={colors.danger} />} label={strings.auth.signOut} danger onPress={confirmSignOut} />
             </View>
           </View>
-        ))}
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <ListRow icon={<SignOut size={20} color={colors.danger} />} label={strings.auth.signOut} danger onPress={confirmSignOut} />
+          {/* No fim da tela, longe do que se usa no dia a dia */}
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <ListRow
+                icon={<Trash size={20} color={colors.danger} />}
+                label={a.deleteAccount}
+                danger
+                onPress={deleteAccount.isPending ? undefined : confirmDeleteAccount}
+              />
+            </View>
           </View>
-        </View>
-        {/* No fim da tela, longe do que se usa no dia a dia */}
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <ListRow
-              icon={<Trash size={20} color={colors.danger} />}
-              label={a.deleteAccount}
-              danger
-              onPress={deleteAccount.isPending ? undefined : confirmDeleteAccount}
-            />
-          </View>
-        </View>
-      </ScrollView>
-      <FloatingBackButton />
+        </ScrollView>
+        <FloatingBackButton />
+      </View>
       <ActionSheet
         visible={pickingReplies}
         title={a.replyPolicy}
@@ -262,6 +269,7 @@ const useStyles = makeStyles((c) => ({
   section: { gap: space.sm },
   card: { borderRadius: radius.lg, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
   row: { paddingHorizontal: space.lg, paddingVertical: space.xs },
+  fill: { flex: 1 },
   blocking: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
