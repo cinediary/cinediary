@@ -2,9 +2,11 @@ package com.cinediary.api.modules.users.application;
 
 import com.cinediary.api.modules.catalog.api.CatalogModulePort;
 import com.cinediary.api.modules.diary.api.DiaryModulePort;
+import com.cinediary.api.modules.users.api.PushDeviceView;
 import com.cinediary.api.modules.users.api.UserProfileView;
 import com.cinediary.api.modules.users.api.UserView;
 import com.cinediary.api.modules.users.api.UsersModulePort;
+import com.cinediary.api.modules.users.domain.PushDevicesPort;
 import com.cinediary.api.modules.users.domain.UserAccount;
 import com.cinediary.api.modules.users.domain.UserRepositoryPort;
 import com.cinediary.api.shared.domain.NotFoundException;
@@ -23,6 +25,7 @@ public class UsersModuleFacade implements UsersModulePort
     private final UserRepositoryPort users;
     private final DiaryModulePort diary;
     private final CatalogModulePort catalog;
+    private final PushDevicesPort pushDevices;
 
     @Override
     public Optional<UserView> findById(UUID userId)
@@ -86,5 +89,19 @@ public class UsersModuleFacade implements UsersModulePort
     {
         return new UserView(u.id(), u.username(), u.displayName(), u.avatarUrl(), u.privateProfile(),
                 u.onboardingCompleted(), u.defaultReplyPolicy());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PushDeviceView> pushDevices(UUID userId)
+    {
+        return pushDevices.devicesOf(userId).stream().map(d -> new PushDeviceView(d.token(), d.language())).toList();
+    }
+
+    @Override
+    @Transactional
+    public void removePushTokens(Collection<String> tokens)
+    {
+        pushDevices.deleteTokens(tokens);
     }
 }
