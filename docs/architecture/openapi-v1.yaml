@@ -125,6 +125,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserProfileResponse'
 
+  /api/v1/me/devices:
+    put:
+      tags: [Users & Onboarding]
+      summary: "Registra o aparelho para as notificações push (depois do login, se a pessoa permitiu)"
+      description: "O mesmo token não duplica: registrar de novo só atualiza. Um token que era de outra pessoa passa para esta."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeviceRequest'
+      responses:
+        '204':
+          description: Aparelho registrado
+        '400':
+          description: "Token fora do formato do Expo, ou plataforma inválida"
+
+  /api/v1/me/devices/{token}:
+    delete:
+      tags: [Users & Onboarding]
+      summary: Tira o aparelho das notificações push (no logout)
+      description: "Só apaga se o aparelho for da pessoa; um token desconhecido não dá erro."
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: "O token do Expo, codificado na URL (ex.: ExponentPushToken%5Babc%5D)"
+          schema: { type: string }
+      responses:
+        '204':
+          description: Aparelho removido (ou não existia)
+
   /api/v1/me/onboarding:
     post:
       tags: [Users & Onboarding]
@@ -2056,6 +2088,13 @@ components:
             properties:
               path: { type: string, description: "O que se manda em PUT /me/header (ex.: /abc.jpg)" }
               url: { type: string, description: "A imagem pronta (1280 px)" }
+
+    RegisterDeviceRequest:
+      type: object
+      required: [token, platform]
+      properties:
+        token: { type: string, maxLength: 255, description: "ExponentPushToken[...] (ou ExpoPushToken[...])" }
+        platform: { type: string, enum: [IOS, ANDROID] }
 
     UpdateProfileRequest:
       type: object

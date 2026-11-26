@@ -4,10 +4,12 @@ import com.cinediary.api.modules.users.api.UserProfileView;
 import com.cinediary.api.modules.users.application.CompleteOnboardingUseCase;
 import com.cinediary.api.modules.users.application.GetCurrentUserUseCase;
 import com.cinediary.api.modules.users.application.OnboardingResult;
+import com.cinediary.api.modules.users.application.PushDevicesUseCase;
 import com.cinediary.api.modules.users.application.UpdateProfileHeaderUseCase;
 import com.cinediary.api.modules.users.application.UpdateUserProfileUseCase;
 import com.cinediary.api.modules.users.presentation.dto.OnboardingRequest;
 import com.cinediary.api.modules.users.presentation.dto.OnboardingResponse;
+import com.cinediary.api.modules.users.presentation.dto.RegisterDeviceRequest;
 import com.cinediary.api.modules.users.presentation.dto.UpdateHeaderRequest;
 import com.cinediary.api.modules.users.presentation.dto.UpdateProfileRequest;
 import com.cinediary.api.shared.domain.CurrentUser;
@@ -15,13 +17,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -34,6 +39,7 @@ public class MeController
     private final UpdateUserProfileUseCase updateUserProfile;
     private final CompleteOnboardingUseCase completeOnboarding;
     private final UpdateProfileHeaderUseCase updateHeader;
+    private final PushDevicesUseCase pushDevices;
 
     @GetMapping
     @Operation(summary = "Perfil do usuário autenticado")
@@ -61,6 +67,22 @@ public class MeController
     public UserProfileView removeHeader(CurrentUser user)
     {
         return updateHeader.remove(user.id());
+    }
+
+    @PutMapping("/devices")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Registra o aparelho para as notificações push (o mesmo token só atualiza)")
+    public void registerDevice(CurrentUser user, @Valid @RequestBody RegisterDeviceRequest request)
+    {
+        pushDevices.register(user.id(), request.token(), request.platform());
+    }
+
+    @DeleteMapping("/devices/{token}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Tira o aparelho das notificações push (no logout)")
+    public void unregisterDevice(CurrentUser user, @PathVariable String token)
+    {
+        pushDevices.unregister(user.id(), token);
     }
 
     @PostMapping("/onboarding")

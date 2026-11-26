@@ -31,4 +31,10 @@ public interface UsersModulePort
      * Devolve, dos {@code userIds}, quem está com ele desligado.
      */
     java.util.Set<UUID> autoAcceptingCompanions(Collection<UUID> userIds);
+
+    /** Os aparelhos da pessoa para o push (token e idioma), o mais recente primeiro; vazio se não há nenhum. */
+    List<PushDeviceView> pushDevices(UUID userId);
+
+    /** Tira os tokens que o serviço de push recusou (o app foi desinstalado, por exemplo). */
+    void removePushTokens(Collection<String> tokens);
 }
