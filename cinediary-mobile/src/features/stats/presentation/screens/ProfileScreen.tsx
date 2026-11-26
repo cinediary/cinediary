@@ -10,7 +10,7 @@ import { OwnProfileActions } from '@/features/social/presentation/components/Pro
 import { ProfileHeader, useCoverStatusBar } from '@/features/social/presentation/components/ProfileHeader';
 import { openFollowRequests } from '@/features/social/presentation/navigation';
 import { formatYearMonthShort, strings } from '@/shared/i18n';
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, makeStyles, useColors } from '@/shared/theme';
 import { nav } from '@/shared/ui/navigation/nav';
 import {
   Button,
@@ -35,6 +35,8 @@ import { StatCards } from '../components/StatCards';
  * configurações (perfil privado, importar, sair…) na engrenagem do canto.
  */
 export function ProfileScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.stats;
   const { me, stats } = useMyStats();
   // Contadores de seguidores/seguindo e pedidos pendentes vêm do perfil público (o mesmo que os outros veem).
@@ -103,12 +105,12 @@ export function ProfileScreen() {
           style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
         >
           <View style={styles.requestsIcon}>
-            <UserPlus size={18} color={palette.terracota700} weight="bold" />
+            <UserPlus size={18} color={colors.terracota700} weight="bold" />
           </View>
           <Text variant="bodyStrong" style={styles.flex}>
             {strings.social.requestsBanner(social.data.pendingRequestsCount)}
           </Text>
-          <CaretRight size={16} color={palette.ink500} />
+          <CaretRight size={16} color={colors.ink500} />
         </Pressable>
       ) : null}
 
@@ -188,7 +190,7 @@ export function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   flex: { flex: 1, gap: 2 },
   // Mesmo espaço entre todas as seções (e igual ao perfil de outra pessoa).
   page: { gap: space.xl },
@@ -199,7 +201,7 @@ const styles = StyleSheet.create({
     gap: space.md,
     padding: space.md,
     borderRadius: radius.lg,
-    backgroundColor: palette.terracota100,
+    backgroundColor: c.terracota100,
   },
   requestsIcon: {
     width: 32,
@@ -207,11 +209,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
   },
   favorites: { flexDirection: 'row', gap: space.md },
   block: { gap: space.md },
-});
+}));
 
 /** Topo do perfil (foto, nome, @), favoritos e números enquanto o /me chega. */
 function ProfileSkeleton() {

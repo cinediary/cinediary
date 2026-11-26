@@ -1,12 +1,12 @@
 import { useLocalSearchParams } from 'expo-router';
 import { PencilSimple, Trash } from 'phosphor-react-native';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { useDeleteEntry, useEntry } from '@/features/diary/application/diaryQueries';
 import { EntrySkeleton } from '@/features/diary/presentation/components/EntryDetail';
 import { strings } from '@/shared/i18n';
-import { palette, semantic } from '@/shared/theme';
+import { makeStyles, useColors } from '@/shared/theme';
 import { ErrorState, MoreMenu, menuIcons, useToast } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { nav } from '@/shared/ui/navigation/nav';
@@ -17,6 +17,8 @@ import { EntryScreenFrame } from '../components/EntryScreenFrame';
  * barra de ações e o "⋯" do canto, que abre o menu nativo do sistema (editar ou excluir).
  */
 export function EntryScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.diary;
   const { entryId = '' } = useLocalSearchParams<{ entryId: string }>();
   const backInset = useFloatingBackInset();
@@ -74,7 +76,7 @@ export function EntryScreen() {
               label: t.entryEdit,
               systemImage: 'pencil',
               androidIcon: menuIcons.edit,
-              icon: <PencilSimple size={20} color={palette.ink900} />,
+              icon: <PencilSimple size={20} color={colors.ink900} />,
               onPress: edit,
             },
             {
@@ -83,7 +85,7 @@ export function EntryScreen() {
               destructive: true,
               systemImage: 'trash',
               androidIcon: menuIcons.delete,
-              icon: <Trash size={20} color={semantic.danger} />,
+              icon: <Trash size={20} color={colors.danger} />,
               onPress: confirmDelete,
             },
           ]}
@@ -93,7 +95,7 @@ export function EntryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   center: { justifyContent: 'center' },
-});
+}));

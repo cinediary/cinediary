@@ -1,10 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { Check, UserPlus, X } from 'phosphor-react-native';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, makeStyles, useColors } from '@/shared/theme';
 import { ErrorState, SkeletonRows, Text, useToast } from '@/shared/ui';
 import { usePullToRefresh } from '@/shared/ui/usePullToRefresh';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
@@ -17,6 +17,8 @@ import { PersonRow } from '../components/PersonRow';
  * botões redondos: ✓ aprovar e ✕ recusar (a pessoa não é avisada da recusa).
  */
 export function FollowRequestsScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social;
   const insets = useSafeAreaInsets();
   const backInset = useFloatingBackInset();
@@ -40,7 +42,7 @@ export function FollowRequestsScreen() {
           styles.content,
           { paddingTop: backInset, paddingBottom: insets.bottom + space.xl },
         ]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={semantic.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
@@ -56,7 +58,7 @@ export function FollowRequestsScreen() {
         ) : requests.isError ? (
           <ErrorState onRetry={() => requests.refetch()} />
         ) : (requests.data?.length ?? 0) === 0 ? (
-          <PeopleEmpty icon={<UserPlus size={28} color={palette.ink500} />} text={s.requestsEmpty} />
+          <PeopleEmpty icon={<UserPlus size={28} color={colors.ink500} />} text={s.requestsEmpty} />
         ) : (
           <PeopleCard>
             {requests.data!.map((person) => (
@@ -71,7 +73,7 @@ export function FollowRequestsScreen() {
                       onPress={() => respond(person.id, person.username, false)}
                       style={({ pressed }) => [styles.round, styles.decline, pressed && styles.pressed]}
                     >
-                      <X size={18} weight="bold" color={palette.ink700} />
+                      <X size={18} weight="bold" color={colors.ink700} />
                     </Pressable>
                     <Pressable
                       accessibilityRole="button"
@@ -79,7 +81,7 @@ export function FollowRequestsScreen() {
                       onPress={() => respond(person.id, person.username, true)}
                       style={({ pressed }) => [styles.round, styles.approve, pressed && styles.pressed]}
                     >
-                      <Check size={18} weight="bold" color={semantic.onPrimary} />
+                      <Check size={18} weight="bold" color={colors.onPrimary} />
                     </Pressable>
                   </View>
                 }
@@ -93,14 +95,14 @@ export function FollowRequestsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: space.screenX, gap: space.lg },
   header: { gap: space.xs, paddingBottom: space.xs },
   center: { textAlign: 'center' },
   actions: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   round: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  approve: { backgroundColor: semantic.primary },
-  decline: { backgroundColor: palette.surface, borderWidth: 1.5, borderColor: palette.borderStrong },
+  approve: { backgroundColor: c.primary },
+  decline: { backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.borderStrong },
   pressed: { opacity: 0.7, transform: [{ scale: 0.95 }] },
-});
+}));

@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { openQuickLog } from '@/features/catalog/presentation/navigation';
 import { useTitleEntries } from '@/features/diary/application/diaryQueries';
 import type { DiaryEntry } from '@/features/diary/domain/diary';
 import { strings } from '@/shared/i18n';
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, makeStyles } from '@/shared/theme';
 import { Avatar, Button, Text } from '@/shared/ui';
 import { useEntryCompanions, useRespondToCompanion } from '../../application/companionQueries';
 import type { Actor } from '../../domain/social';
@@ -29,6 +29,7 @@ export function WatchedWith({
   /** No fim da linha do "Com…" (ex.: o botão dos Stories num registro sem review). Sem marcações, fica sozinho. */
   trailing?: ReactNode;
 }) {
+  const styles = useStyles();
   const t = strings.social.companions;
   const entryId = entry.id;
   const companions = useEntryCompanions(entryId);
@@ -131,18 +132,18 @@ export function WatchedWith({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.md },
   // As fotos e o "Com…" bem juntos (antes 12; ficava longe demais).
   row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   flex: { flex: 1 },
   avatars: { flexDirection: 'row' },
-  avatar: { borderRadius: 16, borderWidth: 2, borderColor: palette.bg },
+  avatar: { borderRadius: 16, borderWidth: 2, borderColor: c.bg },
   overlap: { marginLeft: -10 },
   faded: { opacity: 0.5 },
-  ask: { gap: space.sm, padding: space.md, borderRadius: radius.lg, backgroundColor: palette.surfaceSunken },
+  ask: { gap: space.sm, padding: space.md, borderRadius: radius.lg, backgroundColor: c.surfaceSunken },
   buttons: { flexDirection: 'row', gap: space.sm },
   accepted: { gap: space.sm },
   link: { alignSelf: 'center', paddingVertical: space.xs },
   dim: { opacity: 0.5 },
-});
+}));

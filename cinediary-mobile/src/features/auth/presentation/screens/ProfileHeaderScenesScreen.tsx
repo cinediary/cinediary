@@ -7,7 +7,7 @@ import { useTitleBackdrops } from '@/features/catalog/application/catalogQueries
 import type { TitleBackdrop } from '@/features/catalog/domain/extras';
 import type { MediaType } from '@/features/catalog/domain/title';
 import { strings } from '@/shared/i18n';
-import { palette, radius, semantic, space } from '@/shared/theme';
+import { radius, space, makeStyles } from '@/shared/theme';
 import { ErrorState, Skeleton, Text, Title } from '@/shared/ui';
 import { FloatingBackButton, FLOATING_BACK_SPACE } from '@/shared/ui/navigation/FloatingBackButton';
 import { openCoverPreview } from '../navigation/coverNavigation';
@@ -19,6 +19,7 @@ const COLUMNS = 2;
  * Tocar numa cena abre a prévia no perfil; nada é salvo aqui. O voltar (botão ou gesto) volta para a busca.
  */
 export function ProfileHeaderScenesScreen() {
+  const styles = useStyles();
   const a = strings.account;
   const p = useLocalSearchParams<{ mediaType: MediaType; tmdbId: string; titleId: string; name: string }>();
   const { width } = useWindowDimensions();
@@ -73,12 +74,12 @@ export function ProfileHeaderScenesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: space.screenX, paddingTop: FLOATING_BACK_SPACE, paddingBottom: space.xl, gap: space.md },
   header: { gap: space.sm, marginBottom: space.md },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   row: { gap: space.md },
-  scene: { borderRadius: radius.md, overflow: 'hidden', backgroundColor: palette.surfaceSunken },
+  scene: { borderRadius: radius.md, overflow: 'hidden', backgroundColor: c.surfaceSunken },
   pressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
-});
+}));

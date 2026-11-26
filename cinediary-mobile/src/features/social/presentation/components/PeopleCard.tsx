@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, makeStyles } from '@/shared/theme';
 import { Text } from '@/shared/ui';
 
 /** Cartão com uma lista de pessoas: linhas separadas por um fio, no mesmo estilo dos cartões do perfil. */
 export function PeopleCard({ children }: { children: ReactNode[] }) {
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       {children.map((child, i) => (
@@ -19,6 +20,7 @@ export function PeopleCard({ children }: { children: ReactNode[] }) {
 
 /** Lista vazia: um ícone num círculo e uma frase, centralizados. */
 export function PeopleEmpty({ icon, text }: { icon: ReactNode; text: string }) {
+  const styles = useStyles();
   return (
     <View style={styles.empty}>
       <View style={styles.emptyIcon}>{icon}</View>
@@ -29,10 +31,10 @@ export function PeopleEmpty({ icon, text }: { icon: ReactNode; text: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: { borderRadius: radius.lg, backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.border, overflow: 'hidden' },
+const useStyles = makeStyles((c) => ({
+  card: { borderRadius: radius.lg, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
   row: { paddingHorizontal: space.lg, paddingVertical: space.xs },
-  divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.border },
+  divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
   empty: { alignItems: 'center', gap: space.md, paddingVertical: space['3xl'], paddingHorizontal: space.xl },
   emptyIcon: {
     width: 64,
@@ -40,7 +42,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
   },
   center: { textAlign: 'center' },
-});
+}));

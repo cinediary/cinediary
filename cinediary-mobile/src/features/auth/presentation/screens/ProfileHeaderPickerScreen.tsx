@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { CatalogSearchPanel } from '@/features/catalog/presentation/components/CatalogSearchPanel';
 import { MyTitlesShortcuts } from '@/features/diary/presentation/components/MyTitlesShortcuts';
 import { strings } from '@/shared/i18n';
-import { palette, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import { Screen, Text, Title } from '@/shared/ui';
 import { FloatingBackButton, FLOATING_BACK_SPACE } from '@/shared/ui/navigation/FloatingBackButton';
 import { openCoverScenes } from '../navigation/coverNavigation';
@@ -16,6 +16,7 @@ import { openCoverScenes } from '../navigation/coverNavigation';
  * (o voltar de lá volta para cá).
  */
 export function ProfileHeaderPickerScreen() {
+  const colors = useColors();
   const a = strings.account;
   return (
     <View style={styles.root}>
@@ -29,7 +30,7 @@ export function ProfileHeaderPickerScreen() {
           onOpen={openCoverScenes}
           onAction={openCoverScenes}
           placeholder={a.coverSearch}
-          actionIcon={<CaretRight size={20} color={palette.ink500} />}
+          actionIcon={<CaretRight size={20} color={colors.ink500} />}
           actionLabel={(t) => a.coverPickScene(t.title)}
           idleHeader={<MyTitlesShortcuts onPick={openCoverScenes} labelFor={(t) => a.coverPickScene(t.title)} />}
         />

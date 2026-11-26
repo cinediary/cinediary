@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ActionSheet, Avatar, Button, markImageBroken, Skeleton, Text, TextField, useToast, useWorkingImageUrl } from '@/shared/ui';
-import { fonts, palette, radius, semantic, space, touch, type as typeScale } from '@/shared/theme';
+import { fonts, radius, space, touch, type as typeScale, makeStyles, useColors, lightColors } from '@/shared/theme';
 import { Camera, CaretDown, EnvelopeSimple, ImageSquare, Trash } from 'phosphor-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
@@ -21,6 +21,7 @@ import { BIO_MAX, isPronounCode, NAME_MAX, PRONOUN_CODES, type UserProfile } fro
  * (cada um com o próprio passo); nome e @ vão juntos no "Salvar alterações", fixo acima do teclado.
  */
 export function EditProfileScreen() {
+  const styles = useStyles();
   const me = useMe();
   const a = strings.account;
   if (!me.data) {
@@ -39,6 +40,8 @@ export function EditProfileScreen() {
 }
 
 function EditProfileForm({ profile }: { profile: UserProfile }) {
+  const styles = useStyles();
+  const colors = useColors();
   const a = strings.account;
   const au = strings.auth;
   const toast = useToast();
@@ -157,7 +160,7 @@ function EditProfileForm({ profile }: { profile: UserProfile }) {
           style={({ pressed }) => [styles.select, pressed && styles.selectPressed]}
         >
           <Text style={[styles.flex, !pronouns && styles.placeholder]}>{pronouns ? a.pronounOptions[pronouns] : a.pronounNone}</Text>
-          <CaretDown size={18} color={palette.ink500} />
+          <CaretDown size={18} color={colors.ink500} />
         </Pressable>
       </View>
       <ActionSheet
@@ -183,7 +186,7 @@ function EditProfileForm({ profile }: { profile: UserProfile }) {
           value={bio}
           onChangeText={setBio}
           placeholder={a.bioPlaceholder}
-          placeholderTextColor={palette.ink500}
+          placeholderTextColor={colors.ink500}
           accessibilityLabel={a.bio}
           maxLength={BIO_MAX}
           multiline
@@ -208,6 +211,8 @@ type Edit = ReturnType<typeof useEditProfile>;
 
 /** Foto grande no topo: tocar abre as opções (galeria, câmera, remover). */
 function PhotoPicker({ profile, edit }: { profile: UserProfile; edit: Edit }) {
+  const styles = useStyles();
+  const colors = useColors();
   const a = strings.account;
   const toast = useToast();
   const busy = edit.busy === 'photo';
@@ -245,11 +250,11 @@ function PhotoPicker({ profile, edit }: { profile: UserProfile; edit: Edit }) {
         <Avatar name={profile.displayName || profile.username} imageUrl={profile.avatarUrl} size={104} />
         {busy ? (
           <View style={styles.photoBusy}>
-            <ActivityIndicator color={palette.surface} />
+            <ActivityIndicator color={lightColors.surface} />
           </View>
         ) : null}
         <View style={styles.cameraBadge}>
-          <Camera size={18} color={semantic.onPrimary} weight="fill" />
+          <Camera size={18} color={colors.onPrimary} weight="fill" />
         </View>
       </Pressable>
       <Pressable accessibilityRole="button" onPress={openOptions} disabled={busy} hitSlop={8}>
@@ -265,13 +270,13 @@ function PhotoPicker({ profile, edit }: { profile: UserProfile; edit: Edit }) {
           {
             key: 'library',
             label: a.photoFromLibrary,
-            icon: <ImageSquare size={20} color={palette.ink900} />,
+            icon: <ImageSquare size={20} color={colors.ink900} />,
             onPress: () => void pick('library'),
           },
           {
             key: 'camera',
             label: a.photoFromCamera,
-            icon: <Camera size={20} color={palette.ink900} />,
+            icon: <Camera size={20} color={colors.ink900} />,
             onPress: () => void pick('camera'),
           },
           ...(profile.avatarUrl
@@ -280,7 +285,7 @@ function PhotoPicker({ profile, edit }: { profile: UserProfile; edit: Edit }) {
                   key: 'remove',
                   label: a.removePhoto,
                   destructive: true,
-                  icon: <Trash size={20} color={semantic.danger} />,
+                  icon: <Trash size={20} color={colors.danger} />,
                   onPress: () => void remove(),
                 },
               ]
@@ -296,6 +301,8 @@ function PhotoPicker({ profile, edit }: { profile: UserProfile; edit: Edit }) {
  * remover salva na hora. Não tem upload: a imagem fica no TMDB.
  */
 function CoverSection({ profile }: { profile: UserProfile }) {
+  const styles = useStyles();
+  const colors = useColors();
   const a = strings.account;
   const toast = useToast();
   const { remove } = useProfileHeader();
@@ -337,7 +344,7 @@ function CoverSection({ profile }: { profile: UserProfile }) {
         ) : (
           // Sem capa, a própria moldura é o botão: ícone, a ação e a explicação, centralizados.
           <View style={styles.coverEmpty}>
-            <ImageSquare size={26} color={palette.terracota500} weight="duotone" />
+            <ImageSquare size={26} color={colors.terracota500} weight="duotone" />
             <Text variant="bodyStrong" tone="link">
               {a.coverChoose}
             </Text>
@@ -367,6 +374,8 @@ function CoverSection({ profile }: { profile: UserProfile }) {
  * confirmado ele vira o principal e o antigo sai.
  */
 function EmailSection({ edit }: { edit: Edit }) {
+  const styles = useStyles();
+  const colors = useColors();
   const a = strings.account;
   const toast = useToast();
   const [step, setStep] = useState<'view' | 'enter' | 'code'>('view');
@@ -407,7 +416,7 @@ function EmailSection({ edit }: { edit: Edit }) {
   return (
     <View style={styles.emailBox}>
       <View style={styles.emailRow}>
-        <EnvelopeSimple size={20} color={palette.ink700} />
+        <EnvelopeSimple size={20} color={colors.ink700} />
         <View style={styles.flex}>
           <Text variant="caption" tone="muted">
             {a.email}
@@ -463,7 +472,7 @@ function EmailSection({ edit }: { edit: Edit }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   center: { alignItems: 'center', gap: space.sm },
   pair: { flexDirection: 'row', gap: space.md },
   field: { gap: space.xs },
@@ -475,31 +484,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: palette.borderStrong,
-    backgroundColor: palette.surface,
+    borderColor: c.borderStrong,
+    backgroundColor: c.surface,
   },
-  selectPressed: { backgroundColor: palette.surfaceSunken },
-  placeholder: { color: palette.ink500 },
+  selectPressed: { backgroundColor: c.surfaceSunken },
+  placeholder: { color: c.ink500 },
   bio: {
     ...typeScale.body,
     minHeight: 96,
     padding: space.md,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: palette.borderStrong,
-    backgroundColor: palette.surface,
-    color: palette.ink900,
+    borderColor: c.borderStrong,
+    backgroundColor: c.surface,
+    color: c.ink900,
     textAlignVertical: 'top',
   },
   count: { textAlign: 'right' },
-  cover: { aspectRatio: 16 / 9, borderRadius: radius.md, overflow: 'hidden', backgroundColor: palette.surfaceSunken },
+  cover: { aspectRatio: 16 / 9, borderRadius: radius.md, overflow: 'hidden', backgroundColor: c.surfaceSunken },
   // Sem capa: a moldura de "escolha aqui".
-  coverEmptyFrame: { borderWidth: 1.5, borderColor: palette.borderStrong, backgroundColor: palette.surface },
+  coverEmptyFrame: { borderWidth: 1.5, borderColor: c.borderStrong, backgroundColor: c.surface },
   coverOutline: {
     ...StyleSheet.absoluteFill,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: semantic.imageOutline,
+    borderColor: c.imageOutline,
   },
   coverEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.xs, paddingHorizontal: space.xl },
   coverHint: { textAlign: 'center', marginTop: 2 },
@@ -522,26 +531,26 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: semantic.primary,
+    backgroundColor: c.primary,
     borderWidth: 3,
-    borderColor: semantic.background,
+    borderColor: c.background,
   },
   emailBox: {
     gap: space.md,
     padding: space.lg,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   emailRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   pill: {
     paddingHorizontal: space.md,
     paddingVertical: 6,
     borderRadius: radius.pill,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.borderStrong,
+    borderColor: c.borderStrong,
   },
-  pillText: { color: palette.ink900, fontFamily: fonts.bodyHeavy },
-});
+  pillText: { color: c.ink900, fontFamily: fonts.bodyHeavy },
+}));

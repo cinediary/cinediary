@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ScrollView, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, FadeIn } from 'react-native-reanimated';
 
 import { EntryRow } from '@/features/diary/presentation/components/DiaryTimeline';
@@ -7,7 +7,7 @@ import { SAMPLE_DIARY } from '@/features/diary/presentation/dev/sampleDiary';
 import { ListCard } from '@/features/lists/presentation/components/ListViews';
 import { SAMPLE_LISTS } from '@/features/lists/presentation/dev/sampleLists';
 import { StatCards } from '@/features/stats/presentation/components/StatCards';
-import { fonts, palette, radius, space } from '@/shared/theme';
+import { fonts, radius, space, makeStyles } from '@/shared/theme';
 import { Button, PosterCard, Screen, SectionHeader, SegmentedControl, Text, UnderlineTabs, useGridItemWidth } from '@/shared/ui';
 import { ProfileHeader } from '../components/ProfileHeader';
 
@@ -71,6 +71,7 @@ const TAGGERS: Record<Viewer, string[]> = { me: ['Maria Lima', 'João', 'Ana Pau
  * o que ele vai ter (favoritos, números, diário recente, listas, marcados e, mais para frente, tags).
  */
 export function ProfileLayoutDesignSystemScreen() {
+  const styles = useStyles();
   const [layout, setLayout] = useState<Layout>('hybrid');
   const [viewer, setViewer] = useState<Viewer>('me');
   const [following, setFollowing] = useState(false);
@@ -121,6 +122,7 @@ export function ProfileLayoutDesignSystemScreen() {
 }
 
 function ScrollLayout() {
+  const styles = useStyles();
   return (
     <View style={styles.sections}>
       <Favorites />
@@ -140,6 +142,7 @@ function ScrollLayout() {
 }
 
 function TabsLayout() {
+  const styles = useStyles();
   const [tab, setTab] = useState<'profile' | 'diary' | 'lists' | 'tagged'>('profile');
   return (
     <View style={styles.sections}>
@@ -175,6 +178,7 @@ function TabsLayout() {
 }
 
 function HybridLayout() {
+  const styles = useStyles();
   const [tab, setTab] = useState<'lists' | 'tagged' | 'tags'>('lists');
   return (
     <View style={styles.sections}>
@@ -201,6 +205,7 @@ function Fade({ children }: { children: ReactNode }) {
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <SectionHeader title={title} actionLabel="Ver tudo" onAction={() => {}} />
@@ -210,6 +215,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 function Favorites() {
+  const styles = useStyles();
   const width = useGridItemWidth(4);
   return (
     <View style={styles.section}>
@@ -224,6 +230,7 @@ function Favorites() {
 }
 
 function Recent({ bare = false }: { bare?: boolean }) {
+  const styles = useStyles();
   const rows = SAMPLE_DIARY.slice(0, bare ? 8 : 3).map((e) => (
     <EntryRow key={e.id} entry={e} day={Number(e.watchedDate!.slice(8, 10))} onOpen={() => {}} />
   ));
@@ -235,6 +242,7 @@ function Recent({ bare = false }: { bare?: boolean }) {
 }
 
 function ListsRail() {
+  const styles = useStyles();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.rail}>
       {SAMPLE_LISTS.map((l) => (
@@ -245,6 +253,7 @@ function ListsRail() {
 }
 
 function ListsGrid() {
+  const styles = useStyles();
   const { width } = useWindowDimensions();
   const w = (width - space.screenX * 2 - space.lg) / 2;
   return (
@@ -257,6 +266,7 @@ function ListsGrid() {
 }
 
 function Tagged() {
+  const styles = useStyles();
   const viewer = useContext(ViewerContext);
   return (
     <View style={styles.list}>
@@ -276,6 +286,7 @@ function Tagged() {
 }
 
 function Tags() {
+  const styles = useStyles();
   return (
     <View style={[styles.row, styles.wrap]}>
       {TAGS.map((t) => (
@@ -292,7 +303,7 @@ function Tags() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   // overflow: o reflexo da capa (que sobe acima dela, para o puxar para atualizar) cobria o seletor de opções. A
   // caixa ocupa a largura da tela (margem negativa + o mesmo recuo por dentro), para a capa continuar de ponta a ponta.
   device: {
@@ -301,7 +312,7 @@ const styles = StyleSheet.create({
     marginHorizontal: -space.screenX,
     paddingHorizontal: space.screenX,
     borderTopWidth: 1,
-    borderTopColor: palette.border,
+    borderTopColor: c.border,
     overflow: 'hidden',
   },
   sections: { gap: space.xl },
@@ -313,7 +324,7 @@ const styles = StyleSheet.create({
   bleed: { marginHorizontal: -space.screenX },
   rail: { paddingHorizontal: space.screenX, gap: space.lg },
   tagged: { gap: space.xs },
-  by: { color: palette.ink900, fontFamily: fonts.bodyHeavy },
+  by: { color: c.ink900, fontFamily: fonts.bodyHeavy },
   tag: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -321,9 +332,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     height: 34,
     borderRadius: radius.pill,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
-  tagText: { color: palette.ink900, fontFamily: fonts.bodyHeavy },
-});
+  tagText: { color: c.ink900, fontFamily: fonts.bodyHeavy },
+}));

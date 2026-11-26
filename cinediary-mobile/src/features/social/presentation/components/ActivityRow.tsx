@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { fonts, palette, semantic, space } from '@/shared/theme';
+import { fonts, space, makeStyles, useColors } from '@/shared/theme';
 import { Avatar, PosterArt, Text } from '@/shared/ui';
 import type { Actor } from '../../domain/social';
 
@@ -31,6 +31,8 @@ export function ActivityRow({
   onPress: () => void;
   onActorPress?: () => void;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const [first, second] = actors;
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
@@ -38,7 +40,7 @@ export function ActivityRow({
         {first ? <Avatar name={first.displayName || first.username} imageUrl={first.avatarUrl} size={second ? 34 : 42} /> : null}
         {second ? (
           <View style={styles.second}>
-            <Avatar name={second.displayName || second.username} imageUrl={second.avatarUrl} size={28} borderColor={semantic.background} />
+            <Avatar name={second.displayName || second.username} imageUrl={second.avatarUrl} size={28} borderColor={colors.background} />
           </View>
         ) : null}
       </Pressable>
@@ -60,20 +62,23 @@ export function ActivityRow({
 }
 
 /** Nome em negrito dentro da frase. */
-export const Bold = ({ children }: { children: ReactNode }) => (
-  <Text variant="caption" style={styles.bold}>
-    {children}
-  </Text>
-);
+export const Bold = ({ children }: { children: ReactNode }) => {
+  const styles = useStyles();
+  return (
+    <Text variant="caption" style={styles.bold}>
+      {children}
+    </Text>
+  );
+};
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, paddingVertical: space.md },
   pressed: { opacity: 0.7 },
   avatars: { width: 46, height: 46 },
   second: { position: 'absolute', right: 0, bottom: 0 },
   texts: { flex: 1, gap: 4, paddingTop: 2 },
-  sentence: { fontSize: 14, lineHeight: 20, color: palette.ink700 },
-  bold: { fontSize: 14, lineHeight: 20, fontFamily: fonts.bodyHeavy, color: palette.ink900 },
+  sentence: { fontSize: 14, lineHeight: 20, color: c.ink700 },
+  bold: { fontSize: 14, lineHeight: 20, fontFamily: fonts.bodyHeavy, color: c.ink900 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: semantic.primary },
-});
+  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: c.primary },
+}));

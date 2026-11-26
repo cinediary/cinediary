@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { LockSimple } from 'phosphor-react-native';
 import { useEffect, useRef } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileListsSection } from '@/features/lists/presentation/components/ProfileListsSection';
 
@@ -12,7 +12,7 @@ import { hasAnyStats } from '@/features/stats/domain/stats';
 import { StatCards } from '@/features/stats/presentation/components/StatCards';
 import { analytics } from '@/shared/analytics/analytics';
 import { parseIsoDate, strings } from '@/shared/i18n';
-import { palette, radius, semantic, space } from '@/shared/theme';
+import { radius, space, makeStyles, useColors } from '@/shared/theme';
 import { Button, ErrorState, PosterCard, SectionHeader, Skeleton, SkeletonRows, Text, useGridItemWidth } from '@/shared/ui';
 import { usePullToRefresh } from '@/shared/ui/usePullToRefresh';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
@@ -30,6 +30,8 @@ const RECENT_ENTRIES = 5;
  * Perfil privado que você não segue: só a parte de cima e um cartão explicando como ver o resto.
  */
 export function PersonProfileScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social;
   const params = useLocalSearchParams<{ username: string; from?: string }>();
   const username = (params.username ?? '').replace(/^@/, '');
@@ -87,7 +89,7 @@ export function PersonProfileScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={onScrollCover}
         scrollEventThrottle={32}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={semantic.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
       >
         <ProfileHeader
           name={p.displayName || p.username}
@@ -117,7 +119,7 @@ export function PersonProfileScreen() {
         {!canSee ? (
           <View style={styles.locked}>
             <View style={styles.lockIcon}>
-              <LockSimple size={26} color={semantic.link} weight="bold" />
+              <LockSimple size={26} color={colors.link} weight="bold" />
             </View>
             <Text variant="h3" style={styles.centerText}>
               {s.privateTitle}
@@ -179,8 +181,8 @@ export function PersonProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   center: { justifyContent: 'center' },
   content: { paddingHorizontal: space.screenX, gap: space.xl },
   hero: { alignItems: 'center', gap: space.sm },
@@ -191,9 +193,9 @@ const styles = StyleSheet.create({
     gap: space.sm,
     padding: space.xl,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   lockIcon: {
     width: 56,
@@ -201,9 +203,9 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.terracota100,
+    backgroundColor: c.terracota100,
   },
   block: { gap: space.md },
   row: { flexDirection: 'row', gap: space.md },
   entries: { gap: space.md },
-});
+}));

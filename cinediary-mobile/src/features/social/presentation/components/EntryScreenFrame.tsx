@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, RefreshControl, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { ActivityIndicator, RefreshControl, View, type ScrollViewInstance } from 'react-native';
 import Animated, { FadeIn, FadeOut, useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,7 +9,7 @@ import { useHidesSpoiler } from '@/features/diary/application/useHidesSpoiler';
 import type { DiaryEntry } from '@/features/diary/domain/diary';
 import { EntryBody, EntryHero, type EntryAuthor } from '@/features/diary/presentation/components/EntryDetail';
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space, touch } from '@/shared/theme';
+import { space, touch, makeStyles, useColors } from '@/shared/theme';
 import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
 import { conversationKeys, useEntryInteractions } from '../../application/entryConversation';
 import type { EntryComment } from '../../domain/social';
@@ -43,6 +43,8 @@ export function EntryScreenFrame({
   /** Puxar para atualizar: recarrega a entrada (curtidas e respostas recarregam junto). */
   onRefresh?: () => Promise<unknown>;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   const me = useMe();
   const hides = useHidesSpoiler(entry);
@@ -137,7 +139,7 @@ export function EntryScreenFrame({
           accessibilityLiveRegion="polite"
           accessibilityLabel={strings.common.loading}
         >
-          <ActivityIndicator size="small" color={semantic.primary} />
+          <ActivityIndicator size="small" color={colors.primary} />
         </Animated.View>
       ) : null}
       {more ? <View style={[styles.more, { top: insets.top + space.sm }]}>{more}</View> : null}
@@ -147,8 +149,8 @@ export function EntryScreenFrame({
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   flex: { flex: 1 },
   content: { paddingHorizontal: space.screenX, paddingTop: space.lg, gap: space.xl },
   more: { position: 'absolute', right: space.screenX },
@@ -161,10 +163,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     // Opaco: com fundo translúcido o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
   },
-});
+}));

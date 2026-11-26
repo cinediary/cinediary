@@ -1,13 +1,15 @@
 import { GearSix, PencilSimple } from 'phosphor-react-native';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { fonts, palette, radius, space, touch } from '@/shared/theme';
+import { fonts, radius, space, touch, makeStyles, useColors } from '@/shared/theme';
 import { Text } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 
 /** Botões do seu próprio perfil: "Editar perfil" (largo) e a engrenagem das Configurações. */
 export function OwnProfileActions() {
+  const styles = useStyles();
+  const colors = useColors();
   const a = strings.account;
   return (
     <>
@@ -16,7 +18,7 @@ export function OwnProfileActions() {
         onPress={() => nav.push('/profile/edit')}
         style={({ pressed }) => [styles.edit, pressed && styles.pressed]}
       >
-        <PencilSimple size={16} weight="bold" color={palette.ink900} />
+        <PencilSimple size={16} weight="bold" color={colors.ink900} />
         <Text variant="bodyStrong" style={styles.editText}>
           {a.editProfile}
         </Text>
@@ -27,13 +29,13 @@ export function OwnProfileActions() {
         onPress={() => nav.push('/settings')}
         style={({ pressed }) => [styles.gear, pressed && styles.pressed]}
       >
-        <GearSix size={20} color={palette.ink900} />
+        <GearSix size={20} color={colors.ink900} />
       </Pressable>
     </>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   edit: {
     flex: 1,
     flexDirection: 'row',
@@ -42,20 +44,20 @@ const styles = StyleSheet.create({
     gap: space.xs,
     minHeight: touch.buttonHeightSm,
     borderRadius: radius.pill,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1.5,
-    borderColor: palette.borderStrong,
+    borderColor: c.borderStrong,
   },
-  editText: { color: palette.ink900, fontFamily: fonts.bodyHeavy },
+  editText: { color: c.ink900, fontFamily: fonts.bodyHeavy },
   gear: {
     width: touch.buttonHeightSm,
     height: touch.buttonHeightSm,
     borderRadius: touch.buttonHeightSm / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1.5,
-    borderColor: palette.borderStrong,
+    borderColor: c.borderStrong,
   },
   pressed: { opacity: 0.7 },
-});
+}));

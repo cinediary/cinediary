@@ -1,10 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { diaryRows, EntryRow } from '@/features/diary/presentation/components/DiaryTimeline';
 import { strings } from '@/shared/i18n';
-import { semantic, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { ErrorState, SkeletonRows, Text } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { usePersonDiary, usePublicProfile } from '../../application/socialQueries';
@@ -15,6 +15,7 @@ import { openPersonEntry } from '../navigation';
  * filmes, o perfil mostra só os recentes e esta tela não baixa tudo de uma vez.
  */
 export function PersonDiaryScreen() {
+  const styles = useStyles();
   const s = strings.social;
   const { username = '' } = useLocalSearchParams<{ username: string }>();
   const insets = useSafeAreaInsets();
@@ -74,11 +75,11 @@ export function PersonDiaryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: space.screenX },
   title: { paddingBottom: space.sm },
   month: { paddingTop: space.xl, paddingBottom: space.md },
   entry: { paddingBottom: space.md },
   more: { paddingTop: space.md, paddingBottom: space.xl },
-});
+}));
