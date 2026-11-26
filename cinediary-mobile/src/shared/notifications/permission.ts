@@ -9,7 +9,7 @@ type Notifications = typeof import('expo-notifications');
  * permissão conta como "não dá para pedir" e o onboarding segue sem a tela.
  */
 let cached: Notifications | null | undefined;
-function load(): Notifications | null {
+export function loadNotifications(): Notifications | null {
   if (cached === undefined) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     cached = requireOptionalNativeModule('ExpoNotificationPermissionsModule') ? (require('expo-notifications') as Notifications) : null;
@@ -21,7 +21,7 @@ function load(): Notifications | null {
 export type PushPermission = 'ask' | 'granted' | 'blocked';
 
 export async function getPushPermission(): Promise<PushPermission> {
-  const n = load();
+  const n = loadNotifications();
   if (!n) return 'blocked';
   const status = await n.getPermissionsAsync();
   if (status.granted) return 'granted';
@@ -33,7 +33,7 @@ export async function getPushPermission(): Promise<PushPermission> {
  * canal padrão é criado antes. Devolve se a pessoa permitiu.
  */
 export async function requestPushPermission(): Promise<boolean> {
-  const n = load();
+  const n = loadNotifications();
   if (!n) return false;
   if (Platform.OS === 'android') {
     await n.setNotificationChannelAsync('default', { name: 'CineDiary', importance: n.AndroidImportance.DEFAULT });
