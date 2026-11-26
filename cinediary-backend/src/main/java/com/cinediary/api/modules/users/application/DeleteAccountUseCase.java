@@ -31,7 +31,8 @@ public class DeleteAccountUseCase
     public void execute(UUID userId, String clerkId)
     {
         tx.executeWithoutResult(status -> {
-            if (users.softDelete(userId) == 1) {
+            // Apaga aqui e no Clerk na mesma transação: se o Clerk falhar, nada é apagado e dá para tentar de novo
+            if (users.deleteAccount(clerkId) == 1) {
                 events.publishEvent(new UserDeletedEvent(userId));
             }
             clerk.deleteUser(clerkId);

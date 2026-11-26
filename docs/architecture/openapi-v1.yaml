@@ -94,7 +94,7 @@ paths:
                 $ref: '#/components/schemas/UserProfileResponse'
     delete:
       tags: [Users & Onboarding]
-      summary: Exclui a conta (soft delete local e remoção do usuário no Clerk)
+      summary: Exclui a conta (apaga os dados da pessoa e o usuário no Clerk)
       responses:
         '204':
           description: Conta excluída (excluir de novo no Clerk também devolve 204)

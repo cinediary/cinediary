@@ -77,7 +77,7 @@ public class MeController
 
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Exclui a conta: soft delete local e remoção do usuário no Clerk")
+    @Operation(summary = "Exclui a conta: apaga os dados da pessoa e o usuário no Clerk")
     public void delete(CurrentUser user)
     {
         deleteAccount.execute(user.id(), user.clerkId());

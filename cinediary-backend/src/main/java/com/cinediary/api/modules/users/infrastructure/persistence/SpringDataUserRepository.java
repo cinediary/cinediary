@@ -57,7 +57,7 @@ interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, UUID>
 
     /**
      * Upsert vindo do Clerk, só aplicado se o evento for mais novo que o último aplicado
-     * (clerk_updated_at e, no empate, clerk_event_timestamp). Usuário com soft delete não volta.
+     * (clerk_updated_at e, no empate, clerk_event_timestamp). Conta excluída (deleted_accounts) não volta.
      * O @username só é trocado enquanto ainda for o provisório do JIT: depois disso o PostgreSQL manda.
      */
     @Modifying
@@ -65,8 +65,9 @@ interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, UUID>
     @Query(value = """
             INSERT INTO users (clerk_id, username, display_name, first_name, last_name, email, avatar_url,
                                clerk_updated_at, clerk_event_timestamp)
-            VALUES (:clerkId, :username, :displayName, :firstName, :lastName, :email, :avatarUrl,
-                    :updatedAt, :eventTimestamp)
+            SELECT :clerkId, :username, :displayName, :firstName, :lastName, :email, :avatarUrl,
+                   :updatedAt, :eventTimestamp
+             WHERE NOT EXISTS (SELECT 1 FROM deleted_accounts WHERE clerk_id_hash = encode(sha256(convert_to(:clerkId, 'UTF8')), 'hex'))
             ON CONFLICT (clerk_id) DO UPDATE SET
                 username = CASE WHEN users.username LIKE 'cinefilo\\_%' THEN EXCLUDED.username ELSE users.username END,
                 -- Nome de exibição acompanha o Clerk enquanto for o que veio de lá (o @, "Cinéfilo" ou o
@@ -101,44 +102,32 @@ interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, UUID>
                       @Param("updatedAt") Instant updatedAt,
                       @Param("eventTimestamp") Instant eventTimestamp);
 
+    /** Guarda só o hash do id do Clerk de uma conta excluída: ela não volta pelo webhook nem pelo JIT. */
     @Modifying
-    @Transactional
     @Query(value = """
-            UPDATE users
-               SET deleted_at = :deletedAt,
-                   -- Conta excluída libera o @username (alguém, ou a mesma pessoa numa conta nova, pode usá-lo)
-                   username = 'excluido_' || substr(replace(id::text, '-', ''), 1, 12),
-                   header_title_id = NULL,
-                   header_backdrop_path = NULL,
-                   clerk_event_timestamp = :eventTimestamp,
-                   updated_at = NOW()
-             WHERE clerk_id = :clerkId
-               AND deleted_at IS NULL
-               AND (clerk_event_timestamp IS NULL OR clerk_event_timestamp < :eventTimestamp)
+            INSERT INTO deleted_accounts (clerk_id_hash)
+            VALUES (encode(sha256(convert_to(:clerkId, 'UTF8')), 'hex'))
+            ON CONFLICT DO NOTHING
             """, nativeQuery = true)
-    int softDeleteIfNewer(@Param("clerkId") String clerkId,
-                          @Param("deletedAt") Instant deletedAt,
-                          @Param("eventTimestamp") Instant eventTimestamp);
+    int insertDeletedAccount(@Param("clerkId") String clerkId);
 
+    /** Apaga a pessoa: o ON DELETE CASCADE leva o conteúdo dela junto. */
     @Modifying
+    @Query(value = "DELETE FROM users WHERE clerk_id = :clerkId", nativeQuery = true)
+    int deleteByClerkIdNative(@Param("clerkId") String clerkId);
+
     @Query(value = """
-            UPDATE users
-               SET deleted_at = NOW(),
-                   -- Igual à exclusão pelo webhook: libera o @username e tira a capa
-                   username = 'excluido_' || substr(replace(id::text, '-', ''), 1, 12),
-                   header_title_id = NULL,
-                   header_backdrop_path = NULL,
-                   updated_at = NOW()
-             WHERE id = :id
-               AND deleted_at IS NULL
+            SELECT EXISTS (SELECT 1 FROM deleted_accounts
+                            WHERE clerk_id_hash = encode(sha256(convert_to(:clerkId, 'UTF8')), 'hex'))
             """, nativeQuery = true)
-    int softDelete(@Param("id") UUID id);
+    boolean isDeletedAccount(@Param("clerkId") String clerkId);
 
     @Modifying
     @Transactional
     @Query(value = """
             INSERT INTO users (clerk_id, username, display_name, avatar_url)
-            VALUES (:clerkId, :username, :displayName, :avatarUrl)
+            SELECT :clerkId, :username, :displayName, :avatarUrl
+             WHERE NOT EXISTS (SELECT 1 FROM deleted_accounts WHERE clerk_id_hash = encode(sha256(convert_to(:clerkId, 'UTF8')), 'hex'))
             ON CONFLICT (clerk_id) DO NOTHING
             """, nativeQuery = true)
     int insertIfAbsent(@Param("clerkId") String clerkId,

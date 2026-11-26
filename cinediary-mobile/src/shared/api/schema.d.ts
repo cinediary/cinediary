@@ -83,7 +83,7 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        /** Exclui a conta (soft delete local e remoção do usuário no Clerk) */
+        /** Exclui a conta (apaga os dados da pessoa e o usuário no Clerk) */
         delete: {
             parameters: {
                 query?: never;

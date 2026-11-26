@@ -3,10 +3,12 @@ package com.cinediary.api.modules.users.application;
 import com.cinediary.api.modules.users.domain.ClerkUserEvent;
 import com.cinediary.api.modules.users.domain.ClerkWebhookGatewayPort;
 import com.cinediary.api.modules.users.domain.ProcessedWebhookPort;
+import com.cinediary.api.modules.users.domain.UserAccount;
 import com.cinediary.api.modules.users.domain.UserRepositoryPort;
 import com.cinediary.api.modules.users.domain.Usernames;
 import com.cinediary.api.shared.domain.DomainValidationException;
 import java.util.Objects;
+import java.util.Optional;
 import com.cinediary.api.modules.users.api.UserDeletedEvent;
 import com.cinediary.api.modules.users.api.UserSyncedEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -88,8 +90,10 @@ public class SyncClerkUserUseCase
         if (event.clerkId() == null || event.clerkId().isBlank()) {
             throw new DomainValidationException("Evento user.deleted sem data.id");
         }
-        if (users.softDeleteIfNewer(event.clerkId(), event.eventTimestamp()) == 1) {
-            users.findByClerkId(event.clerkId()).ifPresent(u -> events.publishEvent(new UserDeletedEvent(u.id())));
+        // Excluída no Clerk (pelo app ou pelo painel): apaga os dados de verdade. Se já foi apagada pelo app, não faz nada
+        Optional<UserAccount> user = users.findByClerkId(event.clerkId());
+        if (users.deleteAccount(event.clerkId()) == 1) {
+            user.ifPresent(u -> events.publishEvent(new UserDeletedEvent(u.id())));
             log.info("User deleted: {}", event.clerkId());
         }
         return Outcome.PROCESSED;

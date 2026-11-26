@@ -17,7 +17,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Usuário autenticado. Se o webhook {@code user.created} ainda não chegou, cria o registro base na hora
- * (JIT, ADR-02). Conta com soft delete não é recriada (403).
+ * (JIT, ADR-02). Conta excluída não é recriada (403).
  * <p>
  * O @username vem do claim {@code username} do JWT (session token customizado no Clerk). Sem ele, o JIT usa
  * um provisório ({@code cinefilo_XXXXXX}) que o webhook substitui. Como o webhook não alcança a API local,
@@ -46,7 +46,13 @@ public class ResolveCurrentUserUseCase
 
     public UserAccount execute(AuthenticatedPrincipal principal)
     {
-        UserAccount user = users.findByClerkId(principal.clerkId()).orElseGet(() -> provision(principal));
+        UserAccount user = users.findByClerkId(principal.clerkId()).orElseGet(() -> {
+            // Conta excluída com um token ainda válido: não recria a pessoa
+            if (users.isDeletedAccount(principal.clerkId())) {
+                throw new AccountDeletedException();
+            }
+            return provision(principal);
+        });
         if (user.deleted()) {
             throw new AccountDeletedException();
         }

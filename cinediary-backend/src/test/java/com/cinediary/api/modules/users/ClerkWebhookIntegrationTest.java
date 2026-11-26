@@ -22,7 +22,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 class ClerkWebhookIntegrationTest extends IntegrationTest {
 
     @Test
-    void userCreatedIsIdempotentAndDeleteIsSoft() throws Exception {
+    void userCreatedIsIdempotentAndDeleteErasesTheAccount() throws Exception {
         String clerkId = "user_" + UUID.randomUUID();
         String svixId = "msg_" + UUID.randomUUID();
         String payload = userEvent("user.created", clerkId, "Edu_Dantas", "Eduardo", "Dantas", 1_000L);
@@ -48,13 +48,18 @@ class ClerkWebhookIntegrationTest extends IntegrationTest {
         assertThat(text("SELECT first_name FROM users WHERE clerk_id = ?", clerkId)).isEqualTo("Eduardo");
 
         send("msg_" + UUID.randomUUID(), deletedEvent(clerkId, System.currentTimeMillis())).andExpect(status().isOk());
-        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ? AND deleted_at IS NOT NULL", clerkId)).isEqualTo(1);
+        // Apagada de verdade (e-mail, nome, tudo): só fica o hash do id do Clerk
+        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ?", clerkId)).isZero();
+        assertThat(count("SELECT COUNT(*) FROM users WHERE email = 'pessoa@example.com' AND clerk_id = ?", clerkId)).isZero();
+        assertThat(count("SELECT COUNT(*) FROM deleted_accounts WHERE clerk_id_hash = encode(sha256(convert_to(?, 'UTF8')), 'hex')",
+                clerkId)).isEqualTo(1);
 
         // Conta removida não volta nem por evento atrasado nem pelo JIT
         send("msg_" + UUID.randomUUID(), userEvent("user.updated", clerkId, "Edu_Dantas", "Volta", "", 9_000L))
                 .andExpect(status().isOk());
-        assertThat(text("SELECT display_name FROM users WHERE clerk_id = ?", clerkId)).isEqualTo("Dudu do Cinema");
+        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ?", clerkId)).isZero();
         mvc.perform(get("/api/v1/me").with(jwt().jwt(j -> j.subject(clerkId)))).andExpect(status().isForbidden());
+        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ?", clerkId)).isZero();
     }
 
     @Test
@@ -143,7 +148,7 @@ class ClerkWebhookIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    void deleteMeHidesTheAccountRightAwayAndRemovesItFromClerk() throws Exception {
+    void deleteMeErasesTheAccountAndItsContentAndRemovesItFromClerk() throws Exception {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         String anaClerk = "user_" + UUID.randomUUID();
         String biaClerk = "user_" + UUID.randomUUID();
@@ -164,7 +169,13 @@ class ClerkWebhookIntegrationTest extends IntegrationTest {
         awaitEvents(UUID.fromString(biaId));
 
         assertThat(CLERK.wasDeleted(biaClerk)).isTrue();
+        // Os dados saem do banco, e não só somem das telas
+        UUID biaUuid = UUID.fromString(biaId);
+        assertThat(count("SELECT COUNT(*) FROM users WHERE id = ?", biaUuid)).isZero();
+        assertThat(count("SELECT COUNT(*) FROM diary_entries WHERE user_id = ?", biaUuid)).isZero();
+        assertThat(count("SELECT COUNT(*) FROM follows WHERE follower_id = ? OR followee_id = ?", biaUuid, biaUuid)).isZero();
         mvc.perform(get("/api/v1/me").with(bia)).andExpect(status().isForbidden());
+        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ?", biaClerk)).isZero();
         mvc.perform(get("/api/v1/feed").with(ana)).andExpect(jsonPath("$.items.length()").value(0));
         mvc.perform(get("/api/v1/people/search").param("q", biaUsername).with(ana)).andExpect(jsonPath("$.length()").value(0));
         mvc.perform(get("/api/v1/users/{u}", biaUsername).with(ana)).andExpect(status().isNotFound());
@@ -188,7 +199,7 @@ class ClerkWebhookIntegrationTest extends IntegrationTest {
         mvc.perform(get("/api/v1/me").with(user(clerkId))).andExpect(status().isOk());
 
         mvc.perform(delete("/api/v1/me").with(user(clerkId))).andExpect(status().isNoContent());
-        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ? AND deleted_at IS NOT NULL", clerkId)).isEqualTo(1);
+        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ?", clerkId)).isZero();
         assertThat(CLERK.wasDeleted(clerkId)).isTrue();
     }
 

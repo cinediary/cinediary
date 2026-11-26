@@ -125,6 +125,7 @@ class ProfileHeaderIntegrationTest extends IntegrationTest
         mvc.perform(put("/api/v1/me/header").with(ana.auth()).contentType(MediaType.APPLICATION_JSON)
                 .content(body(matrix, "/bg-best.jpg"))).andExpect(status().isOk());
         String clerkId = jdbc.sql("SELECT clerk_id FROM users WHERE username = ?").param(ana.username()).query(String.class).single();
+        java.util.UUID id = jdbc.sql("SELECT id FROM users WHERE clerk_id = ?").param(clerkId).query(java.util.UUID.class).single();
 
         // Conta excluída no Clerk (webhook user.deleted assinado, como em produção)
         String svixId = "msg_" + UUID.randomUUID();
@@ -138,13 +139,11 @@ class ProfileHeaderIntegrationTest extends IntegrationTest
                         .header("svix-signature", new com.svix.Webhook(WEBHOOK_SECRET).sign(svixId, ts, payload))
                         .content(payload))
                 .andExpect(status().isOk());
-        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ? AND deleted_at IS NOT NULL", clerkId)).isEqualTo(1);
+        // A conta sai do banco, e a capa junto
+        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ?", clerkId)).isZero();
 
         // Uma gravação de capa que chega depois da exclusão (corrida) não muda nada e não reativa a conta
-        java.util.UUID id = jdbc.sql("SELECT id FROM users WHERE clerk_id = ?").param(clerkId).query(java.util.UUID.class).single();
         assertThat(userRepository.updateHeader(id, matrix, "/bg-best.jpg")).isFalse();
-        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ? AND deleted_at IS NOT NULL", clerkId)).isEqualTo(1);
-        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ? AND (header_title_id IS NOT NULL OR header_backdrop_path IS NOT NULL)",
-                clerkId)).isZero();
+        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ?", clerkId)).isZero();
     }
 }
