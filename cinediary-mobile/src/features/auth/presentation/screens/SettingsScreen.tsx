@@ -1,14 +1,32 @@
 import Constants from 'expo-constants';
 import { usePreventRemove } from 'expo-router';
-import { ChatCircle, CircleHalf, DownloadSimple, Eye, FilmSlate, Info, LockSimple, Palette, SignOut, Trash, UserCircle, UsersThree } from 'phosphor-react-native';
+import {
+  BellSlash,
+  ChatCircle,
+  CircleHalf,
+  DownloadSimple,
+  Eye,
+  FilmSlate,
+  Heart,
+  Info,
+  LockSimple,
+  Palette,
+  SignOut,
+  Trash,
+  UserCircle,
+  UserPlus,
+  UsersThree,
+} from 'phosphor-react-native';
 import { useState, type ReactNode } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
+import { usePushPreferences, useUpdatePushPreferences, type PushPreferences } from '@/shared/notifications/pushPreferences';
+import { enablePush, usePushPermission, useRefreshPushPermissionOnForeground } from '@/shared/notifications/usePushPermission';
 import { radius, space, useTheme, useColors, makeStyles } from '@/shared/theme';
-import { ActionSheet, ListRow, StarSpinner, Text, Title, useToast } from '@/shared/ui';
+import { ActionSheet, Button, ListRow, StarSpinner, Text, Title, useToast } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useMe, useUpdateProfile } from '../../application/profileQueries';
@@ -27,9 +45,11 @@ type SettingRow = {
   switchValue?: boolean;
   onSwitchChange?: (value: boolean) => void;
   danger?: boolean;
+  disabled?: boolean;
 };
 
-type SettingSection = { key: string; title: string; rows: SettingRow[] };
+/** {@code header}: algo acima das linhas, no mesmo cartão (ex.: o aviso de notificações desativadas). */
+type SettingSection = { key: string; title: string; header?: ReactNode; rows: SettingRow[] };
 
 function SettingIcon({ Icon }: { Icon: typeof UserCircle }) {
   const colors = useColors();
@@ -38,6 +58,63 @@ function SettingIcon({ Icon }: { Icon: typeof UserCircle }) {
 
 const icon = (Icon: typeof UserCircle) => <SettingIcon Icon={Icon} />;
 
+/** Sem a permissão do sistema: o porquê e o "Ativar" (pede ao sistema ou abre os Ajustes do aparelho). */
+function PushOffBanner({ onEnable }: { onEnable: () => void }) {
+  const styles = useStyles();
+  const colors = useColors();
+  const a = strings.account;
+  return (
+    <View style={styles.banner}>
+      <BellSlash size={22} color={colors.primary} />
+      <View style={styles.bannerText}>
+        <Text variant="bodyStrong">{a.pushOffTitle}</Text>
+        <Text variant="caption" tone="muted">
+          {a.pushOffText}
+        </Text>
+      </View>
+      <Button label={a.pushEnable} size="sm" onPress={onEnable} />
+    </View>
+  );
+}
+
+/**
+ * Os tipos de push (#15). Sem a permissão do sistema, as chaves ficam apagadas e o aviso em cima explica; voltar
+ * dos Ajustes com a permissão ligada acende tudo na hora.
+ */
+function useNotificationsSection(): SettingSection {
+  const a = strings.account;
+  const toast = useToast();
+  const permission = usePushPermission();
+  const preferences = usePushPreferences();
+  const update = useUpdatePushPreferences();
+  const granted = permission.data === 'granted';
+
+  const row = (key: keyof PushPreferences, Icon: typeof UserCircle, label: string, hint: string): SettingRow => ({
+    key: `push-${key}`,
+    icon: icon(Icon),
+    label,
+    hint,
+    switchValue: preferences.data?.[key] ?? true,
+    disabled: !granted,
+    onSwitchChange: (value) => {
+      analytics.track('setting_changed', { key: `push_${key}`, value });
+      update.mutate({ [key]: value }, { onError: () => toast(strings.common.genericError) });
+    },
+  });
+
+  return {
+    key: 'notifications',
+    title: a.sectionNotifications,
+    header: permission.data && !granted ? <PushOffBanner onEnable={() => void enablePush(permission.data)} /> : undefined,
+    rows: [
+      row('followers', UserPlus, a.pushFollowers, a.pushFollowersHint),
+      row('likes', Heart, a.pushLikes, a.pushLikesHint),
+      row('replies', ChatCircle, a.pushReplies, a.pushRepliesHint),
+      row('companions', UsersThree, a.pushCompanions, a.pushCompanionsHint),
+    ],
+  };
+}
+
 function useSections(openReplyPicker: () => void, openAppearancePicker: () => void): SettingSection[] {
   const a = strings.account;
   const t = strings.stats;
@@ -45,6 +122,7 @@ function useSections(openReplyPicker: () => void, openAppearancePicker: () => vo
   const me = useMe();
   const updateProfile = useUpdateProfile();
   const { preference } = useTheme();
+  const notifications = useNotificationsSection();
 
   return [
     {
@@ -110,6 +188,7 @@ function useSections(openReplyPicker: () => void, openAppearancePicker: () => vo
         },
       ],
     },
+    notifications,
     {
       key: 'data',
       title: a.sectionData,
@@ -144,6 +223,7 @@ export function SettingsScreen() {
   const [pickingReplies, setPickingReplies] = useState(false);
   const [pickingAppearance, setPickingAppearance] = useState(false);
   const { preference, setPreference } = useTheme();
+  useRefreshPushPermissionOnForeground();
   const sections = useSections(
     () => setPickingReplies(true),
     () => setPickingAppearance(true),
@@ -187,8 +267,9 @@ export function SettingsScreen() {
                 {section.title}
               </Text>
               <View style={styles.card}>
+                {section.header ? <View style={styles.row}>{section.header}</View> : null}
                 {section.rows.map((row, i) => (
-                  <View key={row.key} style={[styles.row, i > 0 && styles.divider]}>
+                  <View key={row.key} style={[styles.row, (i > 0 || section.header !== undefined) && styles.divider]}>
                     <ListRow
                       icon={row.icon}
                       label={row.label}
@@ -197,6 +278,7 @@ export function SettingsScreen() {
                       switchValue={row.switchValue}
                       onSwitchChange={row.onSwitchChange}
                       danger={row.danger}
+                      disabled={row.disabled}
                     />
                   </View>
                 ))}
@@ -279,4 +361,6 @@ const useStyles = makeStyles((c) => ({
     opacity: 0.94,
   },
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
+  bannerText: { flex: 1, gap: 2 },
 }));

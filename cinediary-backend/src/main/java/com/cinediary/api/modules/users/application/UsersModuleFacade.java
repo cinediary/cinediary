@@ -3,10 +3,12 @@ package com.cinediary.api.modules.users.application;
 import com.cinediary.api.modules.catalog.api.CatalogModulePort;
 import com.cinediary.api.modules.diary.api.DiaryModulePort;
 import com.cinediary.api.modules.users.api.PushDeviceView;
+import com.cinediary.api.modules.users.api.PushPreferencesView;
 import com.cinediary.api.modules.users.api.UserProfileView;
 import com.cinediary.api.modules.users.api.UserView;
 import com.cinediary.api.modules.users.api.UsersModulePort;
 import com.cinediary.api.modules.users.domain.PushDevicesPort;
+import com.cinediary.api.modules.users.domain.PushPreferencesPort;
 import com.cinediary.api.modules.users.domain.UserAccount;
 import com.cinediary.api.modules.users.domain.UserRepositoryPort;
 import com.cinediary.api.shared.domain.NotFoundException;
@@ -26,6 +28,7 @@ public class UsersModuleFacade implements UsersModulePort
     private final DiaryModulePort diary;
     private final CatalogModulePort catalog;
     private final PushDevicesPort pushDevices;
+    private final PushPreferencesPort pushPreferences;
 
     @Override
     public Optional<UserView> findById(UUID userId)
@@ -103,5 +106,12 @@ public class UsersModuleFacade implements UsersModulePort
     public void removePushTokens(Collection<String> tokens)
     {
         pushDevices.deleteTokens(tokens);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PushPreferencesView pushPreferences(UUID userId)
+    {
+        return PushPreferencesUseCase.view(pushPreferences.of(userId));
     }
 }

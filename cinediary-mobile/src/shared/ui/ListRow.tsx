@@ -16,14 +16,16 @@ export interface ListRowProps {
   switchValue?: boolean;
   onSwitchChange?: (value: boolean) => void;
   danger?: boolean;
+  /** Apagada e sem resposta ao toque (ex.: a chave de um push sem a permissão do sistema). */
+  disabled?: boolean;
 }
 
 /** Linha de configuração (Perfil): ação com chevron ou chave liga/desliga. */
-export function ListRow({ label, hint, hintLines, icon, onPress, switchValue, onSwitchChange, danger }: ListRowProps) {
+export function ListRow({ label, hint, hintLines, icon, onPress, switchValue, onSwitchChange, danger, disabled }: ListRowProps) {
   const colors = useColors();
   const isSwitch = switchValue !== undefined;
   const content = (
-    <View style={styles.row}>
+    <View style={[styles.row, disabled && styles.disabled]}>
       {icon}
       <View style={styles.texts}>
         <Text variant="bodyStrong" tone={danger ? 'danger' : 'primary'}>
@@ -39,6 +41,7 @@ export function ListRow({ label, hint, hintLines, icon, onPress, switchValue, on
         <Switch
           value={switchValue}
           onValueChange={onSwitchChange}
+          disabled={disabled}
           trackColor={{ true: colors.primary, false: colors.borderStrong }}
           accessibilityLabel={label}
         />
@@ -47,7 +50,7 @@ export function ListRow({ label, hint, hintLines, icon, onPress, switchValue, on
       ) : null}
     </View>
   );
-  if (isSwitch || !onPress) return content;
+  if (isSwitch || !onPress || disabled) return content;
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
       {content}
@@ -59,4 +62,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: touch.buttonHeight, paddingVertical: space.sm },
   texts: { flex: 1, gap: 2 },
   pressed: { opacity: 0.7 },
+  disabled: { opacity: 0.45 },
 });
