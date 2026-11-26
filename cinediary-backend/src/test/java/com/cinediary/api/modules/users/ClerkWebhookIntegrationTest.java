@@ -2,7 +2,6 @@ package com.cinediary.api.modules.users;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -120,7 +119,7 @@ class ClerkWebhookIntegrationTest extends IntegrationTest {
     }
 
     @Test
-    void deletedAccountDisappearsFromFeedAndSearch() throws Exception {
+    void deletedAccountIsErasedAndDisappearsFromFeedAndSearch() throws Exception {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         String anaClerk = "user_" + UUID.randomUUID();
         String biaClerk = "user_" + UUID.randomUUID();
@@ -141,66 +140,15 @@ class ClerkWebhookIntegrationTest extends IntegrationTest {
         send("msg_" + UUID.randomUUID(), deletedEvent(biaClerk, System.currentTimeMillis())).andExpect(status().isOk());
         awaitEvents(UUID.fromString(biaId));
 
-        mvc.perform(get("/api/v1/me").with(bia)).andExpect(status().isForbidden());
-        mvc.perform(get("/api/v1/feed").with(ana)).andExpect(jsonPath("$.items.length()").value(0));
-        mvc.perform(get("/api/v1/people/search").param("q", biaUsername).with(ana)).andExpect(jsonPath("$.length()").value(0));
-        mvc.perform(get("/api/v1/users/{u}", biaUsername).with(ana)).andExpect(status().isNotFound());
-    }
-
-    @Test
-    void deleteMeErasesTheAccountAndItsContentAndRemovesItFromClerk() throws Exception {
-        String suffix = UUID.randomUUID().toString().substring(0, 8);
-        String anaClerk = "user_" + UUID.randomUUID();
-        String biaClerk = "user_" + UUID.randomUUID();
-        String biaUsername = "bia_" + suffix;
-        RequestPostProcessor ana = jwt().jwt(j -> j.subject(anaClerk).claim("username", "ana_" + suffix));
-        RequestPostProcessor bia = jwt().jwt(j -> j.subject(biaClerk).claim("username", biaUsername));
-        mvc.perform(get("/api/v1/me").with(ana)).andExpect(status().isOk());
-        String biaId = JsonPath.read(mvc.perform(get("/api/v1/me").with(bia)).andReturn().getResponse().getContentAsString(), "$.id");
-        jdbc.sql("UPDATE users SET onboarding_completed = TRUE WHERE clerk_id IN (?, ?)").param(anaClerk).param(biaClerk).update();
-
-        long title = TestTitles.movie(jdbc, "Filme da conta excluída pelo app", 10, "18:Drama");
-        mvc.perform(post("/api/v1/users/{u}/follow", biaUsername).with(ana)).andExpect(status().is2xxSuccessful());
-        mvc.perform(post("/api/v1/diary/entries").with(bia).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"titleId\":%d,\"watchedDate\":\"2026-01-10\"}".formatted(title))).andExpect(status().isCreated());
-        mvc.perform(get("/api/v1/feed").with(ana)).andExpect(jsonPath("$.items.length()").value(1));
-
-        mvc.perform(delete("/api/v1/me").with(bia)).andExpect(status().isNoContent());
-        awaitEvents(UUID.fromString(biaId));
-
-        assertThat(CLERK.wasDeleted(biaClerk)).isTrue();
         // Os dados saem do banco, e não só somem das telas
         UUID biaUuid = UUID.fromString(biaId);
         assertThat(count("SELECT COUNT(*) FROM users WHERE id = ?", biaUuid)).isZero();
         assertThat(count("SELECT COUNT(*) FROM diary_entries WHERE user_id = ?", biaUuid)).isZero();
         assertThat(count("SELECT COUNT(*) FROM follows WHERE follower_id = ? OR followee_id = ?", biaUuid, biaUuid)).isZero();
         mvc.perform(get("/api/v1/me").with(bia)).andExpect(status().isForbidden());
-        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ?", biaClerk)).isZero();
         mvc.perform(get("/api/v1/feed").with(ana)).andExpect(jsonPath("$.items.length()").value(0));
         mvc.perform(get("/api/v1/people/search").param("q", biaUsername).with(ana)).andExpect(jsonPath("$.length()").value(0));
         mvc.perform(get("/api/v1/users/{u}", biaUsername).with(ana)).andExpect(status().isNotFound());
-
-        send("msg_" + UUID.randomUUID(), deletedEvent(biaClerk, System.currentTimeMillis())).andExpect(status().isOk());
-        assertThat(publications("UserDeletedEvent", biaId)).isEqualTo(1);
-    }
-
-    @Test
-    void deleteMeKeepsTheAccountWhenClerkFailsSoItCanBeRetried() throws Exception {
-        String clerkId = "user_" + UUID.randomUUID();
-        mvc.perform(get("/api/v1/me").with(user(clerkId))).andExpect(status().isOk());
-
-        CLERK.setDown(true);
-        try {
-            mvc.perform(delete("/api/v1/me").with(user(clerkId))).andExpect(status().isServiceUnavailable());
-        } finally {
-            CLERK.setDown(false);
-        }
-        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ? AND deleted_at IS NULL", clerkId)).isEqualTo(1);
-        mvc.perform(get("/api/v1/me").with(user(clerkId))).andExpect(status().isOk());
-
-        mvc.perform(delete("/api/v1/me").with(user(clerkId))).andExpect(status().isNoContent());
-        assertThat(count("SELECT COUNT(*) FROM users WHERE clerk_id = ?", clerkId)).isZero();
-        assertThat(CLERK.wasDeleted(clerkId)).isTrue();
     }
 
     @Test

@@ -38,13 +38,7 @@ function SettingIcon({ Icon }: { Icon: typeof UserCircle }) {
 
 const icon = (Icon: typeof UserCircle) => <SettingIcon Icon={Icon} />;
 
-function useSections(
-  openReplyPicker: () => void,
-  openAppearancePicker: () => void,
-  openDeleteAccount: () => void,
-  deletingAccount: boolean,
-): SettingSection[] {
-  const colors = useColors();
+function useSections(openReplyPicker: () => void, openAppearancePicker: () => void): SettingSection[] {
   const a = strings.account;
   const t = strings.stats;
   const toast = useToast();
@@ -68,14 +62,6 @@ function useSections(
             analytics.track('setting_changed', { key: 'private_profile', value: isPrivate });
             updateProfile.mutate({ isPrivate }, { onError: () => toast(strings.common.genericError) });
           },
-        },
-        {
-          key: 'delete',
-          icon: <Trash size={20} color={colors.danger} />,
-          label: a.deleteAccount,
-          hint: deletingAccount ? a.deleteAccountPending : undefined,
-          onPress: deletingAccount ? undefined : openDeleteAccount,
-          danger: true,
         },
       ],
     },
@@ -157,13 +143,10 @@ export function SettingsScreen() {
   const deleteAccount = useDeleteAccount({ onError: () => toast(a.deleteAccountError) });
   const [pickingReplies, setPickingReplies] = useState(false);
   const [pickingAppearance, setPickingAppearance] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { preference, setPreference } = useTheme();
   const sections = useSections(
     () => setPickingReplies(true),
     () => setPickingAppearance(true),
-    () => setConfirmingDelete(true),
-    deleteAccount.isPending,
   );
   const current = me.data?.defaultReplyPolicy ?? 'EVERYONE';
 
@@ -171,6 +154,13 @@ export function SettingsScreen() {
     Alert.alert(a.signOutConfirmTitle, a.signOutConfirmText, [
       { text: strings.common.cancel, style: 'cancel' },
       { text: strings.auth.signOut, style: 'destructive', onPress: signOut },
+    ]);
+
+  // Igual ao "Sair": o alerta nativo, com o botão de excluir em vermelho
+  const confirmDeleteAccount = () =>
+    Alert.alert(a.deleteAccountTitle, a.deleteAccountText, [
+      { text: strings.common.cancel, style: 'cancel' },
+      { text: a.deleteAccountConfirm, style: 'destructive', onPress: () => deleteAccount.mutate() },
     ]);
 
   usePreventRemove(deleteAccount.isPending, () => undefined);
@@ -212,6 +202,17 @@ export function SettingsScreen() {
             <ListRow icon={<SignOut size={20} color={colors.danger} />} label={strings.auth.signOut} danger onPress={confirmSignOut} />
           </View>
         </View>
+        {/* No fim da tela, longe do que se usa no dia a dia */}
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <ListRow
+              icon={<Trash size={20} color={colors.danger} />}
+              label={a.deleteAccount}
+              danger
+              onPress={deleteAccount.isPending ? undefined : confirmDeleteAccount}
+            />
+          </View>
+        </View>
       </ScrollView>
       <FloatingBackButton />
       <ActionSheet
@@ -244,13 +245,6 @@ export function SettingsScreen() {
             setPreference(choice);
           },
         }))}
-      />
-      <ActionSheet
-        visible={confirmingDelete}
-        title={a.deleteAccountTitle}
-        message={a.deleteAccountText}
-        onClose={() => setConfirmingDelete(false)}
-        options={[{ key: 'delete', label: a.deleteAccountConfirm, destructive: true, onPress: () => deleteAccount.mutate() }]}
       />
       {deleteAccount.isPending ? (
         <View style={styles.blocking} accessibilityViewIsModal>

@@ -92,14 +92,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProfileResponse'
-    delete:
-      tags: [Users & Onboarding]
-      summary: Exclui a conta (apaga os dados da pessoa e o usuário no Clerk)
-      responses:
-        '204':
-          description: Conta excluída (excluir de novo no Clerk também devolve 204)
-        '503':
-          description: O Clerk não respondeu; nada foi excluído e dá para tentar de novo
 
   /api/v1/me/header:
     put:

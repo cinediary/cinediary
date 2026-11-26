@@ -34,7 +34,6 @@ public abstract class IntegrationTest
             .withPlugins("graph-data-science")
             .withAdminPassword("cinediary-test");
     protected static final FakeTmdb TMDB = FakeTmdb.start();
-    protected static final FakeClerk CLERK = FakeClerk.start();
 
     static {
         POSTGRES.start();
@@ -55,8 +54,6 @@ public abstract class IntegrationTest
         registry.add("cinediary.tmdb.api-token", () -> FakeTmdb.TOKEN);
         registry.add("cinediary.importing.short-link-base-url", () -> TMDB.baseUrl() + "/boxd");
         registry.add("cinediary.clerk.webhook-secret", () -> WEBHOOK_SECRET);
-        registry.add("cinediary.clerk.api-base-url", CLERK::baseUrl);
-        registry.add("cinediary.clerk.secret-key", () -> FakeClerk.SECRET_KEY);
     }
 
     @Autowired

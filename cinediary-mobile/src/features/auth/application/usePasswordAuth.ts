@@ -1,4 +1,4 @@
-import { useClerk, useSignIn, useSignUp } from '@clerk/expo';
+import { useClerk, useSignIn, useSignUp, useUser } from '@clerk/expo';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -7,7 +7,6 @@ import { analytics, posthogLogger } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
 import { normalizeEmail, normalizeIdentifier, normalizeUsername, type SignUpInput } from '../domain/credentials';
 import { clerkErrorCode } from '../infrastructure/clerkErrors';
-import { profileApi } from '../infrastructure/profileApi';
 
 /**
  * MVP: autenticação só com usuário + e-mail + senha, sem SSO e sem
@@ -90,10 +89,19 @@ export function useSignOut() {
   };
 }
 
+/**
+ * Exclui a conta no Clerk, do mesmo jeito que o app cria a conta e entra por ele. O Clerk avisa o backend pelo
+ * webhook `user.deleted`, e o backend apaga os dados da pessoa. Precisa da opção "permitir que as pessoas excluam a
+ * própria conta" ligada no painel do Clerk.
+ */
 export function useDeleteAccount({ onError }: { onError: () => void }) {
   const { signOut } = useClerk();
+  const { user } = useUser();
   return useMutation({
-    mutationFn: profileApi.deleteAccount,
+    mutationFn: async () => {
+      if (!user) throw new Error('Sem sessão para excluir');
+      await user.delete();
+    },
     onSuccess: () => {
       analytics.track('account_deleted', {});
       void signOut().catch(() => undefined);

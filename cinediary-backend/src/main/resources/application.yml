@@ -80,8 +80,6 @@ cinediary:
     # Origens aceitas no claim "azp" (ex.: http://localhost:8081). Vazio = não valida azp.
     authorized-parties: ${CLERK_AUTHORIZED_PARTIES:}
     webhook-secret: ${CLERK_WEBHOOK_SECRET:}
-    secret-key: ${CLERK_SECRET_KEY:}
-    api-base-url: ${CLERK_API_BASE_URL:https://api.clerk.com/v1}
   tmdb:
     base-url: ${TMDB_BASE_URL:https://api.themoviedb.org/3}
     image-base-url: https://image.tmdb.org/t/p
