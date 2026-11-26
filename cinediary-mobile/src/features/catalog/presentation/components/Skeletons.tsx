@@ -1,6 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { radius, semantic, space } from '@/shared/theme';
+import { radius, space, makeStyles } from '@/shared/theme';
 import { Skeleton, SkeletonGrid, SkeletonLines, SkeletonRail, useRailItemWidth } from '@/shared/ui';
 import { useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 
@@ -11,6 +11,7 @@ import { useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton'
 
 /** Temporadas da série enquanto o detalhe completo chega. */
 export function SeasonsSkeleton({ count = 3 }: { count?: number }) {
+  const styles = useStyles();
   return (
     <View style={styles.seasons}>
       <Skeleton width="100%" height={8} round />
@@ -29,6 +30,7 @@ export function SeasonsSkeleton({ count = 3 }: { count?: number }) {
 
 /** Equipe e "Sobre" enquanto os extras chegam. */
 export function ExtrasSkeleton() {
+  const styles = useStyles();
   const itemWidth = useRailItemWidth(4.4);
   return (
     <View style={styles.seasons}>
@@ -53,6 +55,7 @@ export function ExtrasSkeleton() {
 
 /** Pessoa (filmografia): foto, nome e a grade. */
 export function PersonSkeleton() {
+  const styles = useStyles();
   const backInset = useFloatingBackInset();
   return (
     <View style={[styles.page, { paddingTop: backInset }]}>
@@ -68,6 +71,7 @@ export function PersonSkeleton() {
 
 /** Produtora: logo, nome, país e a grade. */
 export function CompanySkeleton() {
+  const styles = useStyles();
   const backInset = useFloatingBackInset();
   return (
     <View style={[styles.page, { paddingTop: backInset }]}>
@@ -82,7 +86,7 @@ export function CompanySkeleton() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   flex: { flex: 1, gap: space.sm },
   seasons: { gap: space.md },
   seasonCard: {
@@ -92,11 +96,11 @@ const styles = StyleSheet.create({
     padding: space.lg,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: '#EFE6DA',
+    borderColor: c.border,
   },
   people: { flexDirection: 'row', gap: space.md },
   person: { alignItems: 'center', gap: space.sm },
-  card: { padding: space.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: '#EFE6DA' },
-  page: { flex: 1, backgroundColor: semantic.background, paddingHorizontal: space.screenX, gap: space.xl },
+  card: { padding: space.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: c.border },
+  page: { flex: 1, backgroundColor: c.background, paddingHorizontal: space.screenX, gap: space.xl },
   hero: { alignItems: 'center', gap: space.md },
-});
+}));

@@ -1,9 +1,9 @@
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, radius, semantic, space } from '@/shared/theme';
+import { radius, space, makeStyles } from '@/shared/theme';
 import { ErrorState, PosterCard, SectionHeader, Text, useGridItemWidth } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { useCompany } from '../../application/catalogQueries';
@@ -12,6 +12,7 @@ import { openTitle } from '../navigation';
 
 /** Produtora (ex.: A24): logo, nome, país e a grade dos filmes dela, os mais populares primeiro. */
 export function CompanyScreen() {
+  const styles = useStyles();
   const t = strings.catalog;
   const backInset = useFloatingBackInset();
   const { companyId } = useLocalSearchParams<{ companyId: string }>();
@@ -77,14 +78,14 @@ export function CompanyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   center: { justifyContent: 'center' },
   content: { paddingHorizontal: space.screenX, paddingBottom: space['3xl'], gap: space.xl },
   hero: { alignItems: 'center', gap: space.sm },
   // Fundo claro: muitos logos do TMDB são escuros e somem no creme sem uma caixa.
-  logoBox: { padding: space.lg, borderRadius: radius.lg, backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.border },
+  logoBox: { padding: space.lg, borderRadius: radius.lg, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
   logo: { width: 160, height: 64 },
   textCenter: { textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
-});
+}));

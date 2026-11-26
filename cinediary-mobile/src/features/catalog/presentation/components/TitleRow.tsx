@@ -1,9 +1,9 @@
 import { BookmarkSimple, Check, Heart, Plus, Star } from 'phosphor-react-native';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { formatNumber, strings } from '@/shared/i18n';
-import { palette, semantic, space, touch } from '@/shared/theme';
+import { space, touch, makeStyles, useColors } from '@/shared/theme';
 import { PosterArt, Text } from '@/shared/ui';
 import { showOriginalTitle, type TitleSummary } from '../../domain/title';
 
@@ -21,6 +21,8 @@ export interface TitleRowProps {
 
 /** Linha de resultado da busca (BU-01): pôster xs, título, original, ano · tipo, selos e "+". */
 export function TitleRow({ title, onPress, onAction, actionLabel, actionIcon, actionActive, activeActionIcon }: TitleRowProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const c = strings.common;
   const s = title.state;
   return (
@@ -45,15 +47,15 @@ export function TitleRow({ title, onPress, onAction, actionLabel, actionIcon, ac
             <Text variant="caption" tone="muted">
               {[title.year, title.mediaType === 'SERIES' ? c.series : c.movie].filter(Boolean).join(' · ')}
             </Text>
-            {s.watched && <Check size={14} weight="bold" color={semantic.watched} />}
-            {s.liked && <Heart size={14} weight="fill" color={semantic.liked} />}
+            {s.watched && <Check size={14} weight="bold" color={colors.watched} />}
+            {s.liked && <Heart size={14} weight="fill" color={colors.liked} />}
             {s.rating ? (
               <View style={styles.rating}>
-                <Star size={12} weight="fill" color={semantic.starFill} />
+                <Star size={12} weight="fill" color={colors.starFill} />
                 <Text variant="caption">{formatNumber(s.rating, s.rating % 1 ? 1 : 0)}</Text>
               </View>
             ) : null}
-            {s.inWatchlist && <BookmarkSimple size={14} weight="fill" color={palette.ink700} />}
+            {s.inWatchlist && <BookmarkSimple size={14} weight="fill" color={colors.ink700} />}
           </View>
         </View>
       </Pressable>
@@ -66,14 +68,14 @@ export function TitleRow({ title, onPress, onAction, actionLabel, actionIcon, ac
           hitSlop={6}
           style={({ pressed }) => [styles.action, pressed && styles.pressed]}
         >
-          {(actionActive ? activeActionIcon : null) ?? actionIcon ?? <Plus size={22} weight="bold" color={semantic.primary} />}
+          {(actionActive ? activeActionIcon : null) ?? actionIcon ?? <Plus size={22} weight="bold" color={colors.primary} />}
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.xs },
   texts: { flex: 1, gap: 2 },
@@ -83,9 +85,9 @@ const styles = StyleSheet.create({
     width: touch.minTarget,
     height: touch.minTarget,
     borderRadius: touch.minTarget / 2,
-    backgroundColor: palette.terracota100,
+    backgroundColor: c.terracota100,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pressed: { opacity: 0.7 },
-});
+}));

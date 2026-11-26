@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, space } from '@/shared/theme';
+import { space, makeStyles, useColors } from '@/shared/theme';
 import { Avatar, Rail, SectionHeader, Skeleton, Text, useRailItemWidth } from '@/shared/ui';
 import { useTitleCredits } from '../../application/catalogQueries';
 import type { MediaType } from '../../domain/title';
@@ -14,6 +14,8 @@ export const RAIL_PEOPLE = 10;
 
 /** Elenco e direção em carrossel: um toque abre a filmografia da pessoa. */
 export function CastSection({ mediaType, tmdbId, titleName }: { mediaType: MediaType; tmdbId: number; titleName: string }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.catalog;
   const credits = useTitleCredits(mediaType, tmdbId);
   const itemWidth = useRailItemWidth(4.4);
@@ -45,7 +47,7 @@ export function CastSection({ mediaType, tmdbId, titleName }: { mediaType: Media
                       name={c.name}
                       imageUrl={c.photoUrl}
                       size={PHOTO}
-                      background={c.director ? palette.salvia300 : palette.pipoca300}
+                      background={c.director ? colors.salvia300 : colors.pipoca300}
                     />
                     <Text variant="caption" style={styles.name} numberOfLines={2}>
                       {c.name}
@@ -80,10 +82,10 @@ export function CastSection({ mediaType, tmdbId, titleName }: { mediaType: Media
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.md },
   item: { alignItems: 'center', gap: space.xs },
   pressed: { opacity: 0.7 },
-  name: { textAlign: 'center', fontFamily: 'Nunito_700Bold', color: palette.ink900 },
+  name: { textAlign: 'center', fontFamily: 'Nunito_700Bold', color: c.ink900 },
   center: { textAlign: 'center' },
-});
+}));

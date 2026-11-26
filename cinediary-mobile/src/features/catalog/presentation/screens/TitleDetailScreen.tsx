@@ -1,11 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeIn, useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
-import { semantic, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Button, ErrorState, SectionHeader, STAR_SPIN_MS, StarSpinner, Text } from '@/shared/ui';
 import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
 import { useTitleDetail, useTitleExtras } from '../../application/catalogQueries';
@@ -32,6 +32,7 @@ import { useTrailerPlacement, type TrailerSlot } from '../trailerPlacement';
  * produtoras), da mesma coleção e similares. Os extras chegam depois do básico, sem segurar a tela.
  */
 export function TitleDetailScreen() {
+  const styles = useStyles();
   const params = useLocalSearchParams<{ mediaType: string; tmdbId: string }>();
   const mediaType: MediaType = params.mediaType === 'SERIES' ? 'SERIES' : 'MOVIE';
   const tmdbId = Number(params.tmdbId);
@@ -147,8 +148,8 @@ export function TitleDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: space['3xl'] },
   body: {
     paddingHorizontal: space.screenX,
@@ -158,13 +159,13 @@ const styles = StyleSheet.create({
   center: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: semantic.background,
+    backgroundColor: c.background,
   },
   // A estrela no meio da tela, nos dois eixos.
   spinner: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: semantic.background,
+    backgroundColor: c.background,
   },
-});
+}));

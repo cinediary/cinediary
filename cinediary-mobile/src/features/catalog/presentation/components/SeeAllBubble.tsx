@@ -1,8 +1,8 @@
 import { ArrowRight } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, space } from '@/shared/theme';
+import { space, makeStyles, useColors } from '@/shared/theme';
 import { Text } from '@/shared/ui';
 
 /**
@@ -11,6 +11,8 @@ import { Text } from '@/shared/ui';
  * borda da cor do fundo, o círculo não).
  */
 export function SeeAllBubble({ width, size = 64, onPress }: { width: number; size?: number; onPress: () => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   const circle = Math.round(size * 0.66);
   return (
     <Pressable
@@ -21,7 +23,7 @@ export function SeeAllBubble({ width, size = 64, onPress }: { width: number; siz
     >
       <View style={[styles.slot, { height: size }]}>
         <View style={[styles.circle, { width: circle, height: circle, borderRadius: circle / 2 }]}>
-          <ArrowRight size={18} weight="bold" color={palette.ink700} />
+          <ArrowRight size={18} weight="bold" color={colors.ink700} />
         </View>
       </View>
       <Text variant="caption" style={styles.label}>
@@ -31,16 +33,16 @@ export function SeeAllBubble({ width, size = 64, onPress }: { width: number; siz
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   item: { alignItems: 'center', gap: space.xs },
   slot: { justifyContent: 'center' },
   circle: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
-  label: { textAlign: 'center', fontFamily: 'Nunito_700Bold', color: palette.ink700 },
+  label: { textAlign: 'center', fontFamily: 'Nunito_700Bold', color: c.ink700 },
   pressed: { opacity: 0.7 },
-});
+}));

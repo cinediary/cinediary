@@ -5,7 +5,7 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, makeStyles, useColors } from '@/shared/theme';
 import { Avatar, ErrorState, SegmentedControl, SkeletonRows, Text } from '@/shared/ui';
 import { TopBar } from '@/shared/ui/navigation/TopBar';
 import { useTitleCredits, useTitleExtras } from '../../application/catalogQueries';
@@ -24,6 +24,8 @@ interface Row {
 
 /** "Ver todos" do elenco e da equipe: a lista inteira, em abas. Tocar abre a filmografia. */
 export function TitleCreditsScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.catalog;
   const params = useLocalSearchParams<{ mediaType: string; tmdbId: string; name?: string; tab?: string }>();
   const mediaType: MediaType = params.mediaType === 'SERIES' ? 'SERIES' : 'MOVIE';
@@ -77,7 +79,7 @@ export function TitleCreditsScreen() {
               name={item.name}
               imageUrl={item.photoUrl}
               size={48}
-              background={item.director || tab === 'crew' ? palette.salvia300 : palette.pipoca300}
+              background={item.director || tab === 'crew' ? colors.salvia300 : colors.pipoca300}
             />
             <View style={styles.texts}>
               <Text variant="bodyStrong" numberOfLines={1}>
@@ -89,7 +91,7 @@ export function TitleCreditsScreen() {
                 </Text>
               ) : null}
             </View>
-            <CaretRight size={16} color={palette.ink500} />
+            <CaretRight size={16} color={colors.ink500} />
           </Pressable>
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -114,11 +116,11 @@ export function TitleCreditsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: space.screenX, paddingTop: space.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm },
   pressed: { opacity: 0.7 },
   texts: { flex: 1, gap: 2 },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: palette.border, marginLeft: 48 + space.md },
-});
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginLeft: 48 + space.md },
+}));

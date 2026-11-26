@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeOut, useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
-import { palette, poster, semantic, space } from '@/shared/theme';
+import { poster, space, makeStyles, useColors, alpha } from '@/shared/theme';
 import { PosterArt, Skeleton, Text } from '@/shared/ui';
 import type { TitleDetail } from '../../domain/title';
 import type { TrailerSlot } from '../trailerPlacement';
@@ -42,6 +42,8 @@ export function TitleHeader({
    */
   trailer?: TrailerSlot;
 }) {
+  const styles = useStyles();
+  const themeColors = useColors();
   const t = strings.catalog;
   const [expanded, setExpanded] = useState(false);
   const [zoomFrom, setZoomFrom] = useState<PosterOrigin | null>(null);
@@ -87,7 +89,7 @@ export function TitleHeader({
             cachePolicy="memory-disk"
           />
         ) : null}
-        <LinearGradient colors={['rgba(250,246,240,0)', palette.bg]} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={[alpha(themeColors.bg, 0), themeColors.bg]} style={StyleSheet.absoluteFill} />
       </Animated.View>
       <View style={styles.body}>
         <View style={styles.row}>
@@ -119,7 +121,7 @@ export function TitleHeader({
                   onPress={trailer.onPress}
                   style={({ pressed }) => [styles.pill, trailer.status === 'loading' && styles.pillLoading, pressed && styles.pressed]}
                 >
-                  <Play size={14} weight="fill" color={palette.ink900} />
+                  <Play size={14} weight="fill" color={themeColors.ink900} />
                   <Text variant="caption" style={styles.pillText}>
                     {t.trailer}
                   </Text>
@@ -163,12 +165,12 @@ export function TitleHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { height: BACKDROP_HEIGHT, backgroundColor: palette.surfaceSunken },
+const useStyles = makeStyles((c) => ({
+  backdrop: { height: BACKDROP_HEIGHT, backgroundColor: c.surfaceSunken },
   skeletonLine: { marginVertical: 5 },
   body: { marginTop: -96, paddingHorizontal: space.screenX, gap: space.lg },
   row: { flexDirection: 'row', gap: space.lg, alignItems: 'flex-end' },
-  poster: { borderWidth: PAGE_BORDER, borderColor: semantic.background },
+  poster: { borderWidth: PAGE_BORDER, borderColor: c.background },
   hidden: { opacity: 0 },
   texts: { flex: 1, gap: space.xs, paddingBottom: space.xs },
   pressed: { opacity: 0.75 },
@@ -183,9 +185,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
-  pillText: { color: palette.ink900, fontFamily: 'Nunito_800ExtraBold' },
-});
+  pillText: { color: c.ink900, fontFamily: 'Nunito_800ExtraBold' },
+}));
