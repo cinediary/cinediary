@@ -63,6 +63,13 @@ export const account: Strings['account'] = {
   sectionPreferences: 'Préférences',
   approveCompanions: 'Approuver les identifications',
   approveCompanionsHint: 'Quand quelqu’un t’identifie dans une entrée, tu décides si elle s’affiche.',
+  appearance: 'Apparence',
+  appearances: { system: 'Automatique', light: 'Clair', dark: 'Sombre' } as Record<'system' | 'light' | 'dark', string>,
+  appearanceHints: {
+    system: 'Suit ton appareil : clair le jour, sombre la nuit.',
+    light: 'Toujours le fond crème.',
+    dark: 'Toujours le fond sombre, idéal pour noter juste après le film.',
+  } as Record<'system' | 'light' | 'dark', string>,
   showSpoilers: 'Afficher les spoilers',
   showSpoilersHint: 'Les critiques et réponses des autres apparaissent sans flou.',
   replyPolicy: 'Qui peut répondre',

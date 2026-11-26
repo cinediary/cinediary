@@ -1,9 +1,9 @@
 import { DotsThree } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, touch } from '@/shared/theme';
+import { touch, useColors, makeStyles } from '@/shared/theme';
 import { ActionSheet } from '../ActionSheet';
 import { hasNativeUI } from './nativeUI';
 import type { MoreMenuOption } from './types';
@@ -27,6 +27,8 @@ export function MoreMenu({
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const [open, setOpen] = useState(false);
 
   if (NativeMoreMenu) {
@@ -47,7 +49,7 @@ export function MoreMenu({
         hitSlop={8}
         style={({ pressed }) => [styles.circle, style, pressed && styles.pressed]}
       >
-        <DotsThree size={24} weight="bold" color={palette.ink900} />
+        <DotsThree size={24} weight="bold" color={colors.ink900} />
       </Pressable>
       <ActionSheet
         visible={open}
@@ -58,16 +60,16 @@ export function MoreMenu({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   circle: {
     width: touch.minTarget,
     height: touch.minTarget,
     borderRadius: touch.minTarget / 2,
     // Igual ao voltar (FloatingBackButton), do outro lado do topo.
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   slot: { width: touch.minTarget, height: touch.minTarget },
   pressed: { opacity: 0.7 },
-});
+}));

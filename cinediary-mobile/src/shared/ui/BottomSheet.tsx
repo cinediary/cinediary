@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type PropsWithChildren, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { nav } from './navigation/nav';
 
 const RADIUS = 28;
@@ -59,6 +59,7 @@ export function useOverlay() {
  * Fecha arrastando pela alça para baixo, tocando no fundo escurecido ou com useBottomSheet().close().
  */
 export function BottomSheet({ children, onClosed = () => nav.back() }: PropsWithChildren<{ onClosed?: () => void }>) {
+  const styles = useStyles();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const reduce = useReducedMotion();
@@ -121,14 +122,14 @@ export function BottomSheet({ children, onClosed = () => nav.back() }: PropsWith
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { backgroundColor: 'rgba(42,33,28,0.45)' },
+const useStyles = makeStyles((c) => ({
+  backdrop: { backgroundColor: c.backdrop },
   sheet: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: semantic.background,
+    backgroundColor: c.background,
     borderTopLeftRadius: RADIUS,
     borderTopRightRadius: RADIUS,
     borderCurve: 'continuous',
@@ -139,5 +140,5 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   handleArea: { alignItems: 'center', justifyContent: 'center', paddingTop: space.sm, paddingBottom: space.xs },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: palette.border },
-});
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: c.border },
+}));

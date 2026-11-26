@@ -63,6 +63,13 @@ export const account: Strings['account'] = {
   sectionPreferences: 'Preferencias',
   approveCompanions: 'Aprobar etiquetas',
   approveCompanionsHint: 'Cuando alguien te etiquete en un registro, tú decides si aparece.',
+  appearance: 'Apariencia',
+  appearances: { system: 'Automático', light: 'Claro', dark: 'Oscuro' } as Record<'system' | 'light' | 'dark', string>,
+  appearanceHints: {
+    system: 'Sigue al dispositivo: claro de día, oscuro de noche.',
+    light: 'Siempre el fondo crema.',
+    dark: 'Siempre el fondo oscuro, ideal para registrar después de la película.',
+  } as Record<'system' | 'light' | 'dark', string>,
   showSpoilers: 'Mostrar spoilers',
   showSpoilersHint: 'Las reseñas y respuestas de otras personas aparecen sin difuminar.',
   replyPolicy: 'Quién puede responder',

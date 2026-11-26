@@ -1,12 +1,12 @@
 import Constants from 'expo-constants';
-import { ChatCircle, DownloadSimple, Eye, FilmSlate, Info, LockSimple, Palette, SignOut, UserCircle, UsersThree } from 'phosphor-react-native';
+import { ChatCircle, CircleHalf, DownloadSimple, Eye, FilmSlate, Info, LockSimple, Palette, SignOut, UserCircle, UsersThree } from 'phosphor-react-native';
 import { useState, type ReactNode } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
-import { palette, radius, semantic, space } from '@/shared/theme';
+import { radius, space, useTheme, useColors, makeStyles } from '@/shared/theme';
 import { ActionSheet, ListRow, Text, Title, useToast } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { nav } from '@/shared/ui/navigation/nav';
@@ -30,14 +30,23 @@ type SettingRow = {
 
 type SettingSection = { key: string; title: string; rows: SettingRow[] };
 
-const icon = (Icon: typeof UserCircle) => <Icon size={20} color={palette.ink700} />;
+function SettingIcon({ Icon }: { Icon: typeof UserCircle }) {
+  const colors = useColors();
+  return <Icon size={20} color={colors.ink700} />;
+}
 
-function useSections(openReplyPicker: () => void): SettingSection[] {
+const icon = (Icon: typeof UserCircle) => <SettingIcon Icon={Icon} />;
+
+/** Aparência só aparece em desenvolvimento enquanto as telas passam para o tema escuro (#61, por etapas). */
+const SHOW_APPEARANCE = __DEV__;
+
+function useSections(openReplyPicker: () => void, openAppearancePicker: () => void): SettingSection[] {
   const a = strings.account;
   const t = strings.stats;
   const toast = useToast();
   const me = useMe();
   const updateProfile = useUpdateProfile();
+  const { preference } = useTheme();
 
   return [
     {
@@ -63,6 +72,18 @@ function useSections(openReplyPicker: () => void): SettingSection[] {
       key: 'preferences',
       title: a.sectionPreferences,
       rows: [
+        ...(SHOW_APPEARANCE
+          ? [
+              {
+                // Do aparelho (não da conta): cada celular guarda a sua
+                key: 'appearance',
+                icon: icon(CircleHalf),
+                label: a.appearance,
+                hint: a.appearances[preference],
+                onPress: openAppearancePicker,
+              },
+            ]
+          : []),
         {
           key: 'spoilers',
           icon: icon(Eye),
@@ -116,6 +137,8 @@ function useSections(openReplyPicker: () => void): SettingSection[] {
 
 /** Configurações (abertas pela engrenagem do Perfil): seções em cartões e "Sair" no fim. */
 export function SettingsScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const a = strings.account;
   const insets = useSafeAreaInsets();
   const backInset = useFloatingBackInset();
@@ -124,7 +147,12 @@ export function SettingsScreen() {
   const me = useMe();
   const updateProfile = useUpdateProfile();
   const [pickingReplies, setPickingReplies] = useState(false);
-  const sections = useSections(() => setPickingReplies(true));
+  const [pickingAppearance, setPickingAppearance] = useState(false);
+  const { preference, setPreference } = useTheme();
+  const sections = useSections(
+    () => setPickingReplies(true),
+    () => setPickingAppearance(true),
+  );
   const current = me.data?.defaultReplyPolicy ?? 'EVERYONE';
 
   const confirmSignOut = () =>
@@ -167,7 +195,7 @@ export function SettingsScreen() {
         ))}
         <View style={styles.card}>
           <View style={styles.row}>
-            <ListRow icon={<SignOut size={20} color={semantic.danger} />} label={strings.auth.signOut} danger onPress={confirmSignOut} />
+            <ListRow icon={<SignOut size={20} color={colors.danger} />} label={strings.auth.signOut} danger onPress={confirmSignOut} />
           </View>
         </View>
       </ScrollView>
@@ -188,15 +216,30 @@ export function SettingsScreen() {
           },
         }))}
       />
+      <ActionSheet
+        visible={pickingAppearance}
+        title={a.appearance}
+        onClose={() => setPickingAppearance(false)}
+        options={(['system', 'light', 'dark'] as const).map((choice) => ({
+          key: choice,
+          label: a.appearances[choice],
+          hint: a.appearanceHints[choice],
+          selected: preference === choice,
+          onPress: () => {
+            analytics.track('setting_changed', { key: 'appearance', value: choice });
+            setPreference(choice);
+          },
+        }))}
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: space.screenX, gap: space.xl },
   section: { gap: space.sm },
-  card: { borderRadius: radius.lg, backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.border, overflow: 'hidden' },
+  card: { borderRadius: radius.lg, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
   row: { paddingHorizontal: space.lg, paddingVertical: space.xs },
-  divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.border },
-});
+  divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+}));

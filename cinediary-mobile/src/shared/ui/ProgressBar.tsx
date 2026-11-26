@@ -1,7 +1,7 @@
 import { Check } from 'phosphor-react-native';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, useColors, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
 
 export interface ProgressBarProps {
@@ -14,6 +14,8 @@ export interface ProgressBarProps {
 }
 
 export function ProgressBar({ current, total, unit = '', accessibilityLabel }: ProgressBarProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const ratio = total > 0 ? Math.min(1, current / total) : 0;
   const done = ratio === 1;
   const label = `${current} de ${total}${unit ? ` ${unit}` : ''}`;
@@ -26,10 +28,10 @@ export function ProgressBar({ current, total, unit = '', accessibilityLabel }: P
       accessibilityValue={{ min: 0, max: total, now: current }}
     >
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${ratio * 100}%`, backgroundColor: done ? palette.salvia700 : palette.salvia500 }]} />
+        <View style={[styles.fill, { width: `${ratio * 100}%`, backgroundColor: done ? colors.salvia700 : colors.salvia500 }]} />
       </View>
       <View style={styles.labelRow}>
-        {done && <Check size={12} weight="bold" color={palette.salvia700} />}
+        {done && <Check size={12} weight="bold" color={colors.salvia700} />}
         <Text variant="caption" tone={done ? 'success' : 'muted'}>
           {label}
         </Text>
@@ -38,8 +40,8 @@ export function ProgressBar({ current, total, unit = '', accessibilityLabel }: P
   );
 }
 
-const styles = StyleSheet.create({
-  track: { height: 8, borderRadius: radius.pill, backgroundColor: palette.surfaceSunken, overflow: 'hidden' },
+const useStyles = makeStyles((c) => ({
+  track: { height: 8, borderRadius: radius.pill, backgroundColor: c.surfaceSunken, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: radius.pill },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.xs },
-});
+}));

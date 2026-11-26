@@ -10,7 +10,7 @@ import { AnalyticsProvider } from '@/shared/analytics/analytics';
 import { queryClient } from '@/shared/api/queryClient';
 import { AuthProvider } from '@/shared/auth/AuthProvider';
 import { isClerkConfigured } from '@/shared/config/env';
-import { fontAssets } from '@/shared/theme';
+import { fontAssets, ThemeProvider, useColors } from '@/shared/theme';
 import { MissingConfigScreen, ToastProvider } from '@/shared/ui';
 
 // Segura a splash nativa até a splash animada (shared/ui/splash) aparecer por cima, idêntica a ela.
@@ -39,19 +39,27 @@ export function AppProviders({ children }: PropsWithChildren) {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <AuthProvider>
-          <QueryClientProvider client={queryClient}>
-            <AnalyticsProvider>
-              <ToastProvider>
-                <StatusBar style="dark" />
-                {children}
-              </ToastProvider>
-            </AnalyticsProvider>
-          </QueryClientProvider>
-        </AuthProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ThemeProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <QueryClientProvider client={queryClient}>
+              <AnalyticsProvider>
+                <ToastProvider>
+                  <ThemedStatusBar />
+                  {children}
+                </ToastProvider>
+              </AnalyticsProvider>
+            </QueryClientProvider>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ThemeProvider>
   );
+}
+
+/** Relógio e bateria escuros no tema claro e claros no escuro. */
+function ThemedStatusBar() {
+  const colors = useColors();
+  return <StatusBar style={colors.scheme === 'dark' ? 'light' : 'dark'} />;
 }

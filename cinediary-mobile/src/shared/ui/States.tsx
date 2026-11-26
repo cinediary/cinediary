@@ -4,23 +4,25 @@ import { ActivityIndicator, StyleSheet, View, useWindowDimensions, type StylePro
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
-import { palette, poster, radius, semantic, space } from '@/shared/theme';
+import { poster, radius, space, useColors } from '@/shared/theme';
 import { Button } from './Button';
 import { Text } from './Text';
 
 export function LoadingState({ label = strings.common.loading }: { label?: string }) {
+  const colors = useColors();
   return (
     <View style={styles.center} accessibilityLiveRegion="polite">
-      <ActivityIndicator color={semantic.primary} />
+      <ActivityIndicator color={colors.primary} />
       <Text tone="muted">{label}</Text>
     </View>
   );
 }
 
 export function ErrorState({ message = strings.common.genericError, onRetry }: { message?: string; onRetry?: () => void }) {
+  const colors = useColors();
   return (
     <View style={styles.center} accessibilityLiveRegion="polite">
-      <WarningCircle size={28} color={palette.error} />
+      <WarningCircle size={28} color={colors.error} />
       <Text tone="secondary" style={styles.text}>
         {message}
       </Text>
@@ -46,6 +48,7 @@ export function Skeleton({
   radius?: number;
   style?: StyleProp<ViewStyle>;
 }) {
+  const colors = useColors();
   const reduce = useReducedMotion();
   const pulse = useSharedValue(0);
   useEffect(() => {
@@ -57,7 +60,7 @@ export function Skeleton({
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       style={[
-        { width, height, borderRadius: round ? height / 2 : (r ?? radius.sm), backgroundColor: palette.surfaceSunken },
+        { width, height, borderRadius: round ? height / 2 : (r ?? radius.sm), backgroundColor: colors.surfaceSunken },
         animated,
         style,
       ]}

@@ -1,8 +1,8 @@
 import * as Haptics from 'expo-haptics';
 import { Check } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { palette, radius, semantic, space, touch } from '@/shared/theme';
+import { radius, space, touch, useColors, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
 
 export interface CheckboxProps {
@@ -15,6 +15,8 @@ export interface CheckboxProps {
 }
 
 export function Checkbox({ label, hint, checked, onChange, shape = 'square' }: CheckboxProps) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -31,10 +33,10 @@ export function Checkbox({ label, hint, checked, onChange, shape = 'square' }: C
         style={[
           styles.box,
           shape === 'circle' && styles.circle,
-          checked && { backgroundColor: semantic.primary, borderColor: semantic.primary },
+          checked && { backgroundColor: colors.primary, borderColor: colors.primary },
         ]}
       >
-        {checked && <Check size={14} weight="bold" color={palette.surface} />}
+        {checked && <Check size={14} weight="bold" color={colors.surface} />}
       </View>
       <View style={styles.texts}>
         <Text variant="bodyStrong">{label}</Text>
@@ -48,7 +50,7 @@ export function Checkbox({ label, hint, checked, onChange, shape = 'square' }: C
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   row: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start', minHeight: touch.minTarget },
   box: {
     width: 24,
@@ -56,11 +58,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
     borderRadius: radius.sm / 2,
     borderWidth: 2,
-    borderColor: palette.borderStrong,
-    backgroundColor: palette.surface,
+    borderColor: c.borderStrong,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   circle: { borderRadius: 12 },
   texts: { flex: 1, gap: 2 },
-});
+}));

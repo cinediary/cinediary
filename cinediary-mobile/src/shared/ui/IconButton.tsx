@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { palette, radius, semantic, space, touch } from '@/shared/theme';
+import { radius, space, touch, useColors, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
 
 export interface IconButtonProps {
@@ -16,6 +16,8 @@ export interface IconButtonProps {
 }
 
 export function IconButton({ icon, accessibilityLabel, onPress, label, active, variant = 'plain', disabled }: IconButtonProps) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <Pressable
       accessibilityRole="button"
@@ -30,7 +32,7 @@ export function IconButton({ icon, accessibilityLabel, onPress, label, active, v
         style={[
           styles.circle,
           variant === 'filled' && styles.filled,
-          active && { backgroundColor: palette.terracota100, borderColor: semantic.primary },
+          active && { backgroundColor: colors.terracota100, borderColor: colors.primary },
         ]}
       >
         {icon}
@@ -44,7 +46,7 @@ export function IconButton({ icon, accessibilityLabel, onPress, label, active, v
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { alignItems: 'center', justifyContent: 'center', minWidth: touch.minTarget, minHeight: touch.minTarget },
   withLabel: { gap: space.xs, flex: 1 },
   circle: {
@@ -56,7 +58,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'transparent',
   },
-  filled: { backgroundColor: palette.surface, borderColor: palette.border },
+  filled: { backgroundColor: c.surface, borderColor: c.border },
   pressed: { opacity: 0.7 },
   disabled: { opacity: 0.4 },
-});
+}));

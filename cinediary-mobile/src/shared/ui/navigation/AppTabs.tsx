@@ -2,7 +2,7 @@ import { NativeTabs } from 'expo-router/native-tabs';
 import { Platform } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic } from '@/shared/theme';
+import { useColors, type Colors } from '@/shared/theme';
 
 /**
  * Barra de abas nativa (UX-01 §7.1, v1.2) — 5 abas na mesma barra.
@@ -11,27 +11,28 @@ import { palette, semantic } from '@/shared/theme';
  * - Android: Material 3 com rótulos sempre visíveis (com 5 itens ele esconderia os inativos).
  * Rótulos seguem o idioma do aparelho (shared/i18n).
  */
-const platformAppearance =
+const platformAppearance = (c: Colors) =>
   Platform.OS === 'android'
     ? {
-        backgroundColor: palette.surface,
-        indicatorColor: palette.terracota100,
-        rippleColor: palette.terracota100,
+        backgroundColor: c.surface,
+        indicatorColor: c.terracota100,
+        rippleColor: c.terracota100,
         labelVisibilityMode: 'labeled' as const,
-        iconColor: { default: palette.ink500, selected: palette.terracota700 },
+        iconColor: { default: c.ink500, selected: c.terracota700 },
       }
     : {
         minimizeBehavior: 'onScrollDown' as const,
-        iconColor: { default: palette.ink500, selected: semantic.primary },
+        iconColor: { default: c.ink500, selected: c.primary },
       };
 
 export function AppTabs() {
+  const colors = useColors();
   const t = strings.tabs;
   return (
     <NativeTabs
-      tintColor={semantic.primary}
-      labelStyle={{ default: { color: palette.ink500 }, selected: { color: palette.ink900 } }}
-      {...platformAppearance}
+      tintColor={colors.primary}
+      labelStyle={{ default: { color: colors.ink500 }, selected: { color: colors.ink900 } }}
+      {...platformAppearance(colors)}
     >
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />

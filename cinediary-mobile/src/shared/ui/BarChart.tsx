@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, useColors, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
 
 export interface BarDatum {
@@ -20,7 +20,7 @@ const scaleOf = (data: BarDatum[], minScale: number) => Math.max(1, minScale, ..
 /** Barras horizontais (top gêneros), preenchimento sálvia. */
 export function HorizontalBars({
   data,
-  color = palette.salvia500,
+  color: colorProp,
   minScale = 0,
 }: {
   data: BarDatum[];
@@ -28,6 +28,9 @@ export function HorizontalBars({
   /** Valor que enche a barra quando os dados são poucos. */
   minScale?: number;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
+  const color = colorProp ?? colors.salvia500;
   const max = scaleOf(data, minScale);
   return (
     <View style={styles.hRoot}>
@@ -58,7 +61,7 @@ const DOT = 6;
  */
 export function VerticalBars({
   data,
-  color = palette.terracota500,
+  color: colorProp,
   height = 120,
   minScale = 0,
   highlightLast = false,
@@ -70,6 +73,9 @@ export function VerticalBars({
   minScale?: number;
   highlightLast?: boolean;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
+  const color = colorProp ?? colors.terracota500;
   const max = scaleOf(data, minScale);
   const lastIndex = data.length - 1;
   return (
@@ -113,25 +119,25 @@ export function VerticalBars({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   hRoot: { gap: space.md },
   hRow: { gap: space.xs },
   hLabelRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  hTrack: { height: 10, borderRadius: radius.pill, backgroundColor: palette.surfaceSunken, overflow: 'hidden' },
+  hTrack: { height: 10, borderRadius: radius.pill, backgroundColor: c.surfaceSunken, overflow: 'hidden' },
   hFill: { height: '100%', borderRadius: radius.pill },
   vBars: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 4,
     borderBottomWidth: StyleSheet.hairlineWidth * 2,
-    borderBottomColor: palette.border,
+    borderBottomColor: c.border,
   },
   vCol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
   vValue: { fontSize: 10, lineHeight: 12, marginBottom: 2 },
   vBar: { width: '70%', borderTopLeftRadius: 4, borderTopRightRadius: 4 },
-  vDot: { width: DOT, height: DOT, borderRadius: DOT / 2, backgroundColor: palette.border, marginBottom: 4 },
-  vDotCurrent: { backgroundColor: palette.terracota300 },
+  vDot: { width: DOT, height: DOT, borderRadius: DOT / 2, backgroundColor: c.border, marginBottom: 4 },
+  vDotCurrent: { backgroundColor: c.terracota300 },
   vLabels: { flexDirection: 'row', gap: 4, marginTop: space.xs },
   vLabel: { flex: 1, textAlign: 'center', fontSize: 10, lineHeight: 12 },
   vLabelCurrent: { fontFamily: 'Nunito_800ExtraBold' },
-});
+}));

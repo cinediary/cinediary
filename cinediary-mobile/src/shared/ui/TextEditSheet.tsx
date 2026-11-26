@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { TextInput, View } from 'react-native';
 
 import { formatNumber, strings } from '@/shared/i18n';
-import { palette, radius, space, type as typeScale } from '@/shared/theme';
+import { radius, space, type as typeScale, useColors, makeStyles } from '@/shared/theme';
 import { Button } from './Button';
 import { OverlaySheet, OverlaySheetActions } from './OverlaySheet';
 import { Text } from './Text';
@@ -45,6 +45,8 @@ export function TextEditSheet({
   onSave: (text: string) => void;
   onClose: () => void;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const [text, setText] = useState(initialText);
   const trimmed = text.trim();
   const over = text.length > maxLength;
@@ -93,7 +95,7 @@ export function TextEditSheet({
         onChangeText={(next) => setText(limit ? limit(next, text) : next)}
         accessibilityLabel={title}
         placeholder={placeholder}
-        placeholderTextColor={palette.ink500}
+        placeholderTextColor={colors.ink500}
         maxLength={limit ? undefined : maxLength}
         multiline
         autoFocus
@@ -103,7 +105,7 @@ export function TextEditSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   flex: { flex: 1 },
   // Encolhe até caber acima do teclado (o cartão limita a altura) e rola por dentro quando o texto passa disso.
   input: {
@@ -112,9 +114,9 @@ const styles = StyleSheet.create({
     minHeight: 120,
     padding: space.md,
     borderRadius: radius.md,
-    backgroundColor: palette.surfaceSunken,
-    color: palette.ink900,
+    backgroundColor: c.surfaceSunken,
+    color: c.ink900,
   },
   count: { alignItems: 'flex-end', gap: space.xs },
   number: { fontVariant: ['tabular-nums'] },
-});
+}));
