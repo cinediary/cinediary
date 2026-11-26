@@ -24,6 +24,10 @@ updates:
       - dependency-name: 'react-dom'
       - dependency-name: 'react-native'
       - dependency-name: 'react-native-*'
+      # Native modules pinned by the SDK too (e.g. datetimepicker, async-storage): `npx expo install --fix`
+      - dependency-name: '@react-native-community/*'
+      - dependency-name: '@react-native-async-storage/*'
+      - dependency-name: '@react-native/*'
     groups:
       npm-minor-and-patch:
         update-types: [minor, patch]
