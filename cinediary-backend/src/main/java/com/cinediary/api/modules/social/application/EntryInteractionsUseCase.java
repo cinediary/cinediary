@@ -43,6 +43,7 @@ public class EntryInteractionsUseCase
     private final EntryInteractionsPort interactions;
     private final FollowRepositoryPort follows;
     private final NotificationsPort notifications;
+    private final Notifier notifier;
     private final ActivityPort activity;
     private final ApplicationEventPublisher events;
 
@@ -58,7 +59,7 @@ public class EntryInteractionsUseCase
         Ctx ctx = context(entryId, viewerId);
         requireInteractive(ctx);
         if (interactions.like(entryId, viewerId) && !ctx.ownerId().equals(viewerId)) {
-            notifications.add(ctx.ownerId(), viewerId, NotificationKind.ENTRY_LIKED, entryId, null);
+            notifier.add(ctx.ownerId(), viewerId, NotificationKind.ENTRY_LIKED, entryId, null);
             activity.add(viewerId, ActivityKind.LIKED_ENTRY, ctx.ownerId(), entryId, null);
             events.publishEvent(new EntryInteractionEvent(EntryInteractionEvent.Kind.LIKED, entryId, ctx.ownerId(), viewerId, null));
         }
@@ -104,7 +105,7 @@ public class EntryInteractionsUseCase
         UUID owner = ctx.ownerId();
         String body = validBody(text);
         EntryComment saved = interactions.addComment(entryId, viewerId, body);
-        notifications.add(owner, viewerId, NotificationKind.ENTRY_REPLIED, entryId, saved.id());
+        notifier.add(owner, viewerId, NotificationKind.ENTRY_REPLIED, entryId, saved.id());
         activity.add(viewerId, ActivityKind.REPLIED_ENTRY, owner, entryId, saved.id());
         if (!owner.equals(viewerId)) {
             events.publishEvent(new EntryInteractionEvent(EntryInteractionEvent.Kind.COMMENTED, entryId, owner, viewerId, saved.id()));

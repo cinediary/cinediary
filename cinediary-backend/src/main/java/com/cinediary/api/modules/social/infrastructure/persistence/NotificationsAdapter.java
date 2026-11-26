@@ -30,21 +30,21 @@ class NotificationsAdapter implements NotificationsPort
     }
 
     @Override
-    public void add(UUID recipientId, UUID actorId, NotificationKind kind, UUID entryId, UUID commentId)
+    public boolean add(UUID recipientId, UUID actorId, NotificationKind kind, UUID entryId, UUID commentId)
     {
         if (recipientId.equals(actorId)) {
-            return;
+            return false;
         }
         String onConflict = kind == NotificationKind.FOLLOWED
                 ? """
                   ON CONFLICT (recipient_id, actor_id, kind) WHERE kind IN ('FOLLOWED', 'FOLLOW_REQUESTED', 'FOLLOW_APPROVED')
                   DO UPDATE SET created_at = NOW(), seen_at = NULL"""
                 : "ON CONFLICT DO NOTHING";
-        jdbc.sql("""
+        return jdbc.sql("""
                         INSERT INTO notifications (recipient_id, actor_id, kind, entry_id, comment_id)
                         VALUES (:r, :a, :k, :e, :c) """ + onConflict)
                 .param("r", recipientId).param("a", actorId).param("k", kind.name()).param("e", entryId).param("c", commentId)
-                .update();
+                .update() > 0;
     }
 
     @Override
@@ -65,15 +65,15 @@ class NotificationsAdapter implements NotificationsPort
     }
 
     @Override
-    public void addListLike(UUID recipientId, UUID actorId, UUID listId)
+    public boolean addListLike(UUID recipientId, UUID actorId, UUID listId)
     {
         if (recipientId.equals(actorId)) {
-            return;
+            return false;
         }
-        jdbc.sql("""
+        return jdbc.sql("""
                         INSERT INTO notifications (recipient_id, actor_id, kind, list_id)
                         VALUES (:r, :a, 'LIST_LIKED', :l) ON CONFLICT DO NOTHING""")
-                .param("r", recipientId).param("a", actorId).param("l", listId).update();
+                .param("r", recipientId).param("a", actorId).param("l", listId).update() > 0;
     }
 
     @Override
@@ -129,5 +129,24 @@ class NotificationsAdapter implements NotificationsPort
     {
         jdbc.sql("UPDATE notifications SET seen_at = NOW() WHERE recipient_id = :r AND seen_at IS NULL")
                 .param("r", recipientId).update();
+    }
+
+    @Override
+    public boolean likedByOthersSince(UUID recipientId, NotificationKind kind, UUID targetId, UUID actorId, java.time.Instant since)
+    {
+        String target = kind == NotificationKind.LIST_LIKED ? "list_id" : "entry_id";
+        return jdbc.sql("""
+                        SELECT EXISTS (SELECT 1 FROM notifications
+                                        WHERE recipient_id = :r AND kind = :k AND %s = :t AND actor_id <> :a
+                                          AND created_at >= :since)""".formatted(target))
+                .param("r", recipientId).param("k", kind.name()).param("t", targetId).param("a", actorId)
+                .param("since", Timestamp.from(since))
+                .query(Boolean.class).single();
+    }
+
+    @Override
+    public java.util.Optional<String> listName(UUID listId)
+    {
+        return jdbc.sql("SELECT name FROM lists WHERE id = :l").param("l", listId).query(String.class).optional();
     }
 }

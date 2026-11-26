@@ -5,16 +5,16 @@ import java.util.UUID;
 
 public interface NotificationsPort
 {
-    /** Cria o aviso (nunca para si mesmo; repetido não duplica). */
-    void add(UUID recipientId, UUID actorId, NotificationKind kind, UUID entryId, UUID commentId);
+    /** Cria o aviso (nunca para si mesmo; repetido não duplica). Devolve se gravou um aviso novo (ou renovou). */
+    boolean add(UUID recipientId, UUID actorId, NotificationKind kind, UUID entryId, UUID commentId);
 
     /** Desfaz um aviso (descurtiu, cancelou o pedido…). {@code entryId} só nas curtidas. */
     void remove(UUID recipientId, UUID actorId, NotificationKind kind, UUID entryId);
 
     void removeByComment(UUID commentId);
 
-    /** "Curtiu sua lista" (repetido não duplica; nunca para si mesmo). */
-    void addListLike(UUID recipientId, UUID actorId, UUID listId);
+    /** "Curtiu sua lista" (repetido não duplica; nunca para si mesmo). Devolve se gravou um aviso novo. */
+    boolean addListLike(UUID recipientId, UUID actorId, UUID listId);
 
     void removeListLike(UUID recipientId, UUID actorId, UUID listId);
 
@@ -31,4 +31,12 @@ public interface NotificationsPort
     long countUnseen(UUID recipientId);
 
     void markAllSeen(UUID recipientId);
+
+    /**
+     * Outra pessoa (que não {@code actorId}) curtiu o mesmo registro ou lista desde {@code since}: o push dessa
+     * curtida já saiu, então esta não manda outro (sem rajada de pushes).
+     */
+    boolean likedByOthersSince(UUID recipientId, NotificationKind kind, UUID targetId, UUID actorId, java.time.Instant since);
+
+    java.util.Optional<String> listName(UUID listId);
 }

@@ -27,6 +27,7 @@ public class FollowUseCase
     private final FollowRepositoryPort follows;
     private final ApplicationEventPublisher events;
     private final NotificationsPort notifications;
+    private final Notifier notifier;
     private final ActivityPort activity;
 
     /** Perfil público: passa a seguir. Privado: vira pedido (REQUESTED). Repetir não muda nada. */
@@ -41,7 +42,7 @@ public class FollowUseCase
         Follow saved = follows.insertIfAbsent(viewerId, person.id(), FollowPolicy.statusForNewFollow(person.isPrivate()));
         if (!existed) {
             boolean pending = saved.status() == FollowStatus.PENDING;
-            notifications.add(person.id(), viewerId, pending ? NotificationKind.FOLLOW_REQUESTED : NotificationKind.FOLLOWED, null, null);
+            notifier.add(person.id(), viewerId, pending ? NotificationKind.FOLLOW_REQUESTED : NotificationKind.FOLLOWED, null, null);
             if (!pending) {
                 activity.add(viewerId, ActivityKind.FOLLOWED, person.id(), null, null);
             }
@@ -69,7 +70,7 @@ public class FollowUseCase
     {
         if (follows.accept(requesterId, ownerId)) {
             notifications.requestsAccepted(ownerId, requesterId);
-            notifications.add(requesterId, ownerId, NotificationKind.FOLLOW_APPROVED, null, null);
+            notifier.add(requesterId, ownerId, NotificationKind.FOLLOW_APPROVED, null, null);
             activity.add(requesterId, ActivityKind.FOLLOWED, ownerId, null, null);
             events.publishEvent(new FollowCreatedEvent(requesterId, ownerId, false));
         }

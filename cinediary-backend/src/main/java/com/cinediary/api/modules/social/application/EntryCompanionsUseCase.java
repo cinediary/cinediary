@@ -42,6 +42,7 @@ public class EntryCompanionsUseCase
     private final SocialAccess access;
     private final EntryCompanionsPort companions;
     private final NotificationsPort notifications;
+    private final Notifier notifier;
 
     @Transactional(readOnly = true)
     public EntryCompanions of(UUID entryId, UUID viewerId)
@@ -110,7 +111,7 @@ public class EntryCompanionsUseCase
             } else {
                 companions.add(entryId, id);
             }
-            notifications.add(id, ownerId, NotificationKind.ENTRY_COMPANION, entryId, null);
+            notifier.add(id, ownerId, NotificationKind.ENTRY_COMPANION, entryId, null);
         }
         for (EntryCompanion c : existing.values()) {
             boolean keep = wantedIds.contains(c.companionId());

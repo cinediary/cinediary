@@ -80,6 +80,12 @@ cinediary:
     # Origens aceitas no claim "azp" (ex.: http://localhost:8081). Vazio = não valida azp.
     authorized-parties: ${CLERK_AUTHORIZED_PARTIES:}
     webhook-secret: ${CLERK_WEBHOOK_SECRET:}
+  push:
+    # Serviço de push da Expo (#13). O access token só é preciso com "Enhanced Push Security" no projeto da Expo.
+    expo-url: ${EXPO_PUSH_URL:https://exp.host/--/api/v2/push/send}
+    access-token: ${EXPO_ACCESS_TOKEN:}
+    connect-timeout: 3s
+    read-timeout: 10s
   tmdb:
     base-url: ${TMDB_BASE_URL:https://api.themoviedb.org/3}
     image-base-url: https://image.tmdb.org/t/p
