@@ -7,7 +7,7 @@ import { saveEntryCompanions, useEntryCompanions } from '@/features/social/appli
 import type { Actor } from '@/features/social/domain/social';
 import { CompanionSheet } from '@/features/social/presentation/components/CompanionSheet';
 import { formatNumber, strings, toIsoDate } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import {
   ActionSheet,
   Button,
@@ -39,6 +39,7 @@ import { scopeLabel } from '../scopeLabel';
  * registro rápido: o conteúdo rola e "Salvar alterações" fica fixo embaixo, logo acima do teclado.
  */
 export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
+  const colors = useColors();
   const t = strings.diary;
   const toast = useToast();
   const sheet = useBottomSheet();
@@ -128,7 +129,7 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
             accessibilityLabel={t.like}
             active={draft.liked}
             variant="filled"
-            icon={<Heart size={22} weight={draft.liked ? 'fill' : 'regular'} color={draft.liked ? semantic.liked : palette.ink700} />}
+            icon={<Heart size={22} weight={draft.liked ? 'fill' : 'regular'} color={draft.liked ? colors.liked : colors.ink700} />}
             onPress={() => set({ liked: !draft.liked })}
           />
         </View>
@@ -139,13 +140,13 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
 
         <WatchedDateField value={draft.watchedDate} onChange={(watchedDate) => set({ watchedDate })} />
         <ListRow
-          icon={<ArrowCounterClockwise size={20} color={palette.ink700} />}
+          icon={<ArrowCounterClockwise size={20} color={colors.ink700} />}
           label={t.rewatch}
           switchValue={draft.isRewatch}
           onSwitchChange={(isRewatch) => set({ isRewatch })}
         />
         <ListRow
-          icon={<UsersThree size={20} color={palette.ink700} />}
+          icon={<UsersThree size={20} color={colors.ink700} />}
           label={ct.row}
           hint={companions.length > 0 ? ct.withNames(ct.names(companions.map((c) => c.displayName || c.username))) : undefined}
           // Só abre depois de carregar quem já está marcado (ver `companionsReady`).
@@ -153,7 +154,7 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
         />
         {/* A review numa linha: sem texto, "Escrever review"; com texto, o começo dele. */}
         <ListRow
-          icon={<PencilSimple size={20} color={palette.ink700} />}
+          icon={<PencilSimple size={20} color={colors.ink700} />}
           label={hasReview ? t.reviewTitle : t.writeReview}
           hint={draft.reviewText?.trim() || undefined}
           hintLines={2}
@@ -161,7 +162,7 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
         />
         {hasReview ? (
           <ListRow
-            icon={<EyeSlash size={20} color={palette.ink700} />}
+            icon={<EyeSlash size={20} color={colors.ink700} />}
             label={t.spoilerToggle}
             hint={t.spoilerToggleHint}
             switchValue={draft.containsSpoilers}
@@ -169,7 +170,7 @@ export function EntryEditForm({ entry }: { entry: DiaryEntry }) {
           />
         ) : null}
         <ListRow
-          icon={<ChatCircle size={20} color={palette.ink700} />}
+          icon={<ChatCircle size={20} color={colors.ink700} />}
           label={ac.replyPolicy}
           hint={replyLabel(draft.replyPolicy)}
           onPress={() => setPickingReplies(true)}

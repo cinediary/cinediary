@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useDebouncedValue } from '@/features/catalog/application/catalogQueries';
 import { strings } from '@/shared/i18n';
-import { semantic, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Button, ErrorState, Skeleton, SkeletonRows, Text, Title } from '@/shared/ui';
 import { useOverlay } from '@/shared/ui/BottomSheet';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
@@ -42,6 +42,7 @@ function ConnectedFilterSheet(props: { initial: DiaryFilters; onApply: (f: Diary
  * Trocar de filtro não pisca: a lista anterior fica (um pouco apagada) até a nova chegar, e a tela volta ao topo.
  */
 export function DiaryScreen() {
+  const styles = useStyles();
   const t = strings.diary;
   const insets = useSafeAreaInsets();
   const backInset = useFloatingBackInset();
@@ -176,8 +177,8 @@ export function DiaryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   center: { justifyContent: 'center' },
   centerText: { textAlign: 'center' },
   content: { paddingHorizontal: space.screenX },
@@ -186,4 +187,4 @@ const styles = StyleSheet.create({
   entry: { paddingBottom: space.md },
   more: { paddingTop: space.md, paddingBottom: space.xl },
   empty: { alignItems: 'center', gap: space.xs, paddingVertical: space['3xl'] },
-});
+}));

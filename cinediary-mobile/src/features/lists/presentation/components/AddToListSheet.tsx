@@ -6,7 +6,7 @@ import Animated, { Easing, FadeIn, FadeOut, ZoomIn } from 'react-native-reanimat
 
 import type { TitleSummary } from '@/features/catalog/domain/title';
 import { strings } from '@/shared/i18n';
-import { fonts, palette, radius, semantic, space, type as typeScale } from '@/shared/theme';
+import { fonts, radius, space, type as typeScale, makeStyles, useColors } from '@/shared/theme';
 import { Button, OverlaySheet, SkeletonRows, Text, useToast } from '@/shared/ui';
 import { useCreateListWithTitle, useMyLists, useToggleInList } from '../../application/listsQueries';
 import { ListCover } from './ListCover';
@@ -19,6 +19,8 @@ const THUMB = 44;
  * Tocar põe ou tira na hora (otimista; volta se o servidor recusar). Embaixo, criar uma lista nova já com o título.
  */
 export function AddToListSheet({ title, onClose }: { title: TitleSummary; onClose: () => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.lists;
   const toast = useToast();
   const mine = useMyLists(title.id);
@@ -76,7 +78,7 @@ export function AddToListSheet({ title, onClose }: { title: TitleSummary; onClos
               <View style={[styles.check, containsTitle && styles.checkOn]}>
                 {containsTitle ? (
                   <Animated.View entering={ZoomIn.duration(180).easing(EASE)} exiting={FadeOut.duration(120)}>
-                    <Check size={14} weight="bold" color={semantic.onPrimary} />
+                    <Check size={14} weight="bold" color={colors.onPrimary} />
                   </Animated.View>
                 ) : null}
               </View>
@@ -91,14 +93,14 @@ export function AddToListSheet({ title, onClose }: { title: TitleSummary; onClos
         {/* Nova lista já com o título: nome e "Criar e adicionar", sem sair da página do título. */}
         <View style={styles.create}>
           <View style={styles.plus}>
-            <Plus size={18} weight="bold" color={palette.terracota700} />
+            <Plus size={18} weight="bold" color={colors.terracota700} />
           </View>
           <TextInput
             style={styles.input}
             value={name}
             onChangeText={setName}
             placeholder={t.newListName}
-            placeholderTextColor={palette.ink500}
+            placeholderTextColor={colors.ink500}
             accessibilityLabel={t.newListName}
             maxLength={100}
             returnKeyType="done"
@@ -115,7 +117,7 @@ export function AddToListSheet({ title, onClose }: { title: TitleSummary; onClos
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.md },
   flex: { flex: 1, gap: 2 },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.xs },
@@ -125,11 +127,11 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     borderWidth: 1.5,
-    borderColor: palette.borderStrong,
+    borderColor: c.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkOn: { backgroundColor: semantic.primary, borderColor: semantic.primary },
+  checkOn: { backgroundColor: c.primary, borderColor: c.primary },
   create: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -137,7 +139,7 @@ const styles = StyleSheet.create({
     marginTop: space.sm,
     paddingTop: space.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: palette.border,
+    borderTopColor: c.border,
   },
   plus: {
     width: THUMB,
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.terracota100,
+    backgroundColor: c.terracota100,
   },
-  input: { ...typeScale.body, flex: 1, color: palette.ink900, fontFamily: fonts.body, paddingVertical: space.sm },
-});
+  input: { ...typeScale.body, flex: 1, color: c.ink900, fontFamily: fonts.body, paddingVertical: space.sm },
+}));

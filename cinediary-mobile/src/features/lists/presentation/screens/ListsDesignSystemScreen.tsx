@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ScrollView, View, useWindowDimensions } from 'react-native';
 
-import { palette, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Chip, Screen, SectionHeader, SegmentedControl, Text } from '@/shared/ui';
 import type { ListCoverStyle } from '../components/ListCover';
 import { ListCard, ListGrid, ListHeader, ListRows } from '../components/ListViews';
@@ -29,6 +29,7 @@ const LAYOUTS = [
  * lista (em linhas, com o número e a nota de cada título, ou em grade de pôsteres), com listas de exemplo.
  */
 export function ListsDesignSystemScreen() {
+  const styles = useStyles();
   const { width } = useWindowDimensions();
   const [cover, setCover] = useState<ListCoverStyle>('fan');
   const [listId, setListId] = useState(SAMPLE_LISTS[0].id);
@@ -85,11 +86,11 @@ export function ListsDesignSystemScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  device: { gap: space.lg, paddingTop: space.lg, borderTopWidth: 1, borderTopColor: palette.border },
+const useStyles = makeStyles((c) => ({
+  device: { gap: space.lg, paddingTop: space.lg, borderTopWidth: 1, borderTopColor: c.border },
   stack: { gap: space.md },
   bleed: { marginHorizontal: -space.screenX },
   rail: { paddingHorizontal: space.screenX, gap: space.lg },
   second: { marginTop: space.xl },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-});
+}));

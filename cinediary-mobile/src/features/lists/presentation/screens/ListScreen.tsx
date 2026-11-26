@@ -1,14 +1,14 @@
 import { useLocalSearchParams } from 'expo-router';
 import { ArrowsDownUp, PencilSimple, Plus, Rows, SquaresFour } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Alert, FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Alert, FlatList, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { openProfile } from '@/features/social/presentation/navigation';
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, makeStyles, useColors } from '@/shared/theme';
 import { Button, ErrorState, LikeButton, Skeleton, SkeletonRows, Text, TextEditSheet, Title, useToast } from '@/shared/ui';
 import { useOverlay } from '@/shared/ui/BottomSheet';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
@@ -28,6 +28,8 @@ const enter = FadeIn.duration(200).easing(Easing.bezier(0.25, 0.1, 0.25, 1));
  * O dono tem o lápis para editar e "Organizar" (#22): arrastar para reordenar, tirar títulos e escrever a nota.
  */
 export function ListScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.lists;
   const { listId = '' } = useLocalSearchParams<{ listId: string }>();
   const { width } = useWindowDimensions();
@@ -137,22 +139,22 @@ export function ListScreen() {
         <View style={styles.tools}>
           {mine && data.items.length ? (
             <Tool label={t.addTitles} onPress={() => openAddTitles(data.id)}>
-              <Plus size={18} weight="bold" color={palette.ink700} />
+              <Plus size={18} weight="bold" color={colors.ink700} />
             </Tool>
           ) : null}
           {mine && data.items.length > 1 ? (
             <Tool label={t.organize} onPress={() => setOrganizing(true)}>
-              <ArrowsDownUp size={18} color={palette.ink700} />
+              <ArrowsDownUp size={18} color={colors.ink700} />
             </Tool>
           ) : null}
           {mine ? (
             <Tool label={t.edit} onPress={() => openEditList(data.id)}>
-              <PencilSimple size={18} color={palette.ink700} />
+              <PencilSimple size={18} color={colors.ink700} />
             </Tool>
           ) : null}
           {data.items.length ? (
             <Tool label={grid ? t.showRows : t.showGrid} onPress={toggle}>
-              {grid ? <Rows size={18} color={palette.ink700} /> : <SquaresFour size={18} color={palette.ink700} />}
+              {grid ? <Rows size={18} color={colors.ink700} /> : <SquaresFour size={18} color={colors.ink700} />}
             </Tool>
           ) : null}
         </View>
@@ -184,7 +186,7 @@ export function ListScreen() {
                     <Button
                       label={t.addTitles}
                       size="sm"
-                      icon={<Plus size={16} weight="bold" color={semantic.onPrimary} />}
+                      icon={<Plus size={16} weight="bold" color={colors.onPrimary} />}
                       onPress={() => openAddTitles(data.id)}
                     />
                   </View>
@@ -206,9 +208,13 @@ export function ListScreen() {
   );
 }
 
-const RowGap = () => <View style={styles.rowGap} />;
+const RowGap = () => {
+  const styles = useStyles();
+  return <View style={styles.rowGap} />;
+};
 
 function Tool({ label, onPress, children }: { label: string; onPress: () => void; children: React.ReactNode }) {
+  const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -222,8 +228,8 @@ function Tool({ label, onPress, children }: { label: string; onPress: () => void
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   flex: { flex: 1 },
   center: { justifyContent: 'center' },
   centerText: { textAlign: 'center' },
@@ -238,9 +244,9 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   pressed: { opacity: 0.7 },
   gridRow: { gap: space.md, marginBottom: space.md },
@@ -249,4 +255,4 @@ const styles = StyleSheet.create({
   emptyAction: { marginTop: space.md },
   organize: { gap: space.lg },
   organizeTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-});
+}));

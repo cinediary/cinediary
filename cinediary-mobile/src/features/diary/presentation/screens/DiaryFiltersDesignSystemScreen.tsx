@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Button, Screen, Text, Title } from '@/shared/ui';
 import { useOverlay } from '@/shared/ui/BottomSheet';
 import { applyDiaryFilters, isFiltered, NO_FILTERS, type DiaryFilters } from '../../domain/diaryFilters';
@@ -19,6 +19,7 @@ const useSampleCount = (draft: DiaryFilters) => applyDiaryFilters(SAMPLE_DIARY, 
  * de exemplo que filtra na hora.
  */
 export function DiaryFiltersDesignSystemScreen() {
+  const styles = useStyles();
   const t = strings.diary.filters;
   const [filters, setFilters] = useState<DiaryFilters>(NO_FILTERS);
   const overlay = useOverlay();
@@ -72,9 +73,9 @@ export function DiaryFiltersDesignSystemScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   month: { paddingTop: space.lg, paddingBottom: space.md },
   entry: { paddingBottom: space.md },
-  empty: { alignItems: 'center', gap: space.xs, paddingVertical: space['3xl'], borderTopWidth: 0, borderColor: palette.border },
-});
+  empty: { alignItems: 'center', gap: space.xs, paddingVertical: space['3xl'], borderTopWidth: 0, borderColor: c.border },
+}));

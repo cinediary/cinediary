@@ -1,6 +1,6 @@
 import { Faders } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
+import { Pressable, ScrollView, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
-import { fonts, palette, radius, semantic, space } from '@/shared/theme';
+import { fonts, radius, space, makeStyles, useColors } from '@/shared/theme';
 import { Button, Chip, OverlaySheet, SearchField, SegmentedControl, Text } from '@/shared/ui';
 import {
   clearSheetFilters,
@@ -55,6 +55,7 @@ export function DiaryFilterBar({
   onChange: Patch;
   onOpenSheet: () => void;
 }) {
+  const styles = useStyles();
   const count = sheetFilterCount(filters);
   const summary = [
     filters.type === 'MOVIE' ? t.movies : filters.type === 'SERIES' ? t.series : null,
@@ -105,6 +106,8 @@ export function DiaryFilterBar({
 
 /** Botão de filtros redondo; com filtros ligados, fica em terracota e mostra quantos. */
 function FilterButton({ count, onPress }: { count: number; onPress: () => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <Pressable
       accessibilityRole="button"
@@ -113,7 +116,7 @@ function FilterButton({ count, onPress }: { count: number; onPress: () => void }
       hitSlop={4}
       style={({ pressed }) => [styles.filterButton, count > 0 && styles.on, pressed && styles.pressed]}
     >
-      <Faders size={20} color={count ? palette.terracota700 : palette.ink900} />
+      <Faders size={20} color={count ? colors.terracota700 : colors.ink900} />
       {count ? (
         <Animated.View entering={enter} exiting={leave} style={styles.badge}>
           <Text style={styles.badgeText}>{count}</Text>
@@ -136,6 +139,7 @@ export function YearTabs({
   year: number | null;
   onChange: (y: number | null) => void;
 }) {
+  const styles = useStyles();
   const reduce = useReducedMotion();
   const tabs = [null, ...years];
   const layouts = useRef(new Map<string, { x: number; width: number }>());
@@ -202,6 +206,7 @@ export function YearTabs({
 
 /** Os meses do ano escolhido; tocar de novo no mesmo mês volta para o ano inteiro. */
 export function MonthPills({ month, onChange }: { month: number | null; onChange: (m: number | null) => void }) {
+  const styles = useStyles();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.pills}>
       {monthShort.map((m, i) => {
@@ -243,6 +248,7 @@ export function DiaryFilterSheet({
   onApply: (f: DiaryFilters) => void;
   onClose: () => void;
 }) {
+  const styles = useStyles();
   const [draft, setDraft] = useState(initial);
   const set: Patch = (p) => setDraft((d) => ({ ...d, ...p }));
   const count = useCount(draft);
@@ -324,6 +330,7 @@ export function DiaryFilterSheet({
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <Text variant="overline" tone="secondary">
@@ -334,7 +341,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   flex: { flex: 1 },
   bar: { gap: space.md },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
@@ -344,11 +351,11 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
-  on: { backgroundColor: palette.terracota100, borderColor: palette.terracota100 },
+  on: { backgroundColor: c.terracota100, borderColor: c.terracota100 },
   pressed: { opacity: 0.7 },
   badge: {
     position: 'absolute',
@@ -360,31 +367,31 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: semantic.primary,
+    backgroundColor: c.primary,
   },
-  badgeText: { color: semantic.onPrimary, fontFamily: fonts.bodyHeavy, fontSize: 11, lineHeight: 14 },
+  badgeText: { color: c.onPrimary, fontFamily: fonts.bodyHeavy, fontSize: 11, lineHeight: 14 },
   bleed: { marginHorizontal: -space.screenX },
   years: { paddingHorizontal: space.screenX },
   yearsInner: { flexDirection: 'row', gap: space.lg, paddingBottom: 6 },
-  year: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, color: palette.ink500 },
-  yearOn: { color: palette.ink900 },
-  indicator: { position: 'absolute', left: 0, bottom: 0, height: 2, borderRadius: 1, backgroundColor: palette.terracota500 },
+  year: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, color: c.ink500 },
+  yearOn: { color: c.ink900 },
+  indicator: { position: 'absolute', left: 0, bottom: 0, height: 2, borderRadius: 1, backgroundColor: c.terracota500 },
   pills: { paddingHorizontal: space.screenX, gap: space.sm },
   pill: {
     height: 34,
     paddingHorizontal: space.md,
     justifyContent: 'center',
     borderRadius: radius.pill,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
-  pillText: { color: palette.ink900, fontFamily: fonts.bodyHeavy },
-  pillTextOn: { color: palette.terracota700 },
+  pillText: { color: c.ink900, fontFamily: fonts.bodyHeavy },
+  pillTextOn: { color: c.terracota700 },
   summary: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  summaryText: { flex: 1, color: palette.terracota700, fontFamily: fonts.bodyHeavy },
+  summaryText: { flex: 1, color: c.terracota700, fontFamily: fonts.bodyHeavy },
   sheet: { gap: space.xl },
   section: { gap: space.md },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   sheetFooter: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-});
+}));

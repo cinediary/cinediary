@@ -5,7 +5,7 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeOut } from 'react-native-reanimated';
 
 import { strings } from '@/shared/i18n';
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, makeStyles, useColors, alpha } from '@/shared/theme';
 import { ExpandableText, Text } from '@/shared/ui';
 import { useHidesSpoiler } from '../../application/useHidesSpoiler';
 import type { DiaryEntry } from '../../domain/diary';
@@ -39,6 +39,8 @@ export function SpoilerReview({
   /** Tela da entrada: corta nessas linhas com "mais" para abrir no lugar. Com spoiler, primeiro revela, depois abre. */
   expandLines?: number;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.diary;
   const spoiler = useHidesSpoiler(entry);
   const text = entry.reviewText ?? '';
@@ -84,7 +86,7 @@ export function SpoilerReview({
             )}
             <View style={styles.badgeWrap}>
               <View style={styles.badge}>
-                <EyeSlash size={16} color={palette.ink900} />
+                <EyeSlash size={16} color={colors.ink900} />
                 <Text variant="caption" style={styles.badgeText}>
                   {t.spoilerBadge}
                 </Text>
@@ -97,13 +99,13 @@ export function SpoilerReview({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { borderRadius: radius.md, overflow: 'hidden' },
   // Review curta com spoiler: altura mínima para o aviso caber por cima.
   hidden: { minHeight: 64 },
   text: { lineHeight: 24 },
   blur: { borderRadius: radius.md },
-  solid: { backgroundColor: palette.surfaceSunken },
+  solid: { backgroundColor: c.surfaceSunken },
   badgeWrap: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   badge: {
     flexDirection: 'row',
@@ -112,9 +114,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     paddingVertical: 8,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,253,249,0.92)',
+    backgroundColor: alpha(c.surface, 0.92),
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
-  badgeText: { color: palette.ink900, fontFamily: 'Nunito_800ExtraBold' },
-});
+  badgeText: { color: c.ink900, fontFamily: 'Nunito_800ExtraBold' },
+}));

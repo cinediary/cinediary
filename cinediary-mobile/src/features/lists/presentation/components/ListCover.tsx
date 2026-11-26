@@ -1,6 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { palette, radius, shadow } from '@/shared/theme';
+import { radius, shadow, makeStyles } from '@/shared/theme';
 import { PosterArt } from '@/shared/ui';
 
 /**
@@ -25,6 +25,7 @@ export function ListCover({
   /** Largura total da capa. */
   width: number;
 }) {
+  const styles = useStyles();
   if (style === 'mosaic') {
     const cell = width / 2;
     const four = Array.from({ length: 4 }, (_, i) => posters[i] ?? null);
@@ -78,14 +79,14 @@ export function ListCover({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   mosaic: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     borderRadius: radius.md,
     overflow: 'hidden',
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
   },
   strip: { flexDirection: 'row' },
   fanItem: { position: 'absolute', top: 0, borderRadius: 8, ...shadow.e1 },
-});
+}));
