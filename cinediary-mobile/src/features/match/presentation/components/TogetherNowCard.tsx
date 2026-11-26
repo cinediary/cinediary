@@ -2,7 +2,7 @@ import { UsersThree } from 'phosphor-react-native';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { strings } from '@/shared/i18n';
-import { palette } from '@/shared/theme';
+import { useColors } from '@/shared/theme';
 import { Banner } from '@/shared/ui';
 import { useRefetchOnFocus } from '@/shared/ui/navigation/useRefetchOnFocus';
 import { useMatches } from '../../application/matchQueries';
@@ -21,12 +21,13 @@ export function TogetherNowCard() {
 
 /** A faixa em si (sem buscar nada): a Início e o Design System do Match. */
 export function TogetherNowBanner({ match, meId }: { match: Match; meId: string | undefined }) {
+  const colors = useColors();
   const t = strings.diary;
   const name = otherPerson(match, meId)?.name ?? strings.match.pendingPartner;
   const message = match.status === 'ACTIVE' ? t.togetherLine(name, match.score ?? 0) : t.togetherBuilding(name);
   return (
     <Banner
-      icon={<UsersThree size={20} color={palette.salvia700} />}
+      icon={<UsersThree size={20} color={colors.salvia700} />}
       message={`${t.togetherNow} · ${message}`}
       onPress={() => openMatch(match.id)}
     />

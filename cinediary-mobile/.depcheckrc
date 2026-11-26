@@ -4,3 +4,5 @@ ignores:
   - expo-dev-client
   # required by the react-native-share config plugin at prebuild, never imported from JS
   - expo-build-properties
+  # its config plugin makes Android follow userInterfaceStyle; JS reaches the native module via requireOptionalNativeModule
+  - expo-system-ui

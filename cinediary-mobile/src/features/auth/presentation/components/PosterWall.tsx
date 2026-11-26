@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { semantic } from '@/shared/theme';
+import { useColors, alpha } from '@/shared/theme';
 import { PosterArt } from '@/shared/ui';
 
 export type WallPoster = { title: string; posterUrl: string | null };
@@ -20,6 +20,7 @@ const PX_PER_SECOND = 14;
  * movimento" ligado, as faixas ficam paradas.
  */
 export function PosterWall({ posters, posterWidth }: { posters: WallPoster[]; posterWidth: number }) {
+  const themeColors = useColors();
   const insets = useSafeAreaInsets();
   // Cada faixa começa num ponto diferente da lista, para os mesmos pôsteres não ficarem empilhados.
   const rows = [0, 1, 2].map((r) => posters.map((_, i) => posters[(i + r * 3) % posters.length]!));
@@ -31,9 +32,12 @@ export function PosterWall({ posters, posterWidth }: { posters: WallPoster[]; po
         ))}
       </View>
       {/* Topo: some atrás da barra de status. Base: dissolve no fundo creme. */}
-      <LinearGradient colors={[semantic.background, 'rgba(250,246,240,0)']} style={[styles.top, { height: insets.top + 40 }]} />
       <LinearGradient
-        colors={['rgba(250,246,240,0)', 'rgba(250,246,240,0.7)', semantic.background, semantic.background]}
+        colors={[themeColors.background, alpha(themeColors.background, 0)]}
+        style={[styles.top, { height: insets.top + 40 }]}
+      />
+      <LinearGradient
+        colors={[alpha(themeColors.background, 0), alpha(themeColors.background, 0.7), themeColors.background, themeColors.background]}
         locations={[0, 0.45, 0.85, 1]}
         style={styles.bottom}
       />

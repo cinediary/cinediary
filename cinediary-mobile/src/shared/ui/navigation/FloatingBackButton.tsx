@@ -1,9 +1,9 @@
 import { CaretLeft } from 'phosphor-react-native';
 import { Pressable } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings } from '@/shared/i18n';
 import { space, touch, useColors, makeStyles } from '@/shared/theme';
+import { useStableTopInset } from '../useStableTopInset';
 import { nav } from './nav';
 
 /** Distância do voltar até o topo da área segura. */
@@ -18,7 +18,7 @@ export const FLOATING_BACK_SPACE = BACK_TOP + touch.minTarget + space.lg;
 
 /** `paddingTop` do conteúdo de uma tela que desenha por baixo da área segura e tem o voltar flutuante. */
 export function useFloatingBackInset() {
-  return useSafeAreaInsets().top + FLOATING_BACK_SPACE;
+  return useStableTopInset() + FLOATING_BACK_SPACE;
 }
 
 /**
@@ -30,14 +30,14 @@ export function useFloatingBackInset() {
 export function FloatingBackButton() {
   const styles = useStyles();
   const colors = useColors();
-  const insets = useSafeAreaInsets();
+  const top = useStableTopInset();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={strings.common.back}
       onPress={() => nav.back()}
       hitSlop={8}
-      style={({ pressed }) => [styles.back, { top: insets.top + BACK_TOP }, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.back, { top: top + BACK_TOP }, pressed && styles.pressed]}
     >
       <CaretLeft size={22} color={colors.ink900} />
     </Pressable>

@@ -2,13 +2,14 @@ import { Copy, ShareNetwork } from 'phosphor-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, party, radius, space } from '@/shared/theme';
+import { party, radius, space, useColors } from '@/shared/theme';
 import { Avatar, Button, Text, Title, useToast } from '@/shared/ui';
 import { useInviteSharing } from '../../application/matchQueries';
 import type { Match } from '../../domain/match';
 
 /** MA-02 · Convite criado: preview do link, compartilhar e copiar. */
 export function InviteCreatedCard({ match, onDone }: { match: Match; onDone: () => void }) {
+  const colors = useColors();
   const t = strings.match;
   const toast = useToast();
   const sharing = useInviteSharing();
@@ -30,11 +31,11 @@ export function InviteCreatedCard({ match, onDone }: { match: Match; onDone: () 
           {match.inviteUrl}
         </Text>
       </View>
-      <Button label={t.shareInvite} icon={<ShareNetwork size={20} color={palette.surface} />} onPress={() => void sharing.share(match)} />
+      <Button label={t.shareInvite} icon={<ShareNetwork size={20} color={colors.onPrimary} />} onPress={() => void sharing.share(match)} />
       <Button
         label={t.copyLink}
         variant="secondary"
-        icon={<Copy size={20} color={palette.ink900} />}
+        icon={<Copy size={20} color={colors.ink900} />}
         onPress={() => void sharing.copy(match).then(() => toast(t.copied))}
       />
       <Button label={strings.common.close} variant="ghost" onPress={onDone} />

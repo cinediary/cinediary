@@ -1,9 +1,9 @@
 import { useEffect, useRef, type ComponentRef, type PropsWithChildren, type ReactNode } from 'react';
-import { Keyboard, ScrollView, StyleSheet, TextInput, View, type ScrollViewInstance } from 'react-native';
+import { Keyboard, ScrollView, TextInput, View, type ScrollViewInstance } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { semantic, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Text, Title, type TitleParts } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 
@@ -27,6 +27,7 @@ export interface AuthFormLayoutProps extends PropsWithChildren {
  * Agora só rola quando o campo focado ficaria atrás do rodapé, e só o necessário para ele aparecer.
  */
 export function AuthFormLayout({ title, subtitle, footer, children }: AuthFormLayoutProps) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const backInset = useFloatingBackInset();
   const keyboard = useAnimatedKeyboard();
@@ -81,10 +82,10 @@ export function AuthFormLayout({ title, subtitle, footer, children }: AuthFormLa
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   scroll: { flex: 1 },
   content: { paddingHorizontal: space.screenX, paddingBottom: space.lg, gap: space.lg },
-  footer: { paddingHorizontal: space.screenX, paddingTop: space.sm, backgroundColor: semantic.background },
+  footer: { paddingHorizontal: space.screenX, paddingTop: space.sm, backgroundColor: c.background },
   footerInner: { gap: space.xs },
-});
+}));

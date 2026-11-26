@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 
-import { palette, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Button, Chip, Screen, Text } from '@/shared/ui';
 import { storySlides, type SlideKind } from '../../domain/story';
 import { BreakdownBars } from '../components/BreakdownBars';
@@ -32,6 +32,7 @@ const CANVAS_RATIO = 16 / 9;
  * dados do servidor e fica de fora.
  */
 export function MatchDesignSystemScreen() {
+  const styles = useStyles();
   const { width } = useWindowDimensions();
   const [discovery, setDiscovery] = useState(false);
   const [reduce, setReduce] = useState(false);
@@ -104,6 +105,7 @@ export function MatchDesignSystemScreen() {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <Text variant="overline" tone="muted">
@@ -114,12 +116,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-const styles = StyleSheet.create({
-  section: { gap: space.md, paddingBottom: space.xl, borderBottomWidth: 1, borderBottomColor: palette.border },
+const useStyles = makeStyles((c) => ({
+  section: { gap: space.md, paddingBottom: space.xl, borderBottomWidth: 1, borderBottomColor: c.border },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   preview: { borderRadius: 24, overflow: 'hidden', alignSelf: 'center' },
   canvas: { transformOrigin: 'top left' },
   // Igual ao slide do StoryPlayer.
   slide: { flex: 1, justifyContent: 'center', paddingTop: 120, paddingBottom: 130, paddingHorizontal: 30 },
   calculating: { height: 420, borderRadius: 24, overflow: 'hidden' },
-});
+}));

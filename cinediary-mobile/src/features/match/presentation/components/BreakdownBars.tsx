@@ -1,7 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, party, radius, space } from '@/shared/theme';
+import { party, radius, space, makeStyles, alpha } from '@/shared/theme';
 import { Text } from '@/shared/ui';
 import { breakdownRows } from '../../domain/story';
 import type { MatchStory } from '../../domain/match';
@@ -19,6 +19,7 @@ export function BreakdownBars({
   story: Pick<MatchStory, 'breakdown' | 'discoveryMode'>;
   variant?: 'card' | 'story';
 }) {
+  const styles = useStyles();
   const t = strings.match;
   const big = variant === 'story';
   const label = (key: 'ratings' | 'genres' | 'favorites') =>
@@ -51,14 +52,14 @@ export function BreakdownBars({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.md },
   row: { gap: 6 },
   labels: { flexDirection: 'row', justifyContent: 'space-between' },
   bigLabel: { fontSize: 17, fontFamily: 'Nunito_800ExtraBold', color: party.ink },
   track: { borderRadius: radius.pill, overflow: 'hidden' },
-  trackCard: { height: 10, backgroundColor: palette.surfaceSunken },
-  trackBig: { height: 18, backgroundColor: 'rgba(42,33,28,0.12)' },
+  trackCard: { height: 10, backgroundColor: c.surfaceSunken },
+  trackBig: { height: 18, backgroundColor: alpha(c.ink900, 0.12) },
   fill: { height: '100%', borderRadius: radius.pill },
   fillBig: { borderWidth: 2, borderColor: party.ink },
-});
+}));

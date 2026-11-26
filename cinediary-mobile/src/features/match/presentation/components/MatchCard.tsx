@@ -1,7 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, space } from '@/shared/theme';
+import { space, makeStyles, useColors } from '@/shared/theme';
 import { AvatarPair, Button, Card, Text, Title } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useInviteSharing } from '../../application/matchQueries';
@@ -10,6 +10,8 @@ import { openMatch } from '../navigation';
 
 /** Card do Hub Juntos nos 3 estados: PENDING, BUILDING e ACTIVE. */
 export function MatchCard({ match, meId }: { match: Match; meId: string | undefined }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.match;
   const other = otherPerson(match, meId);
   const otherName = other?.name ?? t.pendingPartner;
@@ -17,7 +19,7 @@ export function MatchCard({ match, meId }: { match: Match; meId: string | undefi
   const avatars = (
     <AvatarPair
       a={{ name: meName, imageUrl: match.creator.id === meId ? match.creator.avatarUrl : match.partner?.avatarUrl }}
-      b={{ name: other ? otherName : '?', imageUrl: other?.avatarUrl, background: palette.rosa300 }}
+      b={{ name: other ? otherName : '?', imageUrl: other?.avatarUrl, background: colors.rosa300 }}
     />
   );
   const sharing = useInviteSharing();
@@ -76,8 +78,8 @@ export function MatchCard({ match, meId }: { match: Match; meId: string | undefi
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   flex: { flex: 1 },
-  score: { color: palette.terracota700 },
-});
+  score: { color: c.terracota700 },
+}));

@@ -1,10 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { Heart } from 'phosphor-react-native';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { usePendingInvite } from '@/features/match/application/matchQueries';
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, makeStyles, useColors, alpha } from '@/shared/theme';
 import { Button, PosterCard, Text, useGridItemWidth } from '@/shared/ui';
 import { useOnboardingDraft } from '../../application/useOnboarding';
 import { MAX_FAVORITES } from '../../domain/onboarding';
@@ -13,6 +13,8 @@ import { useFinishOnboarding } from '../components/useFinishOnboarding';
 
 /** ON-03 · "E quais você ama?" — até 4 favoritos, opcional. */
 export function OnboardingFavoritesScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.onboarding;
   const { draft, toggleFavorite } = useOnboardingDraft();
   const { finish, isPending } = useFinishOnboarding();
@@ -51,7 +53,7 @@ export function OnboardingFavoritesScreen() {
               accessibilityHint={!fav && full ? t.favoritesCount(MAX_FAVORITES) : undefined}
               corner={
                 <View style={[styles.heart, fav && styles.heartOn]}>
-                  <Heart size={16} weight={fav ? 'fill' : 'regular'} color={fav ? palette.surface : palette.ink700} />
+                  <Heart size={16} weight={fav ? 'fill' : 'regular'} color={fav ? colors.surface : colors.ink700} />
                 </View>
               }
               onPress={() => {
@@ -66,16 +68,16 @@ export function OnboardingFavoritesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   center: { textAlign: 'center' },
   heart: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: 'rgba(255,253,249,0.9)',
+    backgroundColor: alpha(c.surface, 0.9),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heartOn: { backgroundColor: semantic.liked },
-});
+  heartOn: { backgroundColor: c.liked },
+}));
