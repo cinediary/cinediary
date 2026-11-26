@@ -83,4 +83,13 @@ export const onboarding: Strings['onboarding'] = {
   favoritesCount: (n: number) => `${n} de 4`,
   submitError: 'No se pudo guardar ahora. Inténtalo de nuevo.',
   welcomeToast: '¡Te damos la bienvenida! Tu diario está listo.',
+  notificationsTitle: title('Entérate cuando tus ', 'amigos', ' pasen por aquí'),
+  notificationsCaption: 'Te avisamos cuando alguien te dé me gusta, te responda o empiece a seguirte. Puedes cambiarlo cuando quieras.',
+  notificationsAllow: 'Activar notificaciones',
+  notificationsLater: 'Ahora no',
+  notificationsExamples: [
+    { when: 'ahora', text: 'Julia dio me gusta a tu registro de Aún estoy aquí ❤️' },
+    { when: '5 min', text: 'Bruno respondió a tu reseña: “¡Totalmente!”' },
+    { when: '1 h', text: 'Marina empezó a seguirte 🍿' },
+  ],
 };

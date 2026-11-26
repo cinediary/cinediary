@@ -89,6 +89,13 @@
           "ios": ["instagram-stories", "instagram"],
           "android": ["com.instagram.android"]
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#A9553A"
+        }
       ]
     ],
     "experiments": {
