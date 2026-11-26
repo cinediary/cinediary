@@ -88,6 +88,17 @@ public enum ContentLanguage
         };
     }
 
+    /** O idioma guardado com {@link #code()} (ex.: o de um aparelho); desconhecido ou vazio → PT. */
+    public static ContentLanguage fromCode(String code)
+    {
+        for (ContentLanguage l : values()) {
+            if (l.code.equals(code)) {
+                return l;
+            }
+        }
+        return PT;
+    }
+
     public static void set(ContentLanguage language)
     {
         CURRENT.set(language);

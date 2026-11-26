@@ -14,6 +14,7 @@ public class SocialModuleFacade implements SocialModulePort
     private final SocialAccess access;
     private final UsersModulePort users;
     private final com.cinediary.api.modules.social.domain.NotificationsPort notifications;
+    private final Notifier notifier;
     private final com.cinediary.api.modules.social.domain.ActivityPort activity;
 
     @Override
@@ -30,7 +31,7 @@ public class SocialModuleFacade implements SocialModulePort
     @Transactional
     public void listLiked(UUID ownerId, UUID actorId, UUID listId)
     {
-        notifications.addListLike(ownerId, actorId, listId);
+        notifier.addListLike(ownerId, actorId, listId);
         activity.listLiked(actorId, ownerId, listId);
     }
 

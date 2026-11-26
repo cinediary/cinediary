@@ -17,7 +17,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Base dos testes de integração: PostgreSQL 17 e Neo4j 5 + GDS reais (Testcontainers, compartilhados) e TMDB
- * falso. Eventos do Spring Modulith são processados de verdade (assíncronos, após o commit); os testes esperam
+ * e push da Expo falsos. Eventos do Spring Modulith são processados de verdade (assíncronos, após o commit); os testes esperam
  * com {@link #awaitEvents(UUID)}. O reenvio agendado fica desligado para um contexto não pegar eventos de outro.
  */
 @SpringBootTest(properties = {
@@ -34,6 +34,7 @@ public abstract class IntegrationTest
             .withPlugins("graph-data-science")
             .withAdminPassword("cinediary-test");
     protected static final FakeTmdb TMDB = FakeTmdb.start();
+    protected static final FakeExpoPush PUSH = FakeExpoPush.start();
 
     static {
         POSTGRES.start();
@@ -54,6 +55,7 @@ public abstract class IntegrationTest
         registry.add("cinediary.tmdb.api-token", () -> FakeTmdb.TOKEN);
         registry.add("cinediary.importing.short-link-base-url", () -> TMDB.baseUrl() + "/boxd");
         registry.add("cinediary.clerk.webhook-secret", () -> WEBHOOK_SECRET);
+        registry.add("cinediary.push.expo-url", PUSH::url);
     }
 
     @Autowired
