@@ -87,9 +87,16 @@ class UserRepositoryAdapter implements UserRepositoryPort
     }
 
     @Override
-    public int softDeleteIfNewer(String clerkId, Instant eventTimestamp)
+    public int deleteAccount(String clerkId)
     {
-        return repository.softDeleteIfNewer(clerkId, eventTimestamp, eventTimestamp);
+        repository.insertDeletedAccount(clerkId);
+        return repository.deleteByClerkIdNative(clerkId);
+    }
+
+    @Override
+    public boolean isDeletedAccount(String clerkId)
+    {
+        return repository.isDeletedAccount(clerkId);
     }
 
     @Override

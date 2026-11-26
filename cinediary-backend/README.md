@@ -561,8 +561,10 @@ serviços (`postgres`, `neo4j`).
 - **Neo4j pelo driver oficial**, sem Spring Data Neo4j, para evitar um segundo gerenciador de transações junto
   do JPA.
 - **Usuário criado no primeiro login (JIT):** o webhook do Clerk é complemento, não requisito.
-- **Webhook idempotente** (`webhook_events`), respeita a ordem dos eventos e faz **soft delete**: a conta excluída
-  responde 403.
+- **Webhook idempotente** (`webhook_events`) e respeita a ordem dos eventos.
+- **Excluir a conta apaga os dados de verdade** (pelo app ou no Clerk): a pessoa sai de `users` e o
+  `ON DELETE CASCADE` leva o conteúdo junto. Fica só o hash do id do Clerk em `deleted_accounts`, para a conta
+  não voltar por um evento atrasado ou um token ainda válido (responde 403).
 - **Idioma:** o app manda `Accept-Language`, e o catálogo volta em pt-BR ou en-US (traduções na V9).
 - **Notificações e atividade são gravadas na hora**, dentro do caso de uso, com índices únicos contra duplicatas.
   O feed é montado na leitura.

@@ -113,4 +113,11 @@ export const account: Strings['account'] = {
   tmdb: 'Datos de películas y series',
   signOutConfirmTitle: '¿Cerrar tu sesión?',
   signOutConfirmText: 'Tu diario queda guardado. Solo entra de nuevo para continuar.',
+  deleteAccount: 'Eliminar cuenta',
+  deleteAccountTitle: '¿Eliminar tu cuenta?',
+  deleteAccountText:
+    'Tu perfil, tu diario y tus reseñas dejan de verse para todo el mundo, y pierdes el acceso a la cuenta. No se puede deshacer.',
+  deleteAccountConfirm: 'Eliminar para siempre',
+  deleteAccountPending: 'Eliminando tu cuenta…',
+  deleteAccountError: 'No se pudo eliminar la cuenta. Inténtalo de nuevo.',
 };

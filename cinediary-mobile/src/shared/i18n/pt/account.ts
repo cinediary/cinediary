@@ -113,4 +113,11 @@ export const account = {
   tmdb: 'Dados de filmes e séries',
   signOutConfirmTitle: 'Sair da sua conta?',
   signOutConfirmText: 'Seu diário fica salvo. É só entrar de novo para continuar.',
+  deleteAccount: 'Excluir conta',
+  deleteAccountTitle: 'Excluir sua conta?',
+  deleteAccountText:
+    'Seu perfil, seu diário e suas reviews deixam de aparecer para todo mundo, e você perde o acesso à conta. Não dá para desfazer.',
+  deleteAccountConfirm: 'Excluir para sempre',
+  deleteAccountPending: 'Excluindo sua conta…',
+  deleteAccountError: 'Não deu para excluir a conta. Tente de novo.',
 };

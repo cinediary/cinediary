@@ -113,4 +113,11 @@ export const account: Strings['account'] = {
   tmdb: 'Données des films et séries',
   signOutConfirmTitle: 'Te déconnecter ?',
   signOutConfirmText: 'Ton journal reste enregistré. Il suffit de te reconnecter pour continuer.',
+  deleteAccount: 'Supprimer le compte',
+  deleteAccountTitle: 'Supprimer ton compte ?',
+  deleteAccountText:
+    "Ton profil, ton journal et tes critiques ne seront plus visibles par personne, et tu perds l'accès au compte. C'est irréversible.",
+  deleteAccountConfirm: 'Supprimer définitivement',
+  deleteAccountPending: 'Suppression de ton compte…',
+  deleteAccountError: "Impossible de supprimer le compte. Réessaie.",
 };
