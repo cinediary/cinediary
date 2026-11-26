@@ -1,6 +1,6 @@
 plugins {
     java
-    id("org.springframework.boot") version "4.1.2"
+    id("org.springframework.boot") version "4.2.0"
     id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -20,7 +20,7 @@ repositories {
 dependencyManagement {
     imports {
         // Spring Modulith 2.1.x é a linha compatível com Spring Boot 4.1
-        mavenBom("org.springframework.modulith:spring-modulith-bom:2.1.2")
+        mavenBom("org.springframework.modulith:spring-modulith-bom:2.2.0")
     }
 }
 
@@ -51,7 +51,7 @@ dependencies {
     implementation("org.neo4j.driver:neo4j-java-driver")
 
     // OpenAPI / Swagger UI
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.1")
 
     compileOnly("org.projectlombok:lombok:1.18.48")
     annotationProcessor("org.projectlombok:lombok:1.18.48")
