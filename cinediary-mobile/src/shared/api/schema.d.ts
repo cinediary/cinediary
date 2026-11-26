@@ -187,6 +187,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registra o aparelho para as notificações push (depois do login, se a pessoa permitiu)
+         * @description O mesmo token não duplica: registrar de novo só atualiza. Um token que era de outra pessoa passa para esta.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RegisterDeviceRequest"];
+                };
+            };
+            responses: {
+                /** @description Aparelho registrado */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Token fora do formato do Expo, ou plataforma inválida */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/devices/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Tira o aparelho das notificações push (no logout)
+         * @description Só apaga se o aparelho for da pessoa; um token desconhecido não dá erro.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description O token do Expo, codificado na URL (ex.: ExponentPushToken%5Babc%5D) */
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Aparelho removido (ou não existia) */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/onboarding": {
         parameters: {
             query?: never;
@@ -3912,6 +4000,12 @@ export interface components {
                 /** @description A imagem pronta (1280 px) */
                 url: string;
             }[];
+        };
+        RegisterDeviceRequest: {
+            /** @description ExponentPushToken[...] (ou ExpoPushToken[...]) */
+            token: string;
+            /** @enum {string} */
+            platform: "IOS" | "ANDROID";
         };
         /** @description Campos ausentes não mudam. Texto vazio em firstName, lastName, bio e pronouns apaga. */
         UpdateProfileRequest: {

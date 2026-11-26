@@ -6,11 +6,13 @@ import { analytics } from '@/shared/analytics/analytics';
 import { setAuthTokenProvider } from '@/shared/api/client';
 import { queryClient } from '@/shared/api/queryClient';
 import { env } from '@/shared/config/env';
+import { registerPushDevice } from '@/shared/notifications/push';
 
 /**
  * Liga a sessão do Clerk ao resto do app:
  * - injeta o JWT no cliente HTTP;
  * - identifica / reseta a pessoa no PostHog;
+ * - registra o aparelho para as notificações push (se a pessoa já permitiu);
  * - limpa o cache de queries ao sair.
  */
 function SessionBridge() {
@@ -31,6 +33,8 @@ function SessionBridge() {
         // Sem e-mail: é dado pessoal fora do nosso banco (LGPD). O id do Clerk e o @ já identificam a pessoa.
         analytics.identify(user.id, user.username ? { username: user.username } : undefined);
         identifiedUserId.current = user.id;
+        // A cada login ou abertura do app: registra (ou só atualiza) o aparelho; sem permissão, não faz nada
+        void registerPushDevice();
       }
       return;
     }

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { pendingInvite } from '@/features/match/application/matchQueries';
 import { analytics, posthogLogger } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
+import { unregisterPushDevice } from '@/shared/notifications/push';
 import { normalizeEmail, normalizeIdentifier, normalizeUsername, type SignUpInput } from '../domain/credentials';
 import { clerkErrorCode } from '../infrastructure/clerkErrors';
 
@@ -82,9 +83,11 @@ export function useSignUpWithPassword() {
 
 export function useSignOut() {
   const { signOut } = useClerk();
-  return () => {
+  return async () => {
     analytics.track('user_signed_out', {});
     posthogLogger.info('authentication completed', { auth_action: 'sign_out', auth_provider: 'password' });
+    // Antes de sair, ainda com a sessão: este aparelho para de receber o push da conta
+    await unregisterPushDevice();
     void signOut();
   };
 }

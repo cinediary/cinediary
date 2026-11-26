@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { queryClient } from '@/shared/api/queryClient';
 import { getPushPermission, requestPushPermission, type PushPermission } from './permission';
+import { registerPushDevice } from './push';
 
 const key = ['push-permission'] as const;
 
@@ -14,5 +15,7 @@ export function usePushPermission() {
 export async function askPushPermission(): Promise<boolean> {
   const granted = await requestPushPermission().catch(() => false);
   queryClient.setQueryData<PushPermission>(key, granted ? 'granted' : await getPushPermission().catch(() => 'blocked' as const));
+  // Já com sessão (fim do onboarding ou configurações): o aparelho passa a receber push
+  if (granted) void registerPushDevice();
   return granted;
 }
