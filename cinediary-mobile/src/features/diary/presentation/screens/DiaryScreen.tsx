@@ -1,25 +1,91 @@
-import { FlatList, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { FlatList, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useDebouncedValue } from '@/features/catalog/application/catalogQueries';
 import { strings } from '@/shared/i18n';
-import { semantic, space } from '@/shared/theme';
-import { ErrorState, Skeleton, SkeletonRows, Text, Title } from '@/shared/ui';
+import { space, makeStyles } from '@/shared/theme';
+import { Button, ErrorState, Skeleton, SkeletonRows, Text, Title } from '@/shared/ui';
+import { useOverlay } from '@/shared/ui/BottomSheet';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
-import { useDiaryEntries } from '../../application/diaryQueries';
+import { useDiaryCount, useDiaryEntries, useDiaryFilterOptions } from '../../application/diaryQueries';
+import { filtersToQuery, isFiltered, NO_FILTERS, type DiaryFilterOptions, type DiaryFilters } from '../../domain/diaryFilters';
+import { DiaryFilterBar, DiaryFilterSheet, enter, leave } from '../components/DiaryFilterBar';
 import { diaryRows as toRows, EntryRow } from '../components/DiaryTimeline';
 
+const NO_OPTIONS: DiaryFilterOptions = { years: [], genres: [], movies: 0, series: 0 };
+
+/** A busca espera a pessoa parar de digitar antes de ir ao servidor. */
+const SEARCH_DEBOUNCE_MS = 300;
+
+/** Conta o rascunho da folha de filtros, esperando um instante entre um toque e outro. */
+function useDraftCount(draft: DiaryFilters) {
+  const settled = useDebouncedValue(draft, 250);
+  const count = useDiaryCount(settled);
+  // Enquanto o número do rascunho atual não chega, nada de número velho (nem botão desligado por ele).
+  return settled === draft && !count.isPlaceholderData ? count.data : undefined;
+}
+
 /**
- * O diário inteiro, por mês. Carrega aos poucos (20 por vez) conforme a pessoa rola: com 400 filmes,
- * a Início continua curta e esta tela não baixa tudo de uma vez.
+ * A folha de filtros lendo as opções por conta própria: a folha aberta fica guardada como foi aberta, e as opções
+ * que chegam depois (abriu enquanto carregavam ou depois de uma falha) entram nela sem perder o rascunho.
+ */
+function ConnectedFilterSheet(props: { initial: DiaryFilters; onApply: (f: DiaryFilters) => void; onClose: () => void }) {
+  const options = useDiaryFilterOptions();
+  return <DiaryFilterSheet {...props} options={options.data ?? NO_OPTIONS} useCount={useDraftCount} />;
+}
+
+/**
+ * O diário inteiro, por mês, com busca e filtros (#147). Carrega aos poucos (20 por vez) conforme a pessoa rola:
+ * com milhares de filmes, esta tela não baixa tudo de uma vez.
+ * Trocar de filtro não pisca: a lista anterior fica (um pouco apagada) até a nova chegar, e a tela volta ao topo.
  */
 export function DiaryScreen() {
+  const styles = useStyles();
   const t = strings.diary;
   const insets = useSafeAreaInsets();
   const backInset = useFloatingBackInset();
-  const diary = useDiaryEntries();
-  const entries = diary.data?.pages.flat() ?? [];
+  const overlay = useOverlay();
+  const [filters, setFilters] = useState<DiaryFilters>(NO_FILTERS);
+  const query = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
+  const applied = useMemo(() => ({ ...filters, query }), [filters, query]);
+  const filtered = isFiltered(applied);
 
-  if (diary.isPending || diary.isError) {
+  const diary = useDiaryEntries(applied);
+  const options = useDiaryFilterOptions();
+  const count = useDiaryCount(applied, filtered);
+  const entries = diary.data?.pages.flat() ?? [];
+  const patch = (p: Partial<DiaryFilters>) => setFilters((f) => ({ ...f, ...p }));
+  // A barra aparece com o diário, sem depender das opções: sem elas (carregando ou com erro), a busca e o botão
+  // continuam, só sem as abas de ano e com a folha mais curta.
+  const filterOptions = options.data ?? NO_OPTIONS;
+  const hasDiary = options.data ? options.data.movies + options.data.series > 0 : entries.length > 0 || filtered;
+
+  // Enquanto a lista do filtro novo não chega, a anterior fica apagada (sem esqueleto nem salto).
+  // Pelo isPlaceholderData (e não por "buscando"): sem internet a consulta fica pausada, e a lista do filtro
+  // anterior apareceria como se fosse a do novo.
+  const changing = diary.isPlaceholderData;
+  const opacity = useSharedValue(1);
+  useEffect(() => {
+    opacity.set(withTiming(changing ? 0.45 : 1, { duration: changing ? 160 : 220 }));
+  }, [changing, opacity]);
+  const listStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  // Filtro novo: volta ao topo da lista (senão a pessoa ficava no meio de outra lista).
+  const list = useRef<FlatList>(null);
+  const appliedKey = JSON.stringify(filtersToQuery(applied));
+  useEffect(() => {
+    list.current?.scrollToOffset({ offset: 0, animated: true });
+  }, [appliedKey]);
+
+  const openSheet = () => {
+    if (!options.data) void options.refetch();
+    overlay.show(<ConnectedFilterSheet initial={filters} onApply={setFilters} onClose={overlay.hide} />);
+  };
+
+  // Erro de tela inteira só no diário sem filtro: com filtro, o topo continua (dá para mudar ou limpar a busca).
+  if (diary.isPending || (diary.isError && !diary.data && !filtered)) {
     return (
       <View style={diary.isError ? [styles.root, styles.center] : styles.root}>
         {diary.isError ? (
@@ -38,7 +104,8 @@ export function DiaryScreen() {
 
   return (
     <View style={styles.root}>
-      <FlatList
+      <Animated.FlatList
+        ref={list}
         data={toRows(entries)}
         keyExtractor={(r) => r.key}
         renderItem={({ item }) =>
@@ -55,7 +122,34 @@ export function DiaryScreen() {
         ListHeaderComponent={
           <View style={[styles.header, { paddingTop: backInset }]}>
             <Title parts={t.diaryTitle} />
+            {hasDiary ? (
+              <DiaryFilterBar filters={filters} options={filterOptions} onChange={patch} onOpenSheet={openSheet} />
+            ) : null}
+            {/* Sem o número do filtro anterior enquanto o novo carrega. */}
+            {filtered && count.data !== undefined && !count.isPlaceholderData && entries.length > 0 ? (
+              <Animated.View entering={enter} exiting={leave}>
+                <Text variant="caption" tone="muted">
+                  {t.filters.count(count.data)}
+                </Text>
+              </Animated.View>
+            ) : null}
           </View>
+        }
+        ListEmptyComponent={
+          filtered && diary.isError ? (
+            <View style={styles.empty}>
+              <ErrorState onRetry={() => diary.refetch()} />
+              <Button label={t.filters.clearAll} variant="ghost" size="sm" onPress={() => setFilters(NO_FILTERS)} />
+            </View>
+          ) : filtered && !changing ? (
+            <Animated.View entering={enter} style={styles.empty}>
+              <Text variant="bodyStrong">{t.filters.emptyTitle}</Text>
+              <Text tone="secondary" style={styles.centerText}>
+                {t.filters.emptyHint}
+              </Text>
+              <Button label={t.filters.clearAll} variant="ghost" size="sm" onPress={() => setFilters(NO_FILTERS)} />
+            </Animated.View>
+          ) : undefined
         }
         ListFooterComponent={
           diary.isFetchingNextPage ? (
@@ -67,23 +161,30 @@ export function DiaryScreen() {
           )
         }
         onEndReached={() => {
-          if (diary.hasNextPage && !diary.isFetchingNextPage) void diary.fetchNextPage();
+          if (diary.hasNextPage && !diary.isFetchingNextPage && !changing) void diary.fetchNextPage();
         }}
         onEndReachedThreshold={0.5}
         contentContainerStyle={styles.content}
+        style={listStyle}
         showsVerticalScrollIndicator={false}
+        // Tocar num registro com o teclado aberto já abre (sem um toque só para fechar o teclado); rolar fecha.
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       />
       <FloatingBackButton />
+      {overlay.node}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   center: { justifyContent: 'center' },
+  centerText: { textAlign: 'center' },
   content: { paddingHorizontal: space.screenX },
-  header: { paddingBottom: space.lg },
+  header: { paddingBottom: space.sm, gap: space.lg },
   month: { paddingTop: space.xl, paddingBottom: space.md },
   entry: { paddingBottom: space.md },
   more: { paddingTop: space.md, paddingBottom: space.xl },
-});
+  empty: { alignItems: 'center', gap: space.xs, paddingVertical: space['3xl'] },
+}));

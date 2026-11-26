@@ -127,6 +127,12 @@ class UserRepositoryAdapter implements UserRepositoryPort
     }
 
     @Override
+    public boolean updateHeader(UUID id, Long titleId, String backdropPath)
+    {
+        return repository.updateHeaderIfActive(id, titleId, backdropPath) > 0;
+    }
+
+    @Override
     public void markOnboardingCompleted(UUID id)
     {
         UserJpaEntity e = repository.findById(id).orElseThrow();
@@ -140,6 +146,7 @@ class UserRepositoryAdapter implements UserRepositoryPort
         return new UserAccount(e.getId(), e.getClerkId(), e.getUsername(), e.getDisplayName(), e.getFirstName(),
                 e.getLastName(), e.getEmail(), e.getAvatarUrl(), e.isPrivateProfile(), e.isOnboardingCompleted(),
                 e.getDeletedAt() != null, e.getBio(), e.getPronouns(), e.isShowSpoilers(),
-                com.cinediary.api.shared.domain.ReplyPolicy.valueOf(e.getDefaultReplyPolicy()), e.isApproveCompanions());
+                com.cinediary.api.shared.domain.ReplyPolicy.valueOf(e.getDefaultReplyPolicy()), e.isApproveCompanions(),
+                e.getHeaderTitleId(), e.getHeaderBackdropPath());
     }
 }

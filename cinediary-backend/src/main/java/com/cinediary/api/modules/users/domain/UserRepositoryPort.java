@@ -45,4 +45,10 @@ public interface UserRepositoryPort
                        com.cinediary.api.shared.domain.ReplyPolicy defaultReplyPolicy, boolean approveCompanions);
 
     void markOnboardingCompleted(UUID id);
+
+    /**
+     * Capa do perfil: título do catálogo e caminho do backdrop no TMDB; os dois null = sem capa.
+     * Só em conta ativa: devolve false (e não muda nada) se a conta não existe ou foi excluída.
+     */
+    boolean updateHeader(UUID id, Long titleId, String backdropPath);
 }

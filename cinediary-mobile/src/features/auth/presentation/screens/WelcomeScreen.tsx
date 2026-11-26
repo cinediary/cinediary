@@ -1,12 +1,12 @@
 import { NotePencil, Star, Ticket, UsersThree } from 'phosphor-react-native';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useShowcase } from '@/features/catalog/application/catalogQueries';
 import { usePendingInvite } from '@/features/match/application/matchQueries';
 import { strings } from '@/shared/i18n';
-import { fonts, palette, radius, semantic, space } from '@/shared/theme';
+import { fonts, radius, space, makeStyles, useColors } from '@/shared/theme';
 import { Button, Text, Title } from '@/shared/ui';
 import { nav } from '@/shared/ui/navigation/nav';
 import { PosterWall, type WallPoster } from '../components/PosterWall';
@@ -24,6 +24,8 @@ const enter = (i: number) => FadeInDown.duration(520).delay(180 + i * 90);
  * por cima dos pôsteres), a marca, o título, o que o app faz em três linhas e os botões. Vindo de um convite, um selo de "Taste Match" aparece acima do título.
  */
 export function WelcomeScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const a = strings.auth;
   const [brandA, brandB] = strings.match.story.brand;
   const insets = useSafeAreaInsets();
@@ -48,7 +50,7 @@ export function WelcomeScreen() {
       <View style={[styles.content, { paddingBottom: insets.bottom + space.md }]}>
         {fromInvite ? (
           <Animated.View entering={enter(0)} style={styles.badge}>
-            <Ticket size={16} color={semantic.link} weight="fill" />
+            <Ticket size={16} color={colors.link} weight="fill" />
             <Text variant="caption" style={styles.badgeText}>
               {a.inviteBadge}
             </Text>
@@ -74,7 +76,7 @@ export function WelcomeScreen() {
               return (
                 <View key={label} style={styles.feature}>
                   <View style={styles.featureIcon}>
-                    <Icon size={18} color={semantic.link} />
+                    <Icon size={18} color={colors.link} />
                   </View>
                   <Text variant="caption" tone="secondary" style={styles.flex}>
                     {label}
@@ -100,11 +102,11 @@ export function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   // Mínimo de parede visível mesmo em aparelho pequeno; o texto nunca fica por cima dos pôsteres.
   wall: { flex: 1, minHeight: 180 },
-  content: { paddingHorizontal: space.screenX, paddingTop: space.sm, gap: space.lg, backgroundColor: semantic.background },
+  content: { paddingHorizontal: space.screenX, paddingTop: space.sm, gap: space.lg, backgroundColor: c.background },
   flex: { flex: 1 },
   badge: {
     alignSelf: 'flex-start',
@@ -114,11 +116,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     paddingVertical: 6,
     borderRadius: radius.pill,
-    backgroundColor: palette.terracota100,
+    backgroundColor: c.terracota100,
   },
-  badgeText: { color: semantic.link, fontFamily: fonts.bodyHeavy },
+  badgeText: { color: c.link, fontFamily: fonts.bodyHeavy },
   // A marca é o destaque da tela; o slogan (título) fica um degrau abaixo, em h2.
-  brand: { fontFamily: fonts.display, fontSize: 52, lineHeight: 56, color: semantic.primary, letterSpacing: -0.5 },
+  brand: { fontFamily: fonts.display, fontSize: 52, lineHeight: 56, color: c.primary, letterSpacing: -0.5 },
   brandItalic: { fontFamily: fonts.displayItalic },
   copy: { gap: space.xs },
   features: { gap: space.sm },
@@ -129,8 +131,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.terracota100,
+    backgroundColor: c.terracota100,
   },
   actions: { gap: space.xs },
   center: { textAlign: 'center' },
-});
+}));

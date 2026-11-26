@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { pendingImport } from '@/features/importing/presentation/incomingImport';
 import { analytics } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
 import { space } from '@/shared/theme';
@@ -21,6 +23,15 @@ export function OnboardingLetterboxdScreen() {
     analytics.track('onboarding_import_choice', { choice });
     nav.push(choice === 'import' ? '/(onboarding)/letterboxd-import' : '/(onboarding)/genres');
   };
+
+  // A pessoa chegou abrindo o ZIP pelo "Abrir com…" antes de ter conta (#111): já escolheu importar.
+  useEffect(() => {
+    // Falhou a leitura: fica na pergunta; o arquivo continua pendente e a importação o pega se a pessoa escolher.
+    void pendingImport
+      .exists()
+      .then((yes) => yes && nav.push('/(onboarding)/letterboxd-import'))
+      .catch(() => {});
+  }, []);
 
   // Um pouco acima do rodapé padrão: sem nada no meio da tela, os botões colados embaixo ficavam longe demais.
   const footer = (

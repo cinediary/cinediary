@@ -1,13 +1,13 @@
 import * as Haptics from 'expo-haptics';
 import { Check } from 'phosphor-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { strings } from '@/shared/i18n';
-import { fonts, palette, radius, semantic, space } from '@/shared/theme';
+import { fonts, radius, space, useColors, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
 
 export interface ActionSheetOption {
@@ -41,6 +41,8 @@ export function ActionSheet({
   options: ActionSheetOption[];
   onClose: () => void;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const reduce = useReducedMotion();
@@ -112,7 +114,7 @@ export function ActionSheet({
                   </Text>
                 ) : null}
               </View>
-              {o.selected ? <Check size={20} weight="bold" color={semantic.primary} /> : null}
+              {o.selected ? <Check size={20} weight="bold" color={colors.primary} /> : null}
             </Pressable>
           ))}
         </View>
@@ -130,11 +132,11 @@ export function ActionSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { backgroundColor: 'rgba(42,33,28,0.4)' },
+const useStyles = makeStyles((c) => ({
+  backdrop: { backgroundColor: c.backdrop },
   // Cartões flutuando acima da borda, com respiro dos lados e entre eles.
   wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.lg, gap: space.md },
-  card: { borderRadius: radius.xl, borderCurve: 'continuous', backgroundColor: palette.surface, overflow: 'hidden' },
+  card: { borderRadius: radius.xl, borderCurve: 'continuous', backgroundColor: c.surface, overflow: 'hidden' },
   head: { paddingHorizontal: space.xl, paddingTop: space.lg, paddingBottom: space.md, gap: space.xs },
   center: { textAlign: 'center' },
   row: {
@@ -145,12 +147,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.xl,
     paddingVertical: space.md,
   },
-  divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.border },
-  pressed: { backgroundColor: palette.surfaceSunken },
+  divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+  pressed: { backgroundColor: c.surfaceSunken },
   icon: { width: 24, alignItems: 'center' },
   texts: { flex: 1, gap: 2 },
-  label: { fontFamily: fonts.bodyBold, color: palette.ink900 },
-  danger: { color: semantic.danger },
+  label: { fontFamily: fonts.bodyBold, color: c.ink900 },
+  danger: { color: c.danger },
   cancel: { minHeight: 60, alignItems: 'center', justifyContent: 'center' },
-  cancelText: { fontFamily: fonts.bodyHeavy, color: palette.ink900 },
-});
+  cancelText: { fontFamily: fonts.bodyHeavy, color: c.ink900 },
+}));

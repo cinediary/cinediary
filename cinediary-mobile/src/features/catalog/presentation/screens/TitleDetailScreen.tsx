@@ -1,11 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeIn, useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
 import { analytics } from '@/shared/analytics/analytics';
 import { strings } from '@/shared/i18n';
-import { semantic, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Button, ErrorState, SectionHeader, STAR_SPIN_MS, StarSpinner, Text } from '@/shared/ui';
 import { FloatingBackButton } from '@/shared/ui/navigation/FloatingBackButton';
 import { useTitleDetail, useTitleExtras } from '../../application/catalogQueries';
@@ -15,25 +15,30 @@ import { CastSection } from '../components/CastSection';
 import { ExtrasSkeleton, SeasonsSkeleton } from '../components/Skeletons';
 import { SeriesProgressSection } from '../components/SeriesProgressSection';
 import { TitleActions } from '../components/TitleActions';
-import { AboutSection, CrewSection, RelatedSections } from '../components/TitleExtrasSections';
+import { AboutSection, CrewSection, RelatedSections, WatchProvidersSection } from '../components/TitleExtrasSections';
 import { TitleHeader } from '../components/TitleHeader';
 import { TrailerPlayer } from '../components/TrailerPlayer';
 import { YourEntries } from '../components/YourEntries';
 import { TitleCommunitySection, TitleRatingSummary } from '@/features/social/presentation/components/TitleCommunitySection';
+import { AddToListRow } from '@/features/lists/presentation/components/AddToListRow';
+import { AddToListSheet } from '@/features/lists/presentation/components/AddToListSheet';
+import { useOverlay } from '@/shared/ui/BottomSheet';
 import { openQuickLog } from '../navigation';
 import { useTrailerPlacement, type TrailerSlot } from '../trailerPlacement';
 
 /**
  * TI-01 (filme) / TI-02 (série), de cima para baixo: topo (backdrop elástico, pôster que amplia),
- * ações, Registrar + Trailer, progresso/seus registros, elenco, equipe, sobre (lançamento, país,
+ * ações, Registrar + Trailer, progresso/seus registros, elenco, onde assistir, equipe, sobre (lançamento, país,
  * produtoras), da mesma coleção e similares. Os extras chegam depois do básico, sem segurar a tela.
  */
 export function TitleDetailScreen() {
+  const styles = useStyles();
   const params = useLocalSearchParams<{ mediaType: string; tmdbId: string }>();
   const mediaType: MediaType = params.mediaType === 'SERIES' ? 'SERIES' : 'MOVIE';
   const tmdbId = Number(params.tmdbId);
   const detail = useTitleDetail(mediaType, tmdbId);
   const extras = useTitleExtras(mediaType, tmdbId);
+  const overlay = useOverlay();
   // A página aparece de uma vez quando o essencial chega (ver useTitlePageGate). Até lá, a estrela girando,
   // por pelo menos uma volta (sem piscar quando a internet é rápida).
   const gate = useTitlePageGate({
@@ -106,6 +111,7 @@ export function TitleDetailScreen() {
         <View style={styles.body}>
           <TitleActions title={title} trailer={placement === 'actions' ? { status: trailerStatus, onPress: openTrailer } : undefined} />
           <Button label={title.state.watched ? t.logAgain : t.log} onPress={() => openQuickLog(title, { from: 'title_page' })} />
+          <AddToListRow title={title} onPress={() => overlay.show(<AddToListSheet title={title} onClose={overlay.hide} />)} />
           {/* Nota única (TMDB + CineDiary) logo abaixo das ações. */}
           <TitleRatingSummary titleId={title.id} myRating={title.state.rating} />
           {isSeries ? (
@@ -121,6 +127,7 @@ export function TitleDetailScreen() {
           <CastSection mediaType={title.mediaType} tmdbId={title.tmdbId} titleName={title.title} />
           {extras.data ? (
             <>
+              <WatchProvidersSection extras={extras.data} mediaType={title.mediaType} tmdbId={title.tmdbId} />
               <CrewSection extras={extras.data} mediaType={title.mediaType} tmdbId={title.tmdbId} titleName={title.title} />
               <AboutSection extras={extras.data} mediaType={title.mediaType} />
               <RelatedSections extras={extras.data} />
@@ -135,12 +142,14 @@ export function TitleDetailScreen() {
       </Animated.ScrollView>
       <FloatingBackButton />
       {trailerKey ? <TrailerPlayer youtubeKey={trailerKey} visible={trailerOpen} onClose={() => setTrailerOpen(false)} /> : null}
+      {/* A folha "Adicionar à lista" na raiz da página, por cima de tudo. */}
+      {overlay.node}
     </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   content: { paddingBottom: space['3xl'] },
   body: {
     paddingHorizontal: space.screenX,
@@ -150,13 +159,13 @@ const styles = StyleSheet.create({
   center: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: semantic.background,
+    backgroundColor: c.background,
   },
   // A estrela no meio da tela, nos dois eixos.
   spinner: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: semantic.background,
+    backgroundColor: c.background,
   },
-});
+}));

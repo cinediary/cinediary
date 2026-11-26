@@ -1,9 +1,9 @@
 import { useLocalSearchParams } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { EntrySkeleton } from '@/features/diary/presentation/components/EntryDetail';
 import { strings } from '@/shared/i18n';
-import { semantic } from '@/shared/theme';
+import { makeStyles } from '@/shared/theme';
 import { ErrorState } from '@/shared/ui';
 import { FloatingBackButton, useFloatingBackInset } from '@/shared/ui/navigation/FloatingBackButton';
 import { usePersonEntry, usePublicProfile } from '../../application/socialQueries';
@@ -15,6 +15,7 @@ import { openProfile } from '../navigation';
  * chegam fechadas, a não ser que você tenha ligado "Mostrar spoilers"; tocar no autor abre o perfil dele.
  */
 export function PersonEntryScreen() {
+  const styles = useStyles();
   const { username = '', entryId = '' } = useLocalSearchParams<{ username: string; entryId: string }>();
   const backInset = useFloatingBackInset();
   const entry = usePersonEntry(username, entryId);
@@ -49,7 +50,7 @@ export function PersonEntryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   center: { justifyContent: 'center' },
-});
+}));

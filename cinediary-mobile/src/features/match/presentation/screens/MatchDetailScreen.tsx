@@ -6,7 +6,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { useMe } from '@/features/auth/application/profileQueries';
 import { openTitle } from '@/features/catalog/presentation/navigation';
 import { strings } from '@/shared/i18n';
-import { palette, space, touch } from '@/shared/theme';
+import { space, touch, useColors } from '@/shared/theme';
 import {
   AvatarPair,
   Button,
@@ -45,6 +45,7 @@ function explainScore(story: MatchStory): string {
 }
 
 export function MatchDetailScreen() {
+  const colors = useColors();
   const t = strings.match;
   const { matchId } = useLocalSearchParams<{ matchId: string }>();
   const me = useMe();
@@ -140,7 +141,7 @@ export function MatchDetailScreen() {
         ) : active ? (
           <Button
             label={story.data ? t.replayStory : t.watchStory}
-            icon={<Play size={18} weight="fill" color={palette.surface} />}
+            icon={<Play size={18} weight="fill" color={colors.onPrimary} />}
             onPress={() => openStory(m.id)}
           />
         ) : (
@@ -161,7 +162,7 @@ export function MatchDetailScreen() {
             <Button
               label={t.add}
               variant="secondary"
-              icon={<Plus size={18} color={palette.ink900} />}
+              icon={<Plus size={18} color={colors.ink900} />}
               onPress={() => openAddToShared(m.id)}
             />
             <SharedWatchlistGrid

@@ -1,10 +1,10 @@
 import { CaretRight } from 'phosphor-react-native';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { openEntry } from '@/features/diary/presentation/navigation';
 import { formatCompact, formatNumber, strings } from '@/shared/i18n';
-import { palette, radius, semantic, space } from '@/shared/theme';
+import { radius, space, makeStyles, useColors } from '@/shared/theme';
 import { Avatar, SectionHeader, Skeleton, SkeletonRows, StarRating, Text } from '@/shared/ui';
 import { useTitleCommunity } from '../../application/titleCommunityQueries';
 import type { TitleCommunity, TitleReview } from '../../domain/social';
@@ -17,6 +17,7 @@ import { ReviewCard } from './ReviewCard';
  * notas suficientes. Um número só: TMDB e CineDiary juntos. A sua nota aparece pequena embaixo, se houver.
  */
 export function TitleRatingSummary({ titleId, myRating }: { titleId: number; myRating?: number | null }) {
+  const styles = useStyles();
   const s = strings.social.community;
   const community = useTitleCommunity(titleId);
   if (community.isPending) return <Skeleton width="100%" height={64} radius={radius.md} />;
@@ -80,6 +81,7 @@ function useOpenReview() {
  * (lá estão a nota e a review). Sem nota embaixo da foto: as estrelas não cabiam e poluíam a fileira.
  */
 function FriendsWhoWatched({ friends }: { friends: TitleReview[] }) {
+  const styles = useStyles();
   const s = strings.social.community;
   const open = useOpenReview();
   if (friends.length === 0) return null;
@@ -110,6 +112,8 @@ function FriendsWhoWatched({ friends }: { friends: TitleReview[] }) {
 }
 
 function Reviews({ data, titleId, titleName }: { data: TitleCommunity; titleId: number; titleName: string }) {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social.community;
   return (
     <View style={styles.section}>
@@ -128,14 +132,14 @@ function Reviews({ data, titleId, titleName }: { data: TitleCommunity; titleId: 
           <Text variant="bodyStrong" tone="link">
             {s.seeAllReviews(data.reviewCount)}
           </Text>
-          <CaretRight size={16} color={semantic.primary} />
+          <CaretRight size={16} color={colors.primary} />
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   section: { gap: space.sm },
   pressed: { opacity: 0.7 },
   rating: { gap: space.xs },
@@ -145,12 +149,12 @@ const styles = StyleSheet.create({
   ratingSide: { gap: 4 },
   histogram: { flex: 1, maxWidth: 140, height: 36, flexDirection: 'row', alignItems: 'flex-end', gap: 2, paddingBottom: 6 },
   barSlot: { flex: 1, justifyContent: 'flex-end' },
-  bar: { borderTopLeftRadius: 2, borderTopRightRadius: 2, backgroundColor: palette.pipoca500 },
-  barEmpty: { backgroundColor: palette.border },
+  bar: { borderTopLeftRadius: 2, borderTopRightRadius: 2, backgroundColor: c.pipoca500 },
+  barEmpty: { backgroundColor: c.border },
   // A fileira vai até a borda da tela (o conteúdo da página tem margem lateral).
   bleed: { marginHorizontal: -space.screenX },
   friends: { gap: space.md, paddingHorizontal: space.screenX },
   friend: { width: 64, alignItems: 'center', gap: space.xs },
   friendName: { textAlign: 'center' },
   more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: space.sm },
-});
+}));

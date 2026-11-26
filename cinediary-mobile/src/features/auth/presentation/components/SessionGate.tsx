@@ -1,12 +1,13 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { semantic, space } from '@/shared/theme';
+import { space, makeStyles } from '@/shared/theme';
 import { Button, ErrorState, LoadingState } from '@/shared/ui';
 import { useSignOut } from '../../application/usePasswordAuth';
 
 /** Enquanto o /me carrega logo após entrar ou criar conta (nunca uma tela vazia). */
 export function SessionLoadingScreen() {
+  const styles = useStyles();
   return (
     <View style={styles.root}>
       <LoadingState />
@@ -16,6 +17,7 @@ export function SessionLoadingScreen() {
 
 /** O backend não respondeu ao /me: sem ele não sabemos se falta o onboarding. */
 export function SessionErrorScreen({ onRetry, retrying }: { onRetry: () => void; retrying: boolean }) {
+  const styles = useStyles();
   const signOut = useSignOut();
   return (
     <View style={styles.root}>
@@ -25,6 +27,6 @@ export function SessionErrorScreen({ onRetry, retrying }: { onRetry: () => void;
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, justifyContent: 'center', padding: space.xl, gap: space.lg, backgroundColor: semantic.background },
-});
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, justifyContent: 'center', padding: space.xl, gap: space.lg, backgroundColor: c.background },
+}));

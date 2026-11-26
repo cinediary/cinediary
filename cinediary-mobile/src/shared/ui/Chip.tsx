@@ -2,17 +2,17 @@ import * as Haptics from 'expo-haptics';
 import { Check } from 'phosphor-react-native';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, useColors, type Colors } from '@/shared/theme';
 import { Text } from './Text';
 
 type Accent = 'terracota' | 'pipoca' | 'salvia' | 'rosa';
 
-const accentBg: Record<Accent, string> = {
-  terracota: palette.terracota300,
-  pipoca: palette.pipoca300,
-  salvia: palette.salvia300,
-  rosa: palette.rosa300,
-};
+const accentBg = (c: Colors): Record<Accent, string> => ({
+  terracota: c.terracota300,
+  pipoca: c.pipoca300,
+  salvia: c.salvia300,
+  rosa: c.rosa300,
+});
 
 export interface ChipProps {
   label: string;
@@ -36,6 +36,7 @@ const CHECK_SPACE = 14 + space.xs;
  * para a linha de baixo: a lista inteira "pulava" a cada toque.
  */
 export function Chip({ label, selected, onToggle, accent = 'terracota', role = 'checkbox', fill = false }: ChipProps) {
+  const colors = useColors();
   return (
     <Pressable
       accessibilityRole={role}
@@ -49,10 +50,10 @@ export function Chip({ label, selected, onToggle, accent = 'terracota', role = '
         styles.chip,
         fill && styles.fill,
         !fill && selected && styles.selectedPadding,
-        { backgroundColor: selected ? accentBg[accent] : palette.surfaceSunken },
+        { backgroundColor: selected ? accentBg(colors)[accent] : colors.surfaceSunken },
       ]}
     >
-      {selected && <Check size={14} weight="bold" color={palette.ink900} />}
+      {selected && <Check size={14} weight="bold" color={colors.ink900} />}
       <Text variant="bodyStrong" numberOfLines={1} adjustsFontSizeToFit={fill} minimumFontScale={0.8} style={fill && styles.fillLabel}>
         {label}
       </Text>

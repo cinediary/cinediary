@@ -56,7 +56,20 @@ public final class FakeTmdb
                         {"id":1,"name":"Fulano","job":"Producer"}]},
                      "recommendations":{"results":[
                         {"id":245891,"title":"John Wick","original_title":"John Wick","release_date":"2014-10-22",
-                         "poster_path":"/wick.jpg","genre_ids":[28,53],"popularity":150.0}]}}""",
+                         "poster_path":"/wick.jpg","genre_ids":[28,53],"popularity":150.0}]},
+                     "watch/providers":{"results":{
+                        "BR":{"link":"https://www.themoviedb.org/movie/603-the-matrix/watch?locale=BR",
+                              "flatrate":[{"provider_id":1899,"provider_name":"Max","logo_path":"/max.jpg","display_priority":3},
+                                          {"provider_id":8,"provider_name":"Netflix","logo_path":"/netflix.jpg","display_priority":1},
+                                          {"provider_id":8,"provider_name":"Netflix","logo_path":"/netflix.jpg","display_priority":1}],
+                              "rent":[{"provider_id":3,"provider_name":"Google Play Filmes","logo_path":"/play.jpg","display_priority":5},
+                                      {"provider_id":2,"provider_name":"Apple TV","logo_path":"/apple.jpg","display_priority":2}],
+                              "buy":[{"provider_id":2,"provider_name":"Apple TV","logo_path":"/apple.jpg","display_priority":2}],
+                              "ads":[{"provider_id":300,"provider_name":"Pluto TV","logo_path":"/pluto.jpg","display_priority":9}]},
+                        "PT":{"link":"https://www.themoviedb.org/movie/603-the-matrix/watch?locale=PT",
+                              "rent":[{"provider_id":2,"provider_name":"Apple TV","logo_path":"/apple.jpg","display_priority":2}]},
+                        "US":{"link":"https://www.themoviedb.org/movie/603-the-matrix/watch?locale=US",
+                              "free":[{"provider_id":300,"provider_name":"Pluto TV","logo_path":"/pluto.jpg","display_priority":1}]}}}}""",
             "/tv/1396", """
                     {"id":1396,"name":"Breaking Bad: A Química do Mal","original_name":"Breaking Bad",
                      "first_air_date":"2008-01-20","poster_path":"/bb.jpg","overview":"Um professor de química...",
@@ -135,6 +148,11 @@ public final class FakeTmdb
                        "overview":""}]}""",
             "/company/79", """
                     {"id":79,"name":"Village Roadshow Pictures","logo_path":"/vr.png","origin_country":"US"}""",
+            "/movie/603/images", """
+                    {"id":603,"backdrops":[
+                      {"file_path":"/bg-ok.jpg","iso_639_1":null,"vote_average":5.2,"width":1920,"height":1080},
+                      {"file_path":"/bg-best.jpg","iso_639_1":null,"vote_average":5.6,"width":3840,"height":2160},
+                      {"file_path":"/bg-ok.jpg","iso_639_1":null,"vote_average":5.2,"width":1920,"height":1080}]}""",
             "/movie/603/recommendations", """
                     {"page":1,"total_results":2,"results":[
                       {"id":245891,"title":"John Wick","original_title":"John Wick","release_date":"2014-10-22",

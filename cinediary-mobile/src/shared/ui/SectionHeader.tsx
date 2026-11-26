@@ -1,7 +1,7 @@
 import { CaretRight } from 'phosphor-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { palette, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import { Text } from './Text';
 
 export interface SectionHeaderProps {
@@ -12,6 +12,7 @@ export interface SectionHeaderProps {
 
 /** Rótulo de seção em caixa alta (overline) com ação opcional. */
 export function SectionHeader({ title, actionLabel, onAction }: SectionHeaderProps) {
+  const colors = useColors();
   return (
     <View style={styles.row}>
       <Text variant="overline" tone="secondary" accessibilityRole="header">
@@ -22,7 +23,7 @@ export function SectionHeader({ title, actionLabel, onAction }: SectionHeaderPro
           <Text variant="caption" tone="link">
             {actionLabel}
           </Text>
-          <CaretRight size={12} color={palette.terracota700} />
+          <CaretRight size={12} color={colors.terracota700} />
         </Pressable>
       ) : null}
     </View>

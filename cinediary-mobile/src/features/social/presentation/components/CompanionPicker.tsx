@@ -1,9 +1,9 @@
 import { CheckCircle } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, makeStyles, useColors } from '@/shared/theme';
 import { Avatar, SearchField, Skeleton, Text, useToast } from '@/shared/ui';
 import { useFriends } from '../../application/companionQueries';
 import type { Actor } from '../../domain/social';
@@ -17,6 +17,8 @@ const VISIBLE = 6;
  * os já escolhidos ficam no topo, com o check. Até 10 pessoas.
  */
 export function CompanionPicker({ selected, onChange }: { selected: Actor[]; onChange: (next: Actor[]) => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.social.companions;
   const toast = useToast();
   const [query, setQuery] = useState('');
@@ -72,7 +74,7 @@ export function CompanionPicker({ selected, onChange }: { selected: Actor[]; onC
                   </Text>
                 </View>
                 {on ? (
-                  <CheckCircle size={24} weight="fill" color={semantic.primary} />
+                  <CheckCircle size={24} weight="fill" color={colors.primary} />
                 ) : (
                   <View style={styles.unchecked} />
                 )}
@@ -85,12 +87,12 @@ export function CompanionPicker({ selected, onChange }: { selected: Actor[]; onC
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.md },
   list: { gap: space.xs },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 44 },
   texts: { flex: 1 },
   pressed: { opacity: 0.7 },
   // O mesmo tamanho do check, vazio.
-  unchecked: { width: 22, height: 22, margin: 1, borderRadius: 11, borderWidth: 1.5, borderColor: palette.ink500 },
-});
+  unchecked: { width: 22, height: 22, margin: 1, borderRadius: 11, borderWidth: 1.5, borderColor: c.ink500 },
+}));

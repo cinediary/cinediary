@@ -218,6 +218,50 @@ class CatalogIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void extrasShowWhereToWatchInTheDeviceCountry() throws Exception {
+        // Sem país: o do idioma (pt-BR → BR). Assinatura, aluguel e compra, cada um na ordem do JustWatch e sem repetir.
+        mvc.perform(get("/api/v1/catalog/MOVIE/603/extras").with(user))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.watchProviders.region").value("BR"))
+                .andExpect(jsonPath("$.watchProviders.regionName").value("Brasil"))
+                .andExpect(jsonPath("$.watchProviders.link").value("https://www.themoviedb.org/movie/603-the-matrix/watch?locale=BR"))
+                .andExpect(jsonPath("$.watchProviders.stream.length()").value(2))
+                .andExpect(jsonPath("$.watchProviders.stream[0].id").value(8))
+                .andExpect(jsonPath("$.watchProviders.stream[0].name").value("Netflix"))
+                .andExpect(jsonPath("$.watchProviders.stream[0].logoUrl").value("https://image.tmdb.org/t/p/w185/netflix.jpg"))
+                .andExpect(jsonPath("$.watchProviders.stream[1].name").value("Max"))
+                .andExpect(jsonPath("$.watchProviders.rent.length()").value(2))
+                .andExpect(jsonPath("$.watchProviders.rent[0].name").value("Apple TV"))
+                .andExpect(jsonPath("$.watchProviders.rent[1].name").value("Google Play Filmes"))
+                .andExpect(jsonPath("$.watchProviders.buy.length()").value(1))
+                // "com anúncios" fica de fora
+                .andExpect(jsonPath("$.watchProviders.ads").doesNotExist());
+        // O país do aparelho vale mais que o do idioma (inglês morando no Brasil)
+        mvc.perform(get("/api/v1/catalog/MOVIE/603/extras").param("language", "en-US").param("region", "br").with(user))
+                .andExpect(jsonPath("$.watchProviders.region").value("BR"))
+                .andExpect(jsonPath("$.watchProviders.stream[0].name").value("Netflix"));
+        // Portugal só tem aluguel: as outras listas vêm vazias
+        mvc.perform(get("/api/v1/catalog/MOVIE/603/extras").param("region", "PT").with(user))
+                .andExpect(jsonPath("$.watchProviders.region").value("PT"))
+                .andExpect(jsonPath("$.watchProviders.stream.length()").value(0))
+                .andExpect(jsonPath("$.watchProviders.rent[0].name").value("Apple TV"))
+                .andExpect(jsonPath("$.watchProviders.buy.length()").value(0));
+    }
+
+    @Test
+    void extrasHaveNoWatchProvidersWhenTheCountryHasNone() throws Exception {
+        // EUA só têm opção grátis (fica de fora): sem dados, sem seção
+        mvc.perform(get("/api/v1/catalog/MOVIE/603/extras").param("language", "en-US").with(user))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.watchProviders").doesNotExist());
+        // País que o TMDB não lista e título sem nenhum dado de onde assistir
+        mvc.perform(get("/api/v1/catalog/MOVIE/603/extras").param("region", "AQ").with(user))
+                .andExpect(jsonPath("$.watchProviders").doesNotExist());
+        mvc.perform(get("/api/v1/catalog/SERIES/1396/extras").with(user))
+                .andExpect(jsonPath("$.watchProviders").doesNotExist());
+    }
+
+    @Test
     void trailerFollowsTheDeviceLanguage() throws Exception {
         mvc.perform(get("/api/v1/catalog/MOVIE/603/extras").param("language", "en-US").with(user))
                 .andExpect(jsonPath("$.trailerYoutubeKey").value("trailerEn"));

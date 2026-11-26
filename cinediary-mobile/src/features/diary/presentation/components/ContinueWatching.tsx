@@ -1,13 +1,14 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import type { TitleSummary } from '@/features/catalog/domain/title';
 import { strings } from '@/shared/i18n';
-import { palette, radius, semantic, space, touch } from '@/shared/theme';
+import { radius, space, touch, makeStyles } from '@/shared/theme';
 import { Button, PosterArt, Rail, SectionHeader, Text, useRailItemWidth, useToast } from '@/shared/ui';
 import { useMarkNextEpisode, useUnmarkEpisode } from '../../application/titleStateMutations';
 
 /** Carrossel "Continue assistindo" com o botão "+1 ep" (marca o próximo episódio). */
 export function ContinueWatching({ items, onOpen }: { items: TitleSummary[]; onOpen: (t: TitleSummary) => void }) {
+  const styles = useStyles();
   const t = strings.diary;
   const toast = useToast();
   const markNext = useMarkNextEpisode();
@@ -56,17 +57,17 @@ export function ContinueWatching({ items, onOpen }: { items: TitleSummary[]; onO
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.md },
   card: {
     gap: space.md,
     padding: space.md,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
     minHeight: touch.minTarget,
   },
   cardTop: { flexDirection: 'row', gap: space.md },
-  name: { flex: 1, color: semantic.textPrimary },
-});
+  name: { flex: 1, color: c.textPrimary },
+}));

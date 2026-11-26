@@ -6,7 +6,7 @@ import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-re
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { strings, timeAgo } from '@/shared/i18n';
-import { fonts, palette, radius, semantic, space, touch, type as typeScale } from '@/shared/theme';
+import { fonts, radius, space, touch, type as typeScale, makeStyles, useColors } from '@/shared/theme';
 import { Avatar, SkeletonRows, SwipeRow, Text, useToast } from '@/shared/ui';
 import {
   useAddReply,
@@ -31,6 +31,8 @@ export function EntryActionBar({
   /** Registro sem review: só o botão dos Stories (sem curtir nem respostas). */
   shareOnly?: boolean;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social;
   const interactions = useEntryInteractions(entryId);
   const like = useToggleEntryLike(entryId, ownEntry);
@@ -46,7 +48,7 @@ export function EntryActionBar({
           onPress={onShare}
           style={({ pressed }) => [styles.share, pressed && styles.pressed]}
         >
-          <InstagramLogo size={20} color={semantic.onPrimary} weight="bold" />
+          <InstagramLogo size={20} color={colors.onPrimary} weight="bold" />
         </Pressable>
       </View>
     ) : null;
@@ -64,13 +66,13 @@ export function EntryActionBar({
         }}
         style={({ pressed }) => [styles.barItem, liked && styles.barItemOn, pressed && styles.pressed]}
       >
-        <Heart size={20} weight={liked ? 'fill' : 'regular'} color={liked ? semantic.liked : palette.ink700} />
+        <Heart size={20} weight={liked ? 'fill' : 'regular'} color={liked ? colors.liked : colors.ink700} />
         <Text variant="bodyStrong" style={styles.barText}>
           {i ? s.likes(i.likes) : s.like}
         </Text>
       </Pressable>
       <View style={styles.barItem} accessible accessibilityLabel={i ? s.repliesCount(i.comments) : s.replies}>
-        <ChatCircle size={20} color={palette.ink700} />
+        <ChatCircle size={20} color={colors.ink700} />
         <Text variant="bodyStrong" style={styles.barText}>
           {i ? s.repliesCount(i.comments) : s.replies}
         </Text>
@@ -82,7 +84,7 @@ export function EntryActionBar({
           onPress={onShare}
           style={({ pressed }) => [styles.share, pressed && styles.pressed]}
         >
-          <InstagramLogo size={20} color={semantic.onPrimary} weight="bold" />
+          <InstagramLogo size={20} color={colors.onPrimary} weight="bold" />
         </Pressable>
       ) : null}
     </View>
@@ -107,6 +109,8 @@ export function ReplyList({
   /** Editar no arrastar: a tela abre a folha de edição (ReplyEditSheet) por cima de tudo. */
   onEdit: (comment: EntryComment) => void;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social;
   const comments = useEntryComments(entryId);
 
@@ -117,7 +121,7 @@ export function ReplyList({
       </Text>
       {hidden && (comments.data?.length ?? 0) > 0 ? (
         <Pressable accessibilityRole="button" onPress={onReveal} style={({ pressed }) => [styles.spoiler, pressed && styles.pressed]}>
-          <EyeSlash size={18} color={palette.ink700} />
+          <EyeSlash size={18} color={colors.ink700} />
           <Text variant="bodyStrong" style={styles.flex}>
             {s.repliesSpoiler}
           </Text>
@@ -156,6 +160,7 @@ function ReplyItem({
   meId?: string;
   onEdit: (comment: EntryComment) => void;
 }) {
+  const styles = useStyles();
   const s = strings.social;
   const toast = useToast();
   const remove = useDeleteReply(entryId);
@@ -218,6 +223,8 @@ export function ReplyComposer({
   onSent?: () => void;
   onFocus?: () => void;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social;
   const toast = useToast();
   const insets = useSafeAreaInsets();
@@ -244,7 +251,7 @@ export function ReplyComposer({
   if (i && !i.canReply && i.replyPolicy !== 'EVERYONE') {
     return (
       <Animated.View style={[styles.composer, styles.closed, footer]}>
-        <LockSimple size={16} color={palette.ink500} />
+        <LockSimple size={16} color={colors.ink500} />
         <Text variant="caption" tone="muted" style={styles.flex}>
           {s.repliesClosed(i.replyPolicy, ownerUsername)}
         </Text>
@@ -259,7 +266,7 @@ export function ReplyComposer({
         value={text}
         onChangeText={setText}
         placeholder={s.replyPlaceholder}
-        placeholderTextColor={palette.ink500}
+        placeholderTextColor={colors.ink500}
         accessibilityLabel={s.replyPlaceholder}
         maxLength={REPLY_MAX}
         onFocus={onFocus}
@@ -273,16 +280,16 @@ export function ReplyComposer({
         style={({ pressed }) => [styles.send, !canSend && styles.sendOff, pressed && styles.pressed]}
       >
         {add.isPending ? (
-          <ActivityIndicator size="small" color={semantic.onPrimary} />
+          <ActivityIndicator size="small" color={colors.onPrimary} />
         ) : (
-          <PaperPlaneRight size={18} weight="fill" color={semantic.onPrimary} />
+          <PaperPlaneRight size={18} weight="fill" color={colors.onPrimary} />
         )}
       </Pressable>
     </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   flex: { flex: 1 },
   shrink: { flexShrink: 1 },
   pressed: { opacity: 0.7 },
@@ -294,12 +301,12 @@ const styles = StyleSheet.create({
     minHeight: 40,
     paddingHorizontal: space.md,
     borderRadius: radius.pill,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
-  barItemOn: { backgroundColor: palette.rosa100, borderColor: palette.rosa300 },
-  barText: { fontFamily: fonts.bodyHeavy, fontSize: 14, color: palette.ink900 },
+  barItemOn: { backgroundColor: c.rosa100, borderColor: c.rosa300 },
+  barText: { fontFamily: fonts.bodyHeavy, fontSize: 14, color: c.ink900 },
   share: {
     marginLeft: 'auto',
     width: 40,
@@ -307,7 +314,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: semantic.primary,
+    backgroundColor: c.primary,
   },
   replies: { gap: space.md },
   spoiler: {
@@ -316,11 +323,11 @@ const styles = StyleSheet.create({
     gap: space.sm,
     padding: space.lg,
     borderRadius: radius.lg,
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
   },
   replyList: { gap: space.xs, marginHorizontal: -space.screenX },
   // A linha ocupa a largura toda (o arraste vai até a borda); o conteúdo volta para dentro da margem.
-  replyRow: { paddingHorizontal: space.screenX, paddingVertical: space.sm, backgroundColor: semantic.background },
+  replyRow: { paddingHorizontal: space.screenX, paddingVertical: space.sm, backgroundColor: c.background },
   reply: { flexDirection: 'row', gap: space.md },
   replyPressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   closed: { alignItems: 'center', paddingTop: space.md, minHeight: touch.minTarget },
@@ -332,9 +339,9 @@ const styles = StyleSheet.create({
     gap: space.sm,
     paddingHorizontal: space.screenX,
     paddingTop: space.sm,
-    backgroundColor: semantic.background,
+    backgroundColor: c.background,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: palette.border,
+    borderTopColor: c.border,
   },
   input: {
     ...typeScale.body,
@@ -345,10 +352,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 10,
     borderRadius: 22,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.borderStrong,
-    color: palette.ink900,
+    borderColor: c.borderStrong,
+    color: c.ink900,
   },
   send: {
     width: touch.minTarget,
@@ -356,7 +363,7 @@ const styles = StyleSheet.create({
     borderRadius: touch.minTarget / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: semantic.primary,
+    backgroundColor: c.primary,
   },
   sendOff: { opacity: 0.4 },
-});
+}));

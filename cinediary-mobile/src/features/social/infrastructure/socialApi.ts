@@ -44,6 +44,7 @@ const toProfile = (dto: Schemas['PublicProfileResponse']): PublicProfile => ({
   totalMoviesWatched: dto.totalMoviesWatched,
   totalSeriesWatched: dto.totalSeriesWatched,
   favorites: dto.favorites.map(toTitleSummary),
+  headerUrl: dto.headerUrl ?? null,
   followersCount: dto.followersCount,
   followingCount: dto.followingCount,
   followsYou: dto.followsYou,
@@ -95,6 +96,7 @@ const toNotification = (dto: Schemas['NotificationResponse']): AppNotification =
   unseen: dto.unseen,
   relationship: dto.relationship,
   companionStatus: dto.companionStatus ?? null,
+  list: dto.list ? { id: dto.list.id, name: dto.list.name } : null,
 });
 
 const toCompanions = (dto: Schemas['EntryCompanionsResponse']): EntryCompanions => ({
@@ -199,6 +201,7 @@ export const socialApi = {
         entry: i.entry ? toDiaryEntry(i.entry) : null,
         commentText: i.commentText ?? null,
         title: i.title ? toTitleSummary(i.title) : null,
+        list: i.list ? { id: i.list.id, name: i.list.name } : null,
         createdAt: i.createdAt,
       })),
       nextBefore: dto.nextBefore ?? null,

@@ -48,7 +48,8 @@ public class NotificationsUseCase
         // Agrupa: curtidas por registro; o resto, uma linha cada (a ordem é a do mais recente de cada grupo).
         Map<String, List<Notification>> groups = new LinkedHashMap<>();
         for (Notification n : rows) {
-            String key = n.kind().groupsByEntry() ? n.kind() + ":" + n.entryId() : n.id().toString();
+            String key = n.kind().groupsByEntry() ? n.kind() + ":" + n.entryId()
+                    : n.kind().groupsByList() ? n.kind() + ":" + n.listId() : n.id().toString();
             groups.computeIfAbsent(key, k -> new ArrayList<>()).add(n);
         }
 
@@ -77,7 +78,8 @@ public class NotificationsUseCase
             out.add(new NotificationItem(key, first.kind(), actors.subList(0, Math.min(MAX_ACTORS, actors.size())), actors.size(),
                     first.entryId() == null ? null : entries.get(first.entryId()),
                     first.commentId() == null ? null : texts.get(first.commentId()),
-                    first.createdAt(), list.stream().anyMatch(Notification::unseen), rel, companionStatus));
+                    first.createdAt(), list.stream().anyMatch(Notification::unseen), rel, companionStatus,
+                    first.listId() == null ? null : new ListRef(first.listId(), first.listName())));
         });
         return out;
     }

@@ -26,13 +26,29 @@ import {
   SwipeRow,
   TextEditSheet,
 } from '@/shared/ui';
-import { palette, semantic, space } from '@/shared/theme';
+import { alpha, palette, space, useTheme, useColors, makeStyles } from '@/shared/theme';
 import { nav } from '../navigation/nav';
 import { OfflineBanner } from '../navigation/OfflineBanner';
 import { AnimatedSplash } from '../splash/AnimatedSplash';
 
+/** Claro ou escuro (#61): troca o app inteiro na hora, para conferir os componentes nos dois temas. */
+function ThemeSwitch() {
+  const { scheme, setPreference } = useTheme();
+  return (
+    <SegmentedControl
+      options={[
+        { value: 'light', label: 'Claro' },
+        { value: 'dark', label: 'Escuro' },
+      ]}
+      value={scheme}
+      onChange={setPreference}
+    />
+  );
+}
+
 /** Catálogo vivo (dados de exemplo) dos componentes (UX-01, seção 9). Só existe em desenvolvimento. */
 export function DesignSystemScreen() {
+  const styles = useStyles();
   const [rating, setRating] = useState(3.5);
   const [liked, setLiked] = useState(false);
   const [segment, setSegment] = useState<'all' | 'movie' | 'series'>('all');
@@ -47,6 +63,7 @@ export function DesignSystemScreen() {
   return (
     <View style={styles.root}>
       <Screen scroll edges={[]}>
+        <ThemeSwitch />
         <SegmentedControl
           options={[
             { value: 'components', label: 'Componentes' },
@@ -57,6 +74,10 @@ export function DesignSystemScreen() {
         />
         {/* O Match tem o próprio Design System (o shared/ não pode importar das features). */}
         <Button label="Abrir o Design System do Match" variant="secondary" onPress={() => nav.push('/_dev/match')} />
+        <Button label="Abrir o Design System do Perfil" variant="secondary" onPress={() => nav.push('/_dev/profile')} />
+        <Button label="Abrir os filtros do diário" variant="secondary" onPress={() => nav.push('/_dev/diary')} />
+        <Button label="Abrir as listas" variant="secondary" onPress={() => nav.push('/_dev/lists')} />
+        <Button label="Abrir a estrutura do perfil" variant="secondary" onPress={() => nav.push('/_dev/profile-layout')} />
         {tab === 'screens' ? (
           <>
             <SplashSection />
@@ -182,6 +203,8 @@ export function DesignSystemScreen() {
  * binário, o menu do próprio app).
  */
 function ActionsSection({ editText, onEdit }: { editText: string; onEdit: () => void }) {
+  const styles = useStyles();
+  const themeColors = useColors();
   const [last, setLast] = useState<string | null>(null);
   return (
     <>
@@ -216,7 +239,7 @@ function ActionsSection({ editText, onEdit }: { editText: string; onEdit: () => 
                 label: 'Editar',
                 systemImage: 'pencil',
                 androidIcon: menuIcons.edit,
-                icon: <PencilSimple size={20} color={palette.ink900} />,
+                icon: <PencilSimple size={20} color={themeColors.ink900} />,
                 onPress: () => setLast('Editar (menu)'),
               },
               {
@@ -225,7 +248,7 @@ function ActionsSection({ editText, onEdit }: { editText: string; onEdit: () => 
                 destructive: true,
                 systemImage: 'trash',
                 androidIcon: menuIcons.delete,
-                icon: <Trash size={20} color={semantic.danger} />,
+                icon: <Trash size={20} color={themeColors.danger} />,
                 onPress: () => setLast('Apagar (menu)'),
               },
             ]}
@@ -244,6 +267,7 @@ function ActionsSection({ editText, onEdit }: { editText: string; onEdit: () => 
  * splash esperando com o ícone completo antes de sair.
  */
 function SplashSection() {
+  const styles = useStyles();
   const [run, setRun] = useState(0);
   const [slow, setSlow] = useState(false);
   const [ready, setReady] = useState(true);
@@ -325,6 +349,8 @@ function OfflineBannerSection() {
 }
 
 function ErrorScreensTab() {
+  const styles = useStyles();
+  const themeColors = useColors();
   const [variant, setVariant] = useState<ConnectionErrorVariant>(APP_CONNECTION_ERROR_VARIANT);
   const [problem, setProblem] = useState<ConnectionProblem>('offline');
   const [replay, setReplay] = useState(0);
@@ -380,7 +406,7 @@ function ErrorScreensTab() {
           onPress={() => setFullscreen(false)}
           style={styles.close}
         >
-          <X size={20} color={palette.ink900} />
+          <X size={20} color={themeColors.ink900} />
         </Pressable>
       </Modal>
     </>
@@ -392,6 +418,7 @@ function ErrorScreensTab() {
  * volta), e a página entra de uma vez. Para ver de verdade, abra um título que ainda não estava em cache.
  */
 function TitleLoadingSection() {
+  const styles = useStyles();
   return (
     <Section title="Carregando (página do título)">
       <View style={styles.spinnerPreview}>
@@ -402,6 +429,7 @@ function TitleLoadingSection() {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <Text variant="overline" tone="muted">
@@ -412,7 +440,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { flex: 1 },
   flex: { flex: 1 },
   // A linha vai de ponta a ponta (como as respostas): sai da margem do Screen.
@@ -422,17 +450,17 @@ const styles = StyleSheet.create({
     gap: space.md,
     paddingHorizontal: space.screenX,
     paddingVertical: space.sm,
-    backgroundColor: semantic.background,
+    backgroundColor: c.background,
   },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  section: { gap: space.md, paddingBottom: space.xl, borderBottomWidth: 1, borderBottomColor: palette.border },
+  section: { gap: space.md, paddingBottom: space.xl, borderBottomWidth: 1, borderBottomColor: c.border },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
-  swatch: { width: 36, height: 36, borderRadius: 8, borderWidth: 1, borderColor: palette.border },
+  swatch: { width: 36, height: 36, borderRadius: 8, borderWidth: 1, borderColor: c.border },
   spinnerPreview: { height: 120, alignItems: 'center', justifyContent: 'center' },
-  preview: { height: 640, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: palette.border },
-  previewSplash: { height: 520, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: palette.border },
-  fakeApp: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: semantic.background },
+  preview: { height: 640, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: c.border },
+  previewSplash: { height: 520, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: c.border },
+  fakeApp: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: c.background },
   close: {
     position: 'absolute',
     top: 60,
@@ -440,8 +468,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,253,249,0.92)',
+    backgroundColor: alpha(c.surface, 0.92),
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

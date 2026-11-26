@@ -69,7 +69,8 @@ public class UsersModuleFacade implements UsersModulePort
         return new UserProfileView(u.id(), u.username(), u.displayName(), u.avatarUrl(), u.privateProfile(),
                 u.onboardingCompleted(), diary.countWatched(userId, "MOVIE"), diary.countWatched(userId, "SERIES"),
                 catalog.summaries(diary.favoriteTitleIds(userId), viewerId), u.bio(), u.pronouns(), u.firstName(),
-                u.lastName(), u.showSpoilers(), u.defaultReplyPolicy().name(), u.approveCompanions());
+                u.lastName(), u.showSpoilers(), u.defaultReplyPolicy().name(), u.approveCompanions(),
+                u.headerTitleId() == null ? null : catalog.backdropUrl(u.headerBackdropPath()));
     }
 
     @Override

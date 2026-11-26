@@ -24,7 +24,7 @@ export type QuickLogEntryPoint =
 export type LogScope = 'title' | 'season' | 'episode';
 export type RecommendationSection = 'for_you' | 'trending_week' | 'because_you_liked' | 'collection' | 'similar';
 /** Onde a busca do catálogo está sendo usada. */
-export type SearchContext = 'search_tab' | 'log_tab' | 'shared_watchlist' | 'favorites';
+export type SearchContext = 'search_tab' | 'log_tab' | 'shared_watchlist' | 'favorites' | 'profile_header' | 'list_add';
 
 export interface AnalyticsEvents {
   user_signed_up: { auth_provider: AuthProvider; from_invite: boolean };
@@ -120,7 +120,10 @@ export interface AnalyticsEvents {
   people_searched: { query_length: number; results_count: number };
   /** Mudou uma preferência nas Configurações. */
   /** `default_reply_policy`: `value` true = ficou mais fechado que "qualquer pessoa". */
-  setting_changed: { key: 'show_spoilers' | 'private_profile' | 'default_reply_policy' | 'approve_companions'; value: boolean };
+  /** `appearance`: `value` é a escolha (automático, claro ou escuro). */
+  setting_changed:
+    | { key: 'show_spoilers' | 'private_profile' | 'default_reply_policy' | 'approve_companions'; value: boolean }
+    | { key: 'appearance'; value: 'system' | 'light' | 'dark' };
   entry_liked: { own_entry: boolean; liked: boolean };
   entry_replied: { own_entry: boolean; length: number };
   entry_reply_deleted: { own_reply: boolean };
@@ -130,12 +133,18 @@ export interface AnalyticsEvents {
   friends_feed_opened: Record<string, never>;
   notifications_opened: { unseen: number };
   notification_opened: {
-    kind: 'FOLLOWED' | 'FOLLOW_REQUESTED' | 'FOLLOW_APPROVED' | 'ENTRY_LIKED' | 'ENTRY_REPLIED' | 'ENTRY_COMPANION';
+    kind: 'FOLLOWED' | 'FOLLOW_REQUESTED' | 'FOLLOW_APPROVED' | 'ENTRY_LIKED' | 'ENTRY_REPLIED' | 'ENTRY_COMPANION' | 'LIST_LIKED';
   };
   /** "Vi com…": a pessoa marcada aceitou, recusou ou tirou a marcação. */
   entry_companion_responded: { response: 'accept' | 'decline' | 'remove' };
   /** Conversão do teste A/B "trailer-button-placement": `placement` é a variante que a pessoa viu. */
   trailer_opened: { tmdb_id: number; media_type: MediaType; placement: 'meta' | 'actions' };
+  /** A seção "Onde assistir" apareceu (uma vez por abertura da página). Quantos serviços em cada fileira. */
+  watch_provider_viewed: { tmdb_id: number; media_type: MediaType; stream_count: number; rent_count: number; buy_count: number };
+  /** Listas (#17): criou uma lista; pôs um título numa lista (`from`: de onde); curtiu uma lista. */
+  list_created: { ranked: boolean; visibility: 'PUBLIC' | 'PRIVATE' };
+  list_item_added: { from: 'title' | 'list'; media_type: MediaType };
+  list_liked: { own_list: boolean; liked: boolean };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;

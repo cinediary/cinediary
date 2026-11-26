@@ -16,6 +16,8 @@ export interface PublicProfile extends Person {
   totalMoviesWatched: number;
   totalSeriesWatched: number;
   favorites: TitleSummary[];
+  /** Capa do perfil (um backdrop do TMDB); null = sem capa. */
+  headerUrl: string | null;
   followersCount: number;
   followingCount: number;
   followsYou: boolean;
@@ -111,7 +113,20 @@ export interface FeedPage {
   nextBefore: string | null;
 }
 
-export type NotificationKind = 'FOLLOWED' | 'FOLLOW_REQUESTED' | 'FOLLOW_APPROVED' | 'ENTRY_LIKED' | 'ENTRY_REPLIED' | 'ENTRY_COMPANION';
+export type NotificationKind =
+  | 'FOLLOWED'
+  | 'FOLLOW_REQUESTED'
+  | 'FOLLOW_APPROVED'
+  | 'ENTRY_LIKED'
+  | 'ENTRY_REPLIED'
+  | 'ENTRY_COMPANION'
+  | 'LIST_LIKED';
+
+/** A lista envolvida num aviso ou numa atividade ("curtiu sua lista"). */
+export interface ListRef {
+  id: string;
+  name: string;
+}
 
 /** "Vi com…": esperando a pessoa marcada, aceita (aparece no registro) ou recusada (some sem avisar quem marcou). */
 export type CompanionStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
@@ -145,9 +160,11 @@ export interface AppNotification {
   relationship: Relationship;
   /** Só no ENTRY_COMPANION: PENDING mostra Aceitar e Recusar; ACCEPTED, já aceito. */
   companionStatus: CompanionStatus | null;
+  /** Só no LIST_LIKED: a lista curtida (curtidas de várias pessoas já vêm agrupadas). */
+  list: ListRef | null;
 }
 
-export type ActivityKind = 'LOGGED' | 'FOLLOWED' | 'LIKED_ENTRY' | 'REPLIED_ENTRY' | 'WATCHLISTED';
+export type ActivityKind = 'LOGGED' | 'FOLLOWED' | 'LIKED_ENTRY' | 'REPLIED_ENTRY' | 'WATCHLISTED' | 'LIKED_LIST';
 
 /** Uma linha da aba "Amigos" do sino (você e quem você segue). */
 export interface ActivityItem {
@@ -160,6 +177,8 @@ export interface ActivityItem {
   commentText: string | null;
   /** Só no "quer ver" (WATCHLISTED): o título que entrou na watchlist. */
   title: import('@/features/catalog/domain/title').TitleSummary | null;
+  /** Só no LIKED_LIST: a lista curtida (do `target`). */
+  list: ListRef | null;
   createdAt: string;
 }
 

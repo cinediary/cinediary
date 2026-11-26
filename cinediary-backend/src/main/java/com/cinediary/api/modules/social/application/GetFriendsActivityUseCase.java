@@ -77,7 +77,7 @@ public class GetFriendsActivityUseCase
         for (DiaryEntryView e : logs) {
             UserView actor = byId.get(e.userId());
             if (actor != null) {
-                out.add(new ActivityItem("log:" + e.id(), ActivityKind.LOGGED, actor, null, e, null, null, e.createdAt()));
+                out.add(new ActivityItem("log:" + e.id(), ActivityKind.LOGGED, actor, null, e, null, null, null, e.createdAt()));
             }
         }
         for (Activity a : rest) {
@@ -88,12 +88,21 @@ public class GetFriendsActivityUseCase
             if (a.kind() == ActivityKind.WATCHLISTED) {
                 TitleSummaryView title = titles.get(a.titleId());
                 if (title != null) {
-                    out.add(new ActivityItem("act:" + a.id(), a.kind(), actor, null, null, null, title, a.createdAt()));
+                    out.add(new ActivityItem("act:" + a.id(), a.kind(), actor, null, null, null, title, null, a.createdAt()));
                 }
                 continue;
             }
             UserView target = byId.get(a.targetUserId());
             if (target == null) {
+                continue;
+            }
+            if (a.kind() == ActivityKind.LIKED_LIST) {
+                // Só listas públicas de quem você pode ver (uma lista que ficou privada some daqui).
+                Relationship rel = Relationship.of(target.id().equals(viewerId), Optional.ofNullable(mine.get(target.id())));
+                if (a.listName() != null && a.listPublic() && FollowPolicy.canSeeContent(rel, target.isPrivate())) {
+                    out.add(new ActivityItem("act:" + a.id(), a.kind(), actor, target, null, null, null,
+                            new ListRef(a.listId(), a.listName()), a.createdAt()));
+                }
                 continue;
             }
             DiaryEntryView entry = a.entryId() == null ? null : entries.get(a.entryId());
@@ -105,7 +114,7 @@ public class GetFriendsActivityUseCase
                 }
             }
             out.add(new ActivityItem("act:" + a.id(), a.kind(), actor, target, entry,
-                    a.commentId() == null ? null : texts.get(a.commentId()), null, a.createdAt()));
+                    a.commentId() == null ? null : texts.get(a.commentId()), null, null, a.createdAt()));
         }
         out.sort(Comparator.comparing(ActivityItem::createdAt).reversed());
         return out.size() > limit ? out.subList(0, limit) : out;

@@ -73,9 +73,12 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
         // Nada é gravado antes de confirmar
         assertThat(count("SELECT COUNT(*) FROM diary_entries d JOIN users u ON u.id = d.user_id WHERE u.clerk_id = ?", clerkId)).isZero();
 
+        // Confirmar responde na hora (APPLYING) e grava em segundo plano (#145)
         mvc.perform(post("/api/v1/imports/{id}/confirm", jobId).with(me))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.status").value("APPLYING"));
+        awaitStatus(me, jobId, "COMPLETED");
+        mvc.perform(get("/api/v1/imports/{id}", jobId).with(me))
                 .andExpect(jsonPath("$.diaryEntriesCreated").value(3))
                 .andExpect(jsonPath("$.diaryEntriesSkipped").value(0));
         // Confirmar de novo não duplica
@@ -103,13 +106,81 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
         // Reenviar o mesmo ZIP: nenhuma entrada nova no diário
         String second = upload(me, zip(EXPORT));
         awaitStatus(me, second, "AWAITING_CONFIRMATION");
-        mvc.perform(post("/api/v1/imports/{id}/confirm", second).with(me))
+        mvc.perform(post("/api/v1/imports/{id}/confirm", second).with(me)).andExpect(status().isOk());
+        awaitStatus(me, second, "COMPLETED");
+        mvc.perform(get("/api/v1/imports/{id}", second).with(me))
                 .andExpect(jsonPath("$.diaryEntriesCreated").value(0))
                 .andExpect(jsonPath("$.diaryEntriesSkipped").value(3));
         assertThat(count("SELECT COUNT(*) FROM diary_entries d JOIN users u ON u.id = d.user_id WHERE u.clerk_id = ?", clerkId)).isEqualTo(3);
 
         // Outra pessoa não enxerga o job
         mvc.perform(get("/api/v1/imports/{id}", jobId).with(user("user_" + UUID.randomUUID()))).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void listsAreImportedPrivateInOrderAndNotDuplicated() throws Exception
+    {
+        String clerkId = "user_" + UUID.randomUUID();
+        RequestPostProcessor me = user(clerkId);
+        java.util.Map<String, String> export = new java.util.HashMap<>(EXPORT);
+        // Um título dos outros CSVs, um só da lista e um que não existe
+        export.put("letterboxd-cinefilo-2026/lists/para-o-natal.csv", """
+                Letterboxd list export v7
+                Date,Name,Tags,URL,Description
+                2026-11-17,Para ver no Natal,,https://boxd.it/L1,"Os de sempre, no sofá"
+
+                Position,Name,Year,URL,Description
+                1,The Matrix,1999,https://boxd.it/a,Tradição de família
+                2,The Polar Express,2004,https://boxd.it/p,
+                3,Filme Fantasma,1990,https://boxd.it/z,
+                """);
+        export.put("letterboxd-cinefilo-2026/lists/favoritos-da-vida.csv", """
+                Letterboxd list export v7
+                Date,Name,Tags,URL,Description
+                2026-11-17,Favoritos da vida,,https://boxd.it/L2,
+
+                Position,Name,Year,URL,Description
+                ,Parasite,2019,https://boxd.it/b,
+                """);
+
+        String jobId = upload(me, zip(export));
+        awaitStatus(me, jobId, "AWAITING_CONFIRMATION");
+        mvc.perform(get("/api/v1/imports/{id}", jobId).with(me))
+                .andExpect(jsonPath("$.listsCount").value(2))
+                .andExpect(jsonPath("$.unmatchedTitlesSample[?(@ == 'Filme Fantasma (1990)')]").exists());
+        mvc.perform(post("/api/v1/imports/{id}/confirm", jobId).with(me)).andExpect(status().isOk());
+        awaitStatus(me, jobId, "COMPLETED");
+
+        String username = JsonPath.read(mvc.perform(get("/api/v1/me").with(me)).andReturn().getResponse().getContentAsString(),
+                "$.username");
+        String lists = mvc.perform(get("/api/v1/users/{u}/lists", username).with(me))
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[*].visibility", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("PRIVATE"))))
+                .andReturn().getResponse().getContentAsString();
+        String natal = JsonPath.<java.util.List<String>>read(lists, "$[?(@.name == 'Para ver no Natal')].id").getFirst();
+        mvc.perform(get("/api/v1/lists/{id}", natal).with(me))
+                // A exportação não diz se a lista tem ranking: entra sem, na ordem do Letterboxd
+                .andExpect(jsonPath("$.ranked").value(false))
+                .andExpect(jsonPath("$.description").value("Os de sempre, no sofá"))
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].title.tmdbId").value(603))
+                .andExpect(jsonPath("$.items[0].note").value("Tradição de família"))
+                .andExpect(jsonPath("$.items[1].title.tmdbId").value(5255));
+        mvc.perform(get("/api/v1/users/{u}/lists", username).with(me))
+                .andExpect(jsonPath("$[?(@.name == 'Favoritos da vida')].ranked").value(false));
+
+        // A pessoa liga o ranking no app; reimportar o mesmo ZIP: as mesmas 2 listas, sem duplicar, e o ranking fica
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/v1/lists/{id}", natal)
+                .with(me).contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("{\"ranked\":true}"))
+                .andExpect(status().isOk());
+        String second = upload(me, zip(export));
+        awaitStatus(me, second, "AWAITING_CONFIRMATION");
+        mvc.perform(post("/api/v1/imports/{id}/confirm", second).with(me)).andExpect(status().isOk());
+        awaitStatus(me, second, "COMPLETED");
+        mvc.perform(get("/api/v1/users/{u}/lists", username).with(me)).andExpect(jsonPath("$.length()").value(2));
+        mvc.perform(get("/api/v1/lists/{id}", natal).with(me))
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.ranked").value(true));
     }
 
     @Test
@@ -151,6 +222,7 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
                 .andExpect(jsonPath("$.diaryEntriesCount").value(1))
                 .andExpect(jsonPath("$.reviewsCount").value(1));
         mvc.perform(post("/api/v1/imports/{id}/confirm", jobId).with(me)).andExpect(status().isOk());
+        awaitStatus(me, jobId, "COMPLETED");
 
         // Parasita, Matrix e O Expresso Polar: a mesma ordem do perfil do Letterboxd
         mvc.perform(get("/api/v1/me").with(me))
@@ -199,6 +271,12 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
         mvc.perform(post("/api/v1/imports/{id}/confirm", job).with(user(keeper))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"favoritesMode\":\"KEEP\"}"))
                 .andExpect(status().isOk());
+        // Confirmar de novo (com outro modo) enquanto grava não troca a escolha: só a primeira dispara a gravação
+        mvc.perform(post("/api/v1/imports/{id}/confirm", job).with(user(keeper))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"favoritesMode\":\"REPLACE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(org.hamcrest.Matchers.oneOf("APPLYING", "COMPLETED")));
+        awaitStatus(user(keeper), job, "COMPLETED");
         mvc.perform(get("/api/v1/me").with(user(keeper)))
                 .andExpect(jsonPath("$.favorites.length()").value(1))
                 .andExpect(jsonPath("$.favorites[0].id").value(mine));
@@ -212,6 +290,7 @@ class LetterboxdImportIntegrationTest extends IntegrationTest
                         .contentType(MediaType.APPLICATION_JSON).content("{\"favoritesMode\":\"MERGE\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.favoritesInApp.length()").value(0)); // fora da revisão, sem extras
+        awaitStatus(user(merger), job2, "COMPLETED");
         mvc.perform(get("/api/v1/me").with(user(merger)))
                 .andExpect(jsonPath("$.favorites.length()").value(2))
                 .andExpect(jsonPath("$.favorites[0].id").value(mine))

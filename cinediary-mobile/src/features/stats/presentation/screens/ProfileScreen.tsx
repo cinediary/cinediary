@@ -1,14 +1,15 @@
 import { CaretRight, UserPlus } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { openTitle } from '@/features/catalog/presentation/navigation';
+import { ProfileListsSection } from '@/features/lists/presentation/components/ProfileListsSection';
 import { useDiaryEntries } from '@/features/diary/application/diaryQueries';
 import { usePublicProfile } from '@/features/social/application/socialQueries';
 import { OwnProfileActions } from '@/features/social/presentation/components/ProfileActions';
-import { ProfileHeader } from '@/features/social/presentation/components/ProfileHeader';
+import { ProfileHeader, useCoverStatusBar } from '@/features/social/presentation/components/ProfileHeader';
 import { openFollowRequests } from '@/features/social/presentation/navigation';
 import { formatYearMonthShort, strings } from '@/shared/i18n';
-import { palette, radius, space } from '@/shared/theme';
+import { radius, space, makeStyles, useColors } from '@/shared/theme';
 import { nav } from '@/shared/ui/navigation/nav';
 import {
   Button,
@@ -21,6 +22,8 @@ import {
   Text,
   Title,
   useGridItemWidth,
+  useStableTopInset,
+  useWorkingImageUrl,
   VerticalBars,
 } from '@/shared/ui';
 import { refreshProfile, useMyStats } from '../../application/useMyStats';
@@ -32,11 +35,17 @@ import { StatCards } from '../components/StatCards';
  * configurações (perfil privado, importar, sair…) na engrenagem do canto.
  */
 export function ProfileScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.stats;
   const { me, stats } = useMyStats();
   // Contadores de seguidores/seguindo e pedidos pendentes vêm do perfil público (o mesmo que os outros veem).
   const social = usePublicProfile(me.data?.username ?? '');
   const diary = useDiaryEntries();
+  const topInset = useStableTopInset();
+  // A capa que vale para o layout: sem capa, ou com uma que não carregou, o topo fica como antes.
+  const headerUrl = useWorkingImageUrl(me.data?.headerUrl);
+  const onScrollCover = useCoverStatusBar(me.data?.headerUrl);
   const favWidth = useGridItemWidth(4);
   const profile = me.data;
 
@@ -56,13 +65,30 @@ export function ProfileScreen() {
 
   const recent = (diary.data?.pages.flat() ?? []).slice(0, 4);
   const s = stats.data;
+  // Com capa, a tela não reserva o topo (relógio) e a capa sobe até a borda da tela. No iOS o ScrollView
+  // continua recuando o conteúdo sozinho (em cima e embaixo, para a barra de abas); no Android o recuo de
+  // cima fica por conta do padding.
+  const coverTop = topInset + space.lg;
+  const coverPadding = Platform.OS === 'ios' ? null : { paddingTop: coverTop };
 
   return (
-    <Screen scroll onRefresh={refreshProfile} contentStyle={styles.page}>
+    <Screen
+      // Uma tela nova quando a capa muda (pôs, trocou ou tirou): com e sem capa o recuo do topo é outro, e o iOS
+      // não reaplicava o recuo no ScrollView que já existia. Ao voltar de trocar a capa, o perfil aparecia
+      // deslocado para baixo, e era preciso rolar até o topo na mão.
+      key={headerUrl ?? 'no-cover'}
+      scroll
+      onRefresh={refreshProfile}
+      edges={headerUrl ? [] : undefined}
+      onScroll={onScrollCover}
+      contentStyle={[styles.page, headerUrl ? coverPadding : null]}
+    >
       <ProfileHeader
         name={profile.displayName || profile.username}
         username={profile.username}
         avatarUrl={profile.avatarUrl}
+        headerUrl={headerUrl}
+        coverBleedTop={coverTop}
         pronouns={profile.pronouns}
         bio={profile.bio}
         isPrivate={profile.isPrivate}
@@ -79,12 +105,12 @@ export function ProfileScreen() {
           style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
         >
           <View style={styles.requestsIcon}>
-            <UserPlus size={18} color={palette.terracota700} weight="bold" />
+            <UserPlus size={18} color={colors.terracota700} weight="bold" />
           </View>
           <Text variant="bodyStrong" style={styles.flex}>
             {strings.social.requestsBanner(social.data.pendingRequestsCount)}
           </Text>
-          <CaretRight size={16} color={palette.ink500} />
+          <CaretRight size={16} color={colors.ink500} />
         </Pressable>
       ) : null}
 
@@ -157,11 +183,14 @@ export function ProfileScreen() {
           </View>
         </>
       )}
+
+      {/* Coleções (opção C do Design System): por enquanto, as listas; marcados e tags entram depois. */}
+      <ProfileListsSection username={profile.username} mine />
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   flex: { flex: 1, gap: 2 },
   // Mesmo espaço entre todas as seções (e igual ao perfil de outra pessoa).
   page: { gap: space.xl },
@@ -172,7 +201,7 @@ const styles = StyleSheet.create({
     gap: space.md,
     padding: space.md,
     borderRadius: radius.lg,
-    backgroundColor: palette.terracota100,
+    backgroundColor: c.terracota100,
   },
   requestsIcon: {
     width: 32,
@@ -180,11 +209,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
   },
   favorites: { flexDirection: 'row', gap: space.md },
   block: { gap: space.md },
-});
+}));
 
 /** Topo do perfil (foto, nome, @), favoritos e números enquanto o /me chega. */
 function ProfileSkeleton() {

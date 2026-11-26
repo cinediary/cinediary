@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import type { TitleSummary } from '@/features/catalog/domain/title';
 import { CatalogSearchPanel } from '@/features/catalog/presentation/components/CatalogSearchPanel';
 import { strings } from '@/shared/i18n';
-import { semantic, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import { Screen, Text, Title, useGridItemWidth, useToast } from '@/shared/ui';
 import { FloatingBackButton, FLOATING_BACK_SPACE } from '@/shared/ui/navigation/FloatingBackButton';
 import { MAX_FAVORITES, useFavorites } from '../../application/favoritesMutations';
@@ -17,6 +17,7 @@ import { SortableFavorites } from '../components/SortableFavorites';
  * - Na busca, o + adiciona na primeira vaga livre e o ✓ (já favorito) tira.
  */
 export function FavoritesEditorScreen() {
+  const colors = useColors();
   const t = strings.stats;
   const toast = useToast();
   const { favorites, isFavorite, isFull, setFavorites } = useFavorites();
@@ -52,8 +53,8 @@ export function FavoritesEditorScreen() {
           onOpen={toggle}
           onAction={toggle}
           placeholder={t.favoritesSearch}
-          actionIcon={<Plus size={22} weight="bold" color={semantic.primary} />}
-          activeActionIcon={<Check size={22} weight="bold" color={semantic.primary} />}
+          actionIcon={<Plus size={22} weight="bold" color={colors.primary} />}
+          activeActionIcon={<Check size={22} weight="bold" color={colors.primary} />}
           isActionActive={(title) => isFavorite(title.id)}
           actionLabel={(title) => (isFavorite(title.id) ? t.favoritesRemove(title.title) : t.favoritesAdd(title.title))}
         />

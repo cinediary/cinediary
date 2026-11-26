@@ -3,7 +3,7 @@ import { Star, StarHalf } from 'phosphor-react-native';
 import { Pressable, StyleSheet, View, type AccessibilityActionEvent } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, semantic } from '@/shared/theme';
+import { useColors } from '@/shared/theme';
 
 export interface StarRatingProps {
   /** 0 = sem nota; de 0.5 a 5 em passos de 0.5. */
@@ -25,6 +25,7 @@ export function formatRating(value: number) {
 }
 
 export function StarRating({ value, onChange, size = 'lg' }: StarRatingProps) {
+  const colors = useColors();
   const px = size === 'lg' ? 32 : 14;
   const readOnly = !onChange;
 
@@ -60,7 +61,7 @@ export function StarRating({ value, onChange, size = 'lg' }: StarRatingProps) {
         const filled = full || half;
         return (
           <View key={position} style={{ width: px, height: px }}>
-            <Icon size={px} weight={filled ? 'fill' : 'regular'} color={filled ? semantic.starFill : palette.ink400} />
+            <Icon size={px} weight={filled ? 'fill' : 'regular'} color={filled ? colors.starFill : colors.ink400} />
             {!readOnly && (
               <View style={StyleSheet.absoluteFill} importantForAccessibility="no-hide-descendants">
                 <View style={styles.halves}>

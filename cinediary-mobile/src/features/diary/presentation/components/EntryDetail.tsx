@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { openTitle } from '@/features/catalog/presentation/navigation';
 import { formatFullDate, parseIsoDate, strings } from '@/shared/i18n';
-import { fonts, palette, radius, semantic, shadow, space } from '@/shared/theme';
+import { fonts, radius, shadow, space, makeStyles, useColors, alpha } from '@/shared/theme';
 import { Avatar, PosterArt, Skeleton, StarRating, Text } from '@/shared/ui';
 import type { DiaryEntry } from '../../domain/diary';
 import { scopeLabel } from '../scopeLabel';
@@ -28,6 +28,8 @@ const REVIEW_LINES = 8;
  * retângulo creme acima dele, como acontecia na página do título).
  */
 export function EntryHero({ entry, scrollY }: { entry: DiaryEntry; scrollY?: SharedValue<number> }) {
+  const styles = useStyles();
+  const themeColors = useColors();
   const t = strings.diary;
   const insets = useSafeAreaInsets();
   const meta = [entry.scope ? scopeLabel(entry.scope) : null, entry.title.year].filter(Boolean).join(' · ');
@@ -50,7 +52,7 @@ export function EntryHero({ entry, scrollY }: { entry: DiaryEntry; scrollY?: Sha
           />
         ) : null}
         <LinearGradient
-          colors={['rgba(250,246,240,0.15)', 'rgba(250,246,240,0.7)', semantic.background]}
+          colors={[alpha(themeColors.background, 0.15), alpha(themeColors.background, 0.7), themeColors.background]}
           locations={[0, 0.6, 1]}
           style={StyleSheet.absoluteFill}
         />
@@ -105,6 +107,8 @@ export function EntryBody({
   revealed?: boolean;
   onReveal?: () => void;
 }) {
+  const styles = useStyles();
+  const themeColors = useColors();
   const t = strings.diary;
   return (
     <View style={styles.body}>
@@ -133,7 +137,7 @@ export function EntryBody({
           <View style={styles.badges}>
             {entry.liked ? (
               <View style={styles.badge}>
-                <Heart size={14} weight="fill" color={semantic.liked} />
+                <Heart size={14} weight="fill" color={themeColors.liked} />
                 <Text variant="caption" style={styles.badgeText}>
                   {strings.catalog.liked}
                 </Text>
@@ -141,7 +145,7 @@ export function EntryBody({
             ) : null}
             {entry.isRewatch ? (
               <View style={styles.badge}>
-                <ArrowCounterClockwise size={13} color={palette.ink700} weight="bold" />
+                <ArrowCounterClockwise size={13} color={themeColors.ink700} weight="bold" />
                 <Text variant="caption" style={styles.badgeText}>
                   {strings.catalog.rewatchBadge}
                 </Text>
@@ -170,7 +174,7 @@ export function EntryBody({
           onPress={onAddReview}
           style={({ pressed }) => [styles.emptyReview, pressed && styles.pressed]}
         >
-          <PencilSimple size={18} color={palette.ink500} />
+          <PencilSimple size={18} color={themeColors.ink500} />
           <Text tone="muted" style={styles.flex}>
             {t.entryNoReview}
           </Text>
@@ -200,14 +204,14 @@ export function EntrySkeleton({ style }: { style?: { paddingTop: number } }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   flex: { flex: 1 },
   pressed: { opacity: 0.75 },
   // Sem overflow hidden: o fundo precisa passar para cima ao esticar.
   hero: { justifyContent: 'flex-end' },
   heroRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.lg, paddingHorizontal: space.screenX },
   // Fundo sólido (coberto pelo pôster): sem ele, o iOS calcula a sombra pixel a pixel (lento, e avisa no console).
-  poster: { borderRadius: radius.md, backgroundColor: palette.surfaceSunken, ...shadow.e3 },
+  poster: { borderRadius: radius.md, backgroundColor: c.surfaceSunken, ...shadow.e3 },
   heroTexts: { flex: 1, gap: 4, paddingBottom: space.xs },
   meta: { fontFamily: fonts.bodyHeavy, letterSpacing: 0.4, textTransform: 'uppercase' },
   body: { gap: space.lg },
@@ -221,12 +225,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.sm,
     paddingVertical: 3,
     borderRadius: radius.pill,
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
   },
-  badgeText: { fontFamily: fonts.bodyHeavy, color: palette.ink700 },
+  badgeText: { fontFamily: fonts.bodyHeavy, color: c.ink700 },
   // Review como citação: uma barra terracota à esquerda, sem caixa pesada.
   review: { flexDirection: 'row', gap: space.md },
-  quote: { width: 3, borderRadius: 2, backgroundColor: palette.terracota300 },
+  quote: { width: 3, borderRadius: 2, backgroundColor: c.terracota300 },
   emptyReview: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -235,9 +239,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: palette.borderStrong,
+    borderColor: c.borderStrong,
   },
-});
+}));
 
 const skeleton = StyleSheet.create({
   root: { gap: space.xl, paddingHorizontal: space.screenX },

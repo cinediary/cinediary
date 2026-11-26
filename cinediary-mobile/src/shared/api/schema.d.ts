@@ -138,6 +138,80 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/me/header": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Define a capa do perfil: um backdrop do TMDB de um título (sem upload) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateHeaderRequest"];
+                };
+            };
+            responses: {
+                /** @description Perfil com a capa nova */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UserProfileResponse"];
+                    };
+                };
+                /** @description A imagem não é um dos backdrops do título */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Título não encontrado no catálogo */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        /** Remove a capa do perfil */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Perfil sem capa */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UserProfileResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/onboarding": {
         parameters: {
             query?: never;
@@ -1937,6 +2011,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog/{mediaType}/{tmdbId}/backdrops": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Backdrops sem texto do título, para escolher a capa do perfil (cache de 6 h) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    mediaType: components["schemas"]["MediaType"];
+                    tmdbId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Lista vazia quando o TMDB não tem imagens sem texto */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TitleBackdropsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog/{mediaType}/{tmdbId}/extras": {
         parameters: {
             query?: never;
@@ -1944,12 +2057,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lançamento, país, produtoras, equipe, trailer, coleção e similares do título */
+        /** Lançamento, país, produtoras, equipe, trailer, coleção, similares e onde assistir do título */
         get: {
             parameters: {
                 query?: {
                     /** @description Idioma do aparelho (BCP 47, ex.: pt-BR), para escolher o trailer; ausente = pt-BR */
                     language?: string;
+                    /** @description País do aparelho (ISO 3166-1, ex.: BR), para o onde assistir; ausente = o país do idioma */
+                    region?: string;
                 };
                 header?: never;
                 path: {
@@ -2265,10 +2380,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lista entradas cronológicas do diário do usuário */
+        /** Lista entradas cronológicas do diário do usuário, com filtros opcionais do "Meu diário" */
         get: {
             parameters: {
                 query?: {
+                    /** @description Ano em que assistiu */
+                    year?: components["parameters"]["DiaryYear"];
+                    /** @description Mês (1–12), só junto com o ano */
+                    month?: components["parameters"]["DiaryMonth"];
+                    /** @description Gênero do TMDB do título */
+                    genreId?: components["parameters"]["DiaryGenreId"];
+                    /** @description Nota a partir de (0,5–5) */
+                    minRating?: components["parameters"]["DiaryMinRating"];
+                    /** @description Só revistos */
+                    rewatch?: components["parameters"]["DiaryRewatch"];
+                    /** @description Só com review */
+                    withReview?: components["parameters"]["DiaryWithReview"];
+                    /** @description MOVIE ou SERIES (sem o parâmetro, os dois) */
+                    mediaType?: components["parameters"]["DiaryMediaType"];
+                    /** @description Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres) */
+                    q?: components["parameters"]["DiaryQuery"];
                     /** @description Só as entradas deste título (página do filme) */
                     titleId?: number;
                     page?: number;
@@ -2317,6 +2448,95 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/diary/entries/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quantos registros do diário passam nos filtros */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Ano em que assistiu */
+                    year?: components["parameters"]["DiaryYear"];
+                    /** @description Mês (1–12), só junto com o ano */
+                    month?: components["parameters"]["DiaryMonth"];
+                    /** @description Gênero do TMDB do título */
+                    genreId?: components["parameters"]["DiaryGenreId"];
+                    /** @description Nota a partir de (0,5–5) */
+                    minRating?: components["parameters"]["DiaryMinRating"];
+                    /** @description Só revistos */
+                    rewatch?: components["parameters"]["DiaryRewatch"];
+                    /** @description Só com review */
+                    withReview?: components["parameters"]["DiaryWithReview"];
+                    /** @description MOVIE ou SERIES (sem o parâmetro, os dois) */
+                    mediaType?: components["parameters"]["DiaryMediaType"];
+                    /** @description Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres) */
+                    q?: components["parameters"]["DiaryQuery"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Total de registros com esses filtros */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DiaryCountResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/diary/filters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Opções dos filtros do diário (só o que existe nele) — anos, gêneros com quantos registros e tipos */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Anos com registro (do mais recente), gêneros (dos mais registrados) e totais de filmes e séries */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DiaryFiltersResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2548,7 +2768,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Confirma a importação e persiste os registros de forma idempotente */
+        /**
+         * Confirma a importação e grava os registros em segundo plano, de forma idempotente
+         * @description Responde na hora com o job em APPLYING; a gravação no diário roda em segundo plano e o job termina em COMPLETED (ou FAILED). Acompanhe por GET /api/v1/imports/{jobId}. Confirmar de novo um job em APPLYING ou COMPLETED devolve o job como está, sem duplicar nada.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -2564,7 +2787,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Importação aplicada sem duplicidades e projetada no Neo4j */
+                /** @description Importação confirmada (APPLYING), ou o job como está se já estava em gravação ou concluído */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -2575,6 +2798,513 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{username}/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listas de um perfil (as privadas só para o dono; perfil privado que você não segue, 403) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    username: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Listas, das atualizadas por último */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListSummaryResponse"][];
+                    };
+                };
+                /** @description Perfil privado que você não segue */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Perfil não encontrado */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cria uma lista (nome obrigatório; ranking e visibilidade opcionais) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ListRequest"] & {
+                        name: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Lista criada (sem títulos) */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description Nome vazio ou longo demais, descrição longa demais ou visibilidade inválida */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lists/{listId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: string;
+            };
+            cookie?: never;
+        };
+        /** Uma lista com os títulos, na ordem */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description A lista */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description Lista privada, ou de um perfil privado que você não segue */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Lista não encontrada */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Exclui uma lista (só o dono) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Excluída */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Não é o dono */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Edita uma lista (só o dono; o que não vier fica como está, descrição vazia apaga) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ListRequest"];
+                };
+            };
+            responses: {
+                /** @description A lista editada */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description Não é o dono */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/lists/{listId}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adiciona um título no fim da lista (só o dono) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ListItemRequest"];
+                };
+            };
+            responses: {
+                /** @description A lista com o título novo */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description Título não encontrado */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description O título já está na lista */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lists/{listId}/items/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Reordena a lista (só o dono; todos os títulos, cada um uma vez) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ListOrderRequest"];
+                };
+            };
+            responses: {
+                /** @description A lista na ordem nova */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description A ordem não tem exatamente os títulos da lista */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lists/{listId}/items/{titleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: string;
+                titleId: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Tira o título da lista (só o dono); as posições seguintes sobem */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                    titleId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description A lista sem o título */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+                /** @description O título não está na lista */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Muda a nota do título na lista (só o dono; vazia apaga) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                    titleId: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ListItemRequest"];
+                };
+            };
+            responses: {
+                /** @description A lista com a nota nova */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListDetailResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/lists/{listId}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Curte a lista (de novo não duplica; o dono ganha o aviso no sino) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Curtida */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListLikeResponse"];
+                    };
+                };
+                /** @description Lista que você não pode ver */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        /** Descurte a lista (o aviso some) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    listId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Descurtida */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ListLikeResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/titles/{titleId}/my-lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** As suas listas, cada uma dizendo se tem o título (folha "Adicionar à lista") */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    titleId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description As suas listas */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MyListResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2956,7 +3686,7 @@ export interface components {
             items: {
                 id: string;
                 /** @enum {string} */
-                kind: "LOGGED" | "FOLLOWED" | "LIKED_ENTRY" | "REPLIED_ENTRY" | "WATCHLISTED";
+                kind: "LOGGED" | "FOLLOWED" | "LIKED_ENTRY" | "REPLIED_ENTRY" | "WATCHLISTED" | "LIKED_LIST";
                 actor: components["schemas"]["FeedAuthor"];
                 /** @description Quem foi seguido / dono da review curtida ou respondida */
                 target?: components["schemas"]["FeedAuthor"] | null;
@@ -2964,6 +3694,8 @@ export interface components {
                 commentText?: string | null;
                 /** @description Só em WATCHLISTED (quer ver) */
                 title?: components["schemas"]["CatalogTitleSummary"] | null;
+                /** @description Só em LIKED_LIST (curtiu a lista de alguém; só listas públicas que você pode ver) */
+                list?: components["schemas"]["ListRef"] | null;
                 /** Format: date-time */
                 createdAt: string;
             }[];
@@ -3016,7 +3748,7 @@ export interface components {
         NotificationResponse: {
             id: string;
             /** @enum {string} */
-            kind: "FOLLOWED" | "FOLLOW_REQUESTED" | "FOLLOW_APPROVED" | "ENTRY_LIKED" | "ENTRY_REPLIED" | "ENTRY_COMPANION";
+            kind: "FOLLOWED" | "FOLLOW_REQUESTED" | "FOLLOW_APPROVED" | "ENTRY_LIKED" | "ENTRY_REPLIED" | "ENTRY_COMPANION" | "LIST_LIKED";
             /** @description Mais recentes primeiro (até 3) */
             actors: components["schemas"]["FeedAuthor"][];
             actorCount: number;
@@ -3035,6 +3767,13 @@ export interface components {
              * @enum {string|null}
              */
             companionStatus?: "PENDING" | "ACCEPTED" | null;
+            /** @description Só no LIST_LIKED: a lista curtida (curtidas de várias pessoas na mesma lista vêm agrupadas) */
+            list?: components["schemas"]["ListRef"] | null;
+        };
+        ListRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
         };
         /** @enum {string} */
         CompanionStatus: "PENDING" | "ACCEPTED" | "DECLINED";
@@ -3123,6 +3862,8 @@ export interface components {
             pendingRequestsCount: number;
             bio?: string | null;
             pronouns?: string | null;
+            /** @description Capa do perfil (backdrop do TMDB); nulo = sem capa. Pública, como a foto */
+            headerUrl?: string | null;
         };
         SocialPersonResponse: {
             /** Format: uuid */
@@ -3176,6 +3917,26 @@ export interface components {
             showSpoilers?: boolean;
             /** @description Só no /me. "Aprovar marcações": true = você aceita ou recusa quando te marcam; false = já entra aceita */
             approveCompanions?: boolean;
+            /** @description Capa do perfil (backdrop do TMDB); nulo = sem capa */
+            headerUrl?: string | null;
+        };
+        UpdateHeaderRequest: {
+            /**
+             * Format: int64
+             * @description ID interno do título no catálogo
+             */
+            titleId: number;
+            /** @description Um dos `path` de /catalog/{mediaType}/{tmdbId}/backdrops */
+            backdropPath: string;
+        };
+        TitleBackdropsResponse: {
+            /** @description Sem texto (sem o nome do título escrito), os mais votados primeiro; até 30 */
+            backdrops: {
+                /** @description O que se manda em PUT /me/header (ex.: /abc.jpg) */
+                path: string;
+                /** @description A imagem pronta (1280 px) */
+                url: string;
+            }[];
         };
         /** @description Campos ausentes não mudam. Texto vazio em firstName, lastName, bio e pronouns apaga. */
         UpdateProfileRequest: {
@@ -3213,6 +3974,65 @@ export interface components {
             onboardingCompleted: boolean;
             /** Format: uuid */
             activatedMatchId?: string | null;
+        };
+        ListRequest: {
+            name?: string;
+            description?: string | null;
+            ranked?: boolean;
+            /** @enum {string} */
+            visibility?: "PUBLIC" | "PRIVATE";
+        };
+        ListItemRequest: {
+            /**
+             * Format: int64
+             * @description Ao adicionar (ignorado ao editar a nota)
+             */
+            titleId?: number;
+            note?: string | null;
+        };
+        ListOrderRequest: {
+            titleIds: number[];
+        };
+        ListLikeResponse: {
+            liked: boolean;
+            likesCount: number;
+        };
+        MyListResponse: {
+            list: components["schemas"]["ListSummaryResponse"];
+            containsTitle: boolean;
+        };
+        ListOwnerResponse: {
+            /** Format: uuid */
+            id: string;
+            username: string;
+            displayName?: string | null;
+            avatarUrl?: string | null;
+        };
+        ListSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            owner: components["schemas"]["ListOwnerResponse"];
+            name: string;
+            description?: string | null;
+            ranked: boolean;
+            /** @enum {string} */
+            visibility: "PUBLIC" | "PRIVATE";
+            itemsCount: number;
+            likesCount: number;
+            likedByMe: boolean;
+            /** @description Os pôsteres dos primeiros títulos (até 4), na ordem da lista */
+            coverPosters: (string | null)[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ListDetailResponse: components["schemas"]["ListSummaryResponse"] & {
+            items: {
+                position: number;
+                title: components["schemas"]["CatalogTitleSummary"];
+                note?: string | null;
+            }[];
         };
         CatalogTitleSummary: {
             /** Format: int64 */
@@ -3308,6 +4128,27 @@ export interface components {
             /** @description Outros filmes da franquia, em ordem de lançamento */
             collection: components["schemas"]["CatalogTitleSummary"][];
             similar: components["schemas"]["CatalogTitleSummary"][];
+            /** @description Onde assistir no país do aparelho, dados do JustWatch (crédito obrigatório); nulo quando não há assinatura, aluguel nem compra */
+            watchProviders?: {
+                /** @description ISO 3166-1 (ex.: BR) */
+                region: string;
+                /** @description O país por extenso, no idioma do conteúdo (ex.: Brasil) */
+                regionName: string;
+                /** @description Página do TMDB com todas as opções no país */
+                link?: string | null;
+                /** @description Assinatura, na ordem do JustWatch */
+                stream: components["schemas"]["WatchProvider"][];
+                /** @description Aluguel */
+                rent: components["schemas"]["WatchProvider"][];
+                /** @description Compra */
+                buy: components["schemas"]["WatchProvider"][];
+            } | null;
+        };
+        WatchProvider: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            logoUrl?: string | null;
         };
         CompanyResponse: {
             /** Format: int64 */
@@ -3390,6 +4231,23 @@ export interface components {
             reviewText?: string | null;
             containsSpoilers?: boolean;
         };
+        DiaryCountResponse: {
+            /** Format: int64 */
+            total: number;
+        };
+        DiaryFiltersResponse: {
+            years: number[];
+            genres: {
+                id: number;
+                name: string;
+                /** Format: int64 */
+                entriesCount: number;
+            }[];
+            /** Format: int64 */
+            moviesCount: number;
+            /** Format: int64 */
+            seriesCount: number;
+        };
         DiaryEntryResponse: {
             /** @description Desta entrada; ausente = segue o padrão da conta */
             replyPolicy?: components["schemas"]["ReplyPolicy"] | null;
@@ -3438,6 +4296,8 @@ export interface components {
             unmatchedTitlesSample?: string[];
             watchlistCount?: number;
             reviewsCount?: number;
+            /** @description As listas do Letterboxd que entram com a importação (novas nascem privadas; reimportar atualiza) */
+            listsCount?: number;
             diaryEntriesCount?: number;
             diaryEntriesCreated?: number | null;
             diaryEntriesSkipped?: number | null;
@@ -3550,7 +4410,24 @@ export interface components {
         };
     };
     responses: never;
-    parameters: never;
+    parameters: {
+        /** @description Ano em que assistiu */
+        DiaryYear: number;
+        /** @description Mês (1–12), só junto com o ano */
+        DiaryMonth: number;
+        /** @description Gênero do TMDB do título */
+        DiaryGenreId: number;
+        /** @description Nota a partir de (0,5–5) */
+        DiaryMinRating: number;
+        /** @description Só revistos */
+        DiaryRewatch: boolean;
+        /** @description Só com review */
+        DiaryWithReview: boolean;
+        /** @description MOVIE ou SERIES (sem o parâmetro, os dois) */
+        DiaryMediaType: "MOVIE" | "SERIES";
+        /** @description Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres) */
+        DiaryQuery: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { strings } from '@/shared/i18n';
-import { palette, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import { useRecents } from '@/shared/storage/useRecents';
 import { Avatar, ErrorState, RecentList, SearchField, SkeletonRows, Text } from '@/shared/ui';
 import { usePeopleSearch } from '../../application/socialQueries';
@@ -13,6 +13,7 @@ import { PersonRow } from './PersonRow';
 
 /** Busca de pessoas (aba Buscar → "Pessoas"): por @ ou nome, com o botão de seguir em cada uma. */
 export function PeopleSearchPanel({ recentsScope = null }: { recentsScope?: string | null }) {
+  const colors = useColors();
   const s = strings.social;
   const [query, setQuery] = useState('');
   const search = usePeopleSearch(query);
@@ -42,7 +43,7 @@ export function PeopleSearchPanel({ recentsScope = null }: { recentsScope?: stri
         />
       ) : !search.enabled ? (
         <View style={styles.hint}>
-          <UsersThree size={28} color={palette.ink500} />
+          <UsersThree size={28} color={colors.ink500} />
           <Text tone="muted" style={styles.center}>
             {s.peopleHint}
           </Text>

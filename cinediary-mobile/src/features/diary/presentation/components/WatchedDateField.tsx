@@ -1,10 +1,10 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarBlank, CaretLeft, CaretRight } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Platform, Pressable, View } from 'react-native';
 
 import { nativeLocale, parseIsoDate, relativeDayLabel, strings, toIsoDate } from '@/shared/i18n';
-import { palette, radius, semantic, space, touch } from '@/shared/theme';
+import { radius, space, touch, makeStyles, useColors } from '@/shared/theme';
 import { Text } from '@/shared/ui';
 
 const shiftDay = (iso: string, days: number) => {
@@ -19,6 +19,8 @@ const shiftDay = (iso: string, days: number) => {
  * registro rápido e na edição de uma entrada.
  */
 export function WatchedDateField({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.diary;
   // Sempre fechado ao abrir; só aparece quando a pessoa toca na data.
   const [showCalendar, setShowCalendar] = useState(false);
@@ -38,7 +40,7 @@ export function WatchedDateField({ value, onChange }: { value: string; onChange:
       display={Platform.OS === 'ios' ? 'inline' : 'default'}
       maximumDate={new Date()}
       locale={nativeLocale}
-      accentColor={semantic.primary}
+      accentColor={colors.primary}
       onValueChange={onPickDate}
       onDismiss={close}
     />
@@ -47,14 +49,14 @@ export function WatchedDateField({ value, onChange }: { value: string; onChange:
   return (
     <>
       <View style={styles.dateRow} accessibilityLabel={t.date}>
-        <CalendarBlank size={20} color={palette.ink700} />
+        <CalendarBlank size={20} color={colors.ink700} />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t.earlier}
           onPress={() => onChange(shiftDay(value, -1))}
           style={styles.dayBtn}
         >
-          <CaretLeft size={18} color={palette.ink700} />
+          <CaretLeft size={18} color={colors.ink700} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -74,7 +76,7 @@ export function WatchedDateField({ value, onChange }: { value: string; onChange:
           onPress={() => onChange(shiftDay(value, 1))}
           style={[styles.dayBtn, value >= today && styles.disabled]}
         >
-          <CaretRight size={18} color={palette.ink700} />
+          <CaretRight size={18} color={colors.ink700} />
         </Pressable>
       </View>
       {Platform.OS !== 'ios' ? (
@@ -99,20 +101,20 @@ export function WatchedDateField({ value, onChange }: { value: string; onChange:
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: touch.minTarget },
   dayBtn: { width: touch.minTarget, height: touch.minTarget, alignItems: 'center', justifyContent: 'center' },
   disabled: { opacity: 0.3 },
   dateButton: { minHeight: touch.minTarget, justifyContent: 'center', paddingHorizontal: space.sm },
   dateLabel: { minWidth: 80, textAlign: 'center', textDecorationLine: 'underline' },
-  backdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.lg, backgroundColor: 'rgba(42,33,28,0.4)' },
+  backdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.lg, backgroundColor: c.backdrop },
   card: {
     width: '100%',
     maxWidth: 380,
     padding: space.md,
     borderRadius: radius.xl,
     borderCurve: 'continuous',
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
   },
   cancel: { alignSelf: 'flex-end', minHeight: touch.minTarget, justifyContent: 'center', paddingHorizontal: space.md },
-});
+}));

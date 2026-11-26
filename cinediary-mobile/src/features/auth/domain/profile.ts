@@ -22,6 +22,8 @@ export interface UserProfile {
   defaultReplyPolicy: 'ME' | 'FOLLOWING' | 'EVERYONE';
   /** "Aprovar marcações": ligado, você aceita ou recusa quando te marcam ("vi com…"); desligado, já entra aceita. */
   approveCompanions: boolean;
+  /** Capa do perfil: um backdrop do TMDB; null = sem capa. */
+  headerUrl: string | null;
 }
 
 export interface ProfileChanges {

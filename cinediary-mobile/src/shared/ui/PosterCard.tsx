@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { formatNumber, strings } from '@/shared/i18n';
-import { palette, poster, radius, semantic, space } from '@/shared/theme';
+import { poster, radius, space, useColors, makeStyles } from '@/shared/theme';
 import { PosterArt } from './PosterArt';
 import { formatRating } from './StarRating';
 import { Text } from './Text';
@@ -44,6 +44,8 @@ function buildA11yLabel({ title, year, watched, liked, rating }: PosterCardProps
 }
 
 export function PosterCard(props: PosterCardProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const { title, year, posterUrl, size = 'md', width, watched, liked, inWatchlist, rating, selected, showCaption } = props;
   const w = width ?? poster[size].width;
   const pressable = !!props.onPress || !!props.onLongPress;
@@ -68,22 +70,22 @@ export function PosterCard(props: PosterCardProps) {
         {selected && <View style={styles.selectedRing} pointerEvents="none" />}
         <View style={styles.badges} pointerEvents="none">
           {watched && (
-            <Badge bg={semantic.watched}>
-              <Check size={10} weight="bold" color={palette.surface} />
+            <Badge bg={colors.watched}>
+              <Check size={10} weight="bold" color={colors.surface} />
             </Badge>
           )}
           {liked && (
-            <Badge bg={semantic.liked}>
-              <Heart size={10} weight="fill" color={palette.surface} />
+            <Badge bg={colors.liked}>
+              <Heart size={10} weight="fill" color={colors.surface} />
             </Badge>
           )}
           {inWatchlist && !watched && (
-            <Badge bg={palette.ink700}>
-              <BookmarkSimple size={10} weight="fill" color={palette.surface} />
+            <Badge bg={colors.ink700}>
+              <BookmarkSimple size={10} weight="fill" color={colors.surface} />
             </Badge>
           )}
           {rating ? (
-            <Badge bg={palette.pipoca300}>
+            <Badge bg={colors.pipoca300}>
               <Text variant="caption" style={styles.ratingText}>
                 {formatNumber(rating, rating % 1 ? 1 : 0)}
               </Text>
@@ -93,7 +95,7 @@ export function PosterCard(props: PosterCardProps) {
         {/* Com `corner` (ex.: coração dos favoritos), o canto já mostra o estado: sem check por baixo dele. */}
         {selected && !props.corner && (
           <View style={styles.check} pointerEvents="none">
-            <Check size={14} weight="bold" color={palette.surface} />
+            <Check size={14} weight="bold" color={colors.surface} />
           </View>
         )}
         {props.corner ? <View style={styles.corner}>{props.corner}</View> : null}
@@ -115,16 +117,17 @@ export function PosterCard(props: PosterCardProps) {
 }
 
 function Badge({ bg, children }: { bg: string; children: ReactNode }) {
+  const styles = useStyles();
   return <View style={[styles.badge, { backgroundColor: bg }]}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   frame: { borderRadius: poster.radius, overflow: 'hidden' },
   selectedRing: {
     ...StyleSheet.absoluteFill,
     borderRadius: poster.radius,
     borderWidth: 3,
-    borderColor: semantic.primary,
+    borderColor: c.primary,
   },
   badges: { position: 'absolute', left: 4, bottom: 4, flexDirection: 'row', gap: 3 },
   badge: {
@@ -143,10 +146,10 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: semantic.primary,
+    backgroundColor: c.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   corner: { position: 'absolute', top: 2, right: 2 },
   caption: { marginTop: space.xs },
-});
+}));

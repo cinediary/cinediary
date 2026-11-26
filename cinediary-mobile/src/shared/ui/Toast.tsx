@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type PropsWithChildren } from 'react';
-import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { palette, radius, space } from '@/shared/theme';
+import { lightColors, radius, space, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
 
 interface ToastOptions {
@@ -28,6 +28,7 @@ const ToastContext = createContext<(message: string, options?: ToastOptions) => 
 
 /** Snackbar da UX-01: pílula ink900, texto creme, ação opcional; 1,5 s (4 s com ação). */
 export function ToastProvider({ children }: PropsWithChildren) {
+  const styles = useStyles();
   const [toast, setToast] = useState<ToastState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const insets = useSafeAreaInsets();
@@ -74,18 +75,19 @@ export function ToastProvider({ children }: PropsWithChildren) {
 
 export const useToast = () => useContext(ToastContext);
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   host: { position: 'absolute', left: space.screenX, right: space.screenX, alignItems: 'center' },
   toast: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.lg,
-    backgroundColor: palette.ink900,
+    backgroundColor: c.ink900,
     borderRadius: radius.pill,
     paddingHorizontal: space.xl,
     paddingVertical: space.md,
     maxWidth: '100%',
   },
-  message: { color: palette.surface, flexShrink: 1 },
-  action: { color: palette.pipoca300 },
-});
+  message: { color: c.surface, flexShrink: 1 },
+  // No escuro a pílula fica creme: a ação vira terracota escuro (o pipoca claro some no creme)
+  action: { color: c.scheme === 'dark' ? lightColors.terracota700 : c.pipoca300 },
+}));

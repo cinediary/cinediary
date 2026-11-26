@@ -1,10 +1,10 @@
-import { CaretDown, CaretUp, CheckCircle } from 'phosphor-react-native';
+import { CaretDown, CaretUp, CheckCircle, LockSimple } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import type { TitleSummary } from '@/features/catalog/domain/title';
 import { formatNumber, strings } from '@/shared/i18n';
-import { palette, radius, semantic, space } from '@/shared/theme';
+import { radius, space, makeStyles, useColors } from '@/shared/theme';
 import { PosterArt, Rail, SectionHeader, Text, Title, useRailItemWidth } from '@/shared/ui';
 import { canMergeFavorites, needsFavoritesChoice, resultingFavorites, type FavoritesMode, type ImportJob } from '../../domain/importJob';
 
@@ -21,6 +21,8 @@ export function ImportReview({
   favoritesMode: FavoritesMode;
   onFavoritesMode: (mode: FavoritesMode) => void;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.importing;
   const previewWidth = useRailItemWidth(4.4, space.sm);
   const stats: [string, number][] = (
@@ -30,6 +32,7 @@ export function ImportReview({
       [t.statLiked, job.likedCount],
       [t.statReviews, job.reviewsCount],
       [t.statWatchlist, job.watchlistCount],
+      [t.statLists, job.listsCount],
     ] as [string, number][]
   ).filter(([, n]) => n > 0);
 
@@ -62,11 +65,19 @@ export function ImportReview({
       ) : null}
 
       <View style={styles.note}>
-        <CheckCircle size={18} color={semantic.success} weight="fill" />
+        <CheckCircle size={18} color={colors.success} weight="fill" />
         <Text variant="caption" tone="secondary" style={styles.flex}>
           {t.noDuplicates}
         </Text>
       </View>
+      {job.listsCount > 0 ? (
+        <View style={styles.note}>
+          <LockSimple size={18} color={colors.ink700} weight="fill" />
+          <Text variant="caption" tone="secondary" style={styles.flex}>
+            {t.listsPrivate}
+          </Text>
+        </View>
+      ) : null}
 
       <Favorites job={job} mode={favoritesMode} onMode={onFavoritesMode} />
       <Unmatched job={job} />
@@ -75,6 +86,7 @@ export function ImportReview({
 }
 
 function Favorites({ job, mode, onMode }: { job: ImportJob; mode: FavoritesMode; onMode: (m: FavoritesMode) => void }) {
+  const styles = useStyles();
   const t = strings.importing;
   if (job.favoritesFromImport.length === 0) return null;
 
@@ -146,6 +158,7 @@ function Favorites({ job, mode, onMode }: { job: ImportJob; mode: FavoritesMode;
 }
 
 function PosterRow({ items, small = false }: { items: TitleSummary[]; small?: boolean }) {
+  const styles = useStyles();
   return (
     <View style={styles.posterRow}>
       {items.map((p) => (
@@ -156,6 +169,8 @@ function PosterRow({ items, small = false }: { items: TitleSummary[]; small?: bo
 }
 
 function Unmatched({ job }: { job: ImportJob }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.importing;
   const [open, setOpen] = useState(false);
   if (job.unmatchedCount === 0) return null;
@@ -170,7 +185,7 @@ function Unmatched({ job }: { job: ImportJob }) {
         <Text variant="bodyStrong" style={styles.flex}>
           {t.unmatchedTitle(job.unmatchedCount)}
         </Text>
-        {open ? <CaretUp size={16} color={palette.ink500} /> : <CaretDown size={16} color={palette.ink500} />}
+        {open ? <CaretUp size={16} color={colors.ink500} /> : <CaretDown size={16} color={colors.ink500} />}
       </Pressable>
       <Text variant="caption" tone="muted">
         {t.unmatchedHint}
@@ -180,7 +195,7 @@ function Unmatched({ job }: { job: ImportJob }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   section: { gap: space.md },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   // Duas colunas iguais (antes eram 3 de 31% e a última linha ficava torta)
@@ -190,12 +205,12 @@ const styles = StyleSheet.create({
     paddingVertical: space.md,
     paddingHorizontal: space.lg,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
     gap: 2,
   },
-  number: { fontFamily: 'Fraunces_600SemiBold', fontSize: 28, lineHeight: 34, color: palette.ink900 },
+  number: { fontFamily: 'Fraunces_600SemiBold', fontSize: 28, lineHeight: 34, color: c.ink900 },
   note: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   flex: { flex: 1 },
   compare: { gap: space.sm },
@@ -210,21 +225,21 @@ const styles = StyleSheet.create({
     padding: space.md,
     borderRadius: radius.lg,
     borderWidth: 1.5,
-    borderColor: palette.border,
-    backgroundColor: palette.surface,
+    borderColor: c.border,
+    backgroundColor: c.surface,
   },
-  optionSelected: { borderColor: semantic.primary, backgroundColor: palette.terracota100 },
+  optionSelected: { borderColor: c.primary, backgroundColor: c.terracota100 },
   radio: {
     width: 22,
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: palette.ink500,
+    borderColor: c.ink500,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioOn: { borderColor: semantic.primary },
-  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: semantic.primary },
-  unmatched: { gap: space.xs, padding: space.md, borderRadius: radius.md, backgroundColor: palette.surfaceSunken },
+  radioOn: { borderColor: c.primary },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.primary },
+  unmatched: { gap: space.xs, padding: space.md, borderRadius: radius.md, backgroundColor: c.surfaceSunken },
   unmatchedHeader: { flexDirection: 'row', alignItems: 'center', minHeight: 32 },
-});
+}));

@@ -53,7 +53,7 @@ public class ImportController
     }
 
     @PostMapping("/{jobId}/confirm")
-    @Operation(summary = "Confirma e grava a importação sem duplicar nada (favoritesMode: KEEP, REPLACE ou MERGE)")
+    @Operation(summary = "Confirma a importação: responde em APPLYING e grava no diário em segundo plano, sem duplicar nada (favoritesMode: KEEP, REPLACE ou MERGE)")
     public ImportJobResponse confirm(CurrentUser user, @PathVariable UUID jobId,
                                      @RequestBody(required = false) ConfirmImportRequest request)
     {

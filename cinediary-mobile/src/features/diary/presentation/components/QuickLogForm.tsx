@@ -7,7 +7,7 @@ import { SeriesProgressSection } from '@/features/catalog/presentation/component
 import type { Actor } from '@/features/social/domain/social';
 import { CompanionSheet } from '@/features/social/presentation/components/CompanionSheet';
 import { strings } from '@/shared/i18n';
-import { palette, semantic, space } from '@/shared/theme';
+import { space, useColors } from '@/shared/theme';
 import {
   Button,
   Chip,
@@ -56,6 +56,7 @@ export function QuickLogForm({
   /** Filme marcado como visto (onboarding/importação) ganhando a primeira data: o "rever" não liga sozinho. */
   undated?: boolean;
 }) {
+  const colors = useColors();
   const t = strings.diary;
   const c = strings.catalog;
   const toast = useToast();
@@ -141,7 +142,7 @@ export function QuickLogForm({
               active={draft.watched}
               variant="filled"
               icon={
-                <Check size={22} weight={draft.watched ? 'bold' : 'regular'} color={draft.watched ? semantic.watched : palette.ink700} />
+                <Check size={22} weight={draft.watched ? 'bold' : 'regular'} color={draft.watched ? colors.watched : colors.ink700} />
               }
               onPress={() => update({ watched: !draft.watched })}
             />
@@ -151,7 +152,7 @@ export function QuickLogForm({
             accessibilityLabel={t.like}
             active={draft.liked}
             variant="filled"
-            icon={<Heart size={22} weight={draft.liked ? 'fill' : 'regular'} color={draft.liked ? semantic.liked : palette.ink700} />}
+            icon={<Heart size={22} weight={draft.liked ? 'fill' : 'regular'} color={draft.liked ? colors.liked : colors.ink700} />}
             onPress={() => update({ liked: !draft.liked })}
           />
           {!scope ? (
@@ -160,7 +161,7 @@ export function QuickLogForm({
               accessibilityLabel={t.watchlist}
               active={draft.inWatchlist}
               variant="filled"
-              icon={<BookmarkSimple size={22} weight={draft.inWatchlist ? 'fill' : 'regular'} color={palette.ink700} />}
+              icon={<BookmarkSimple size={22} weight={draft.inWatchlist ? 'fill' : 'regular'} color={colors.ink700} />}
               onPress={() => update({ inWatchlist: !draft.inWatchlist })}
             />
           ) : null}
@@ -195,21 +196,21 @@ export function QuickLogForm({
           <>
             <WatchedDateField value={draft.watchedDate} onChange={(watchedDate) => update({ watchedDate })} />
             <ListRow
-              icon={<ArrowCounterClockwise size={20} color={palette.ink700} />}
+              icon={<ArrowCounterClockwise size={20} color={colors.ink700} />}
               label={t.rewatch}
               switchValue={draft.isRewatch}
               onSwitchChange={(isRewatch) => update({ isRewatch })}
             />
             {/* "Vi com…": opcional, fechado até tocar (não atrapalha os 3 toques do registro). */}
             <ListRow
-              icon={<UsersThree size={20} color={palette.ink700} />}
+              icon={<UsersThree size={20} color={colors.ink700} />}
               label={ct.row}
               hint={companions.length > 0 ? ct.withNames(ct.names(companions.map((c) => c.displayName || c.username))) : undefined}
               onPress={openCompanions}
             />
             {/* A review numa linha: sem texto, "Escrever review"; com texto, o começo dele. */}
             <ListRow
-              icon={<PencilSimple size={20} color={palette.ink700} />}
+              icon={<PencilSimple size={20} color={colors.ink700} />}
               label={draft.reviewText.trim() ? t.reviewTitle : t.writeReview}
               hint={draft.reviewText.trim() || undefined}
               hintLines={2}
@@ -218,7 +219,7 @@ export function QuickLogForm({
             {/* Só faz sentido com texto: sem review, não há o que esconder. */}
             {draft.reviewText.trim() ? (
               <ListRow
-                icon={<EyeSlash size={20} color={palette.ink700} />}
+                icon={<EyeSlash size={20} color={colors.ink700} />}
                 label={t.spoilerToggle}
                 hint={t.spoilerToggleHint}
                 switchValue={draft.containsSpoilers}

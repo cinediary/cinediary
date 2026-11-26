@@ -1,11 +1,11 @@
 import * as Haptics from 'expo-haptics';
 import type { ComponentType, ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { interpolate, useAnimatedReaction, useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { fonts, palette, radius, semantic, space } from '@/shared/theme';
+import { fonts, radius, space, useColors, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
 
 /** Largura de cada ação revelada pelo arrastar. */
@@ -55,6 +55,8 @@ export function SwipeRow({ actions, children }: { actions: SwipeRowAction[]; chi
 
 /** `progress` vai de 0 (fechado) a 1 (aberto). */
 function Actions({ progress, actions }: { progress: SharedValue<number>; actions: SwipeRowAction[] }) {
+  const styles = useStyles();
+  const colors = useColors();
   const content = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0.15, 0.7], [0, 1], 'clamp'),
     transform: [{ scale: interpolate(progress.value, [0, 1], [0.6, 1], 'clamp') }],
@@ -79,7 +81,7 @@ function Actions({ progress, actions }: { progress: SharedValue<number>; actions
             style={({ pressed }) => [styles.action, danger && styles.actionDanger, pressed && styles.pressed]}
           >
             <Animated.View style={[styles.content, content]}>
-              <Icon size={18} color={danger ? semantic.danger : palette.ink700} weight="bold" />
+              <Icon size={18} color={danger ? colors.danger : colors.ink700} weight="bold" />
               <Text variant="caption" style={[styles.label, danger && styles.labelDanger]}>
                 {label}
               </Text>
@@ -91,7 +93,7 @@ function Actions({ progress, actions }: { progress: SharedValue<number>; actions
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   // Sobre o mesmo creme da tela: painéis suaves com os cantos arredondados, sem cor chapada.
   actions: {
     flexDirection: 'row',
@@ -99,7 +101,7 @@ const styles = StyleSheet.create({
     paddingVertical: space.xs,
     paddingRight: space.screenX,
     paddingLeft: space.xs,
-    backgroundColor: semantic.background,
+    backgroundColor: c.background,
   },
   action: {
     width: ACTION_WIDTH,
@@ -107,11 +109,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.lg,
     borderCurve: 'continuous',
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
   },
-  actionDanger: { backgroundColor: palette.rosa100 },
+  actionDanger: { backgroundColor: c.rosa100 },
   pressed: { opacity: 0.7 },
   content: { alignItems: 'center', gap: 2 },
-  label: { color: palette.ink700, fontFamily: fonts.bodyHeavy },
-  labelDanger: { color: semantic.danger },
-});
+  label: { color: c.ink700, fontFamily: fonts.bodyHeavy },
+  labelDanger: { color: c.danger },
+}));

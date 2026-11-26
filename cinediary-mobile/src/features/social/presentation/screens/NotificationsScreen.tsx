@@ -2,6 +2,7 @@ import { ArrowCounterClockwise, Bell, Heart, UsersThree } from 'phosphor-react-n
 import { useEffect, useRef, useState } from 'react';
 import { SectionList, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { openList } from '@/features/lists/presentation/navigation';
 
 import { useMe } from '@/features/auth/application/profileQueries';
 import { openTitle } from '@/features/catalog/presentation/navigation';
@@ -9,7 +10,7 @@ import { useHidesSpoiler } from '@/features/diary/application/useHidesSpoiler';
 import type { DiaryEntry } from '@/features/diary/domain/diary';
 import { analytics } from '@/shared/analytics/analytics';
 import { formatShortDate, parseIsoDate, strings, timeAgo } from '@/shared/i18n';
-import { fonts, palette, radius, semantic, space } from '@/shared/theme';
+import { fonts, radius, space, makeStyles, useColors } from '@/shared/theme';
 import { Button, ErrorState, SegmentedControl, SkeletonRows, StarRating, Text } from '@/shared/ui';
 import { TopBar } from '@/shared/ui/navigation/TopBar';
 import { usePullToRefresh } from '@/shared/ui/usePullToRefresh';
@@ -40,6 +41,8 @@ function byDay<T>(items: T[], date: (t: T) => string) {
  * Abre em "Para você" quando há novidades. Abrir essa aba marca tudo como visto.
  */
 export function NotificationsScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social;
   const insets = useSafeAreaInsets();
   const notifications = useNotifications();
@@ -99,7 +102,7 @@ export function NotificationsScreen() {
             ) : notifications.isError ? (
               <ErrorState onRetry={() => notifications.refetch()} />
             ) : (
-              <PeopleEmpty icon={<Bell size={28} color={palette.ink500} />} text={s.notificationsEmpty} />
+              <PeopleEmpty icon={<Bell size={28} color={colors.ink500} />} text={s.notificationsEmpty} />
             )
           }
           refreshing={pullYou.refreshing}
@@ -124,7 +127,7 @@ export function NotificationsScreen() {
             ) : activity.isError ? (
               <ErrorState onRetry={() => activity.refetch()} />
             ) : (
-              <PeopleEmpty icon={<UsersThree size={28} color={palette.ink500} />} text={s.activityEmpty} />
+              <PeopleEmpty icon={<UsersThree size={28} color={colors.ink500} />} text={s.activityEmpty} />
             )
           }
           onEndReached={() => {
@@ -144,12 +147,18 @@ export function NotificationsScreen() {
   );
 }
 
-const SectionTitle = ({ title }: { title: string }) => (
-  <Text variant="overline" tone="secondary" style={styles.section}>
-    {title}
-  </Text>
-);
-const Separator = () => <View style={styles.separator} />;
+const SectionTitle = ({ title }: { title: string }) => {
+  const styles = useStyles();
+  return (
+    <Text variant="overline" tone="secondary" style={styles.section}>
+      {title}
+    </Text>
+  );
+};
+const Separator = () => {
+  const styles = useStyles();
+  return <View style={styles.separator} />;
+};
 
 /** Abre uma entrada: a sua (com editar) ou a de outra pessoa (só leitura). */
 function openEntryOf(owner: Actor, entry: Pick<DiaryEntry, 'id'>, meId: string | undefined) {
@@ -159,6 +168,8 @@ function openEntryOf(owner: Actor, entry: Pick<DiaryEntry, 'id'>, meId: string |
 
 /** Aba "Amigos": "Ana reviu Matrix em 12 de nov", "Bia curtiu a review de Caio sobre X", "Você começou a seguir Dora". */
 function FriendActivityRow({ a }: { a: ActivityItem }) {
+  const styles = useStyles();
+  const colors = useColors();
   const s = strings.social;
   const me = useMe();
   const meId = me.data?.id;
@@ -195,6 +206,15 @@ function FriendActivityRow({ a }: { a: ActivityItem }) {
       </>
     );
     onPress = () => openProfile(target.username, 'link');
+  } else if (a.kind === 'LIKED_LIST' && a.target && a.list) {
+    const list = a.list;
+    sentence = (
+      <>
+        <Bold>{name(a.actor)}</Bold>{' '}
+        {a.target.id === meId ? s.act.likedYourList(list.name) : s.act.likedList(name(a.target), list.name)}
+      </>
+    );
+    onPress = () => openList(list.id);
   } else if (a.target && entry) {
     const owner = a.target.id === meId ? s.yourReview : name(a.target);
     sentence = (
@@ -214,8 +234,8 @@ function FriendActivityRow({ a }: { a: ActivityItem }) {
         {a.kind === 'LOGGED' && (entry.rating || entry.liked || entry.isRewatch) ? (
           <View style={styles.signals}>
             {entry.rating ? <StarRating value={entry.rating} size="mini" /> : null}
-            {entry.liked ? <Heart size={12} weight="fill" color={semantic.liked} /> : null}
-            {entry.isRewatch ? <ArrowCounterClockwise size={12} weight="bold" color={palette.ink500} /> : null}
+            {entry.liked ? <Heart size={12} weight="fill" color={colors.liked} /> : null}
+            {entry.isRewatch ? <ArrowCounterClockwise size={12} weight="bold" color={colors.ink500} /> : null}
           </View>
         ) : null}
         {snippet ? (
@@ -247,6 +267,7 @@ function FriendActivityRow({ a }: { a: ActivityItem }) {
 
 /** Aba "Para você": quem te seguiu, curtiu (agrupado), respondeu… */
 function NotificationItemRow({ n }: { n: AppNotification }) {
+  const styles = useStyles();
   const s = strings.social;
   const first = n.actors[0]!;
   const others = n.actorCount - 1;
@@ -258,13 +279,16 @@ function NotificationItemRow({ n }: { n: AppNotification }) {
         ? s.notif.ENTRY_REPLIED(title)
         : n.kind === 'ENTRY_COMPANION'
           ? s.notif.ENTRY_COMPANION(title)
-          : s.notif[n.kind];
+          : n.kind === 'LIST_LIKED'
+            ? s.notif.LIST_LIKED(n.list?.name ?? '', others > 0)
+            : s.notif[n.kind];
 
   const open = () => {
     analytics.track('notification_opened', { kind: n.kind });
     // Marcado num registro: o registro é de quem marcou (abre como entrada de outra pessoa).
     if (n.kind === 'ENTRY_COMPANION' && n.entry) openPersonEntry(first.username, n.entry as unknown as DiaryEntry);
     else if (n.entry) nav.push({ pathname: '/entry/[entryId]', params: { entryId: n.entry.id } });
+    else if (n.kind === 'LIST_LIKED' && n.list) openList(n.list.id);
     else if (n.kind === 'FOLLOW_REQUESTED') openFollowRequests();
     else openProfile(first.username, 'link');
   };
@@ -309,6 +333,7 @@ function NotificationItemRow({ n }: { n: AppNotification }) {
 
 /** "Vi com…" no sino: Aceitar (cheio) e Recusar (contorno), do mesmo tamanho; ao aceitar, "Você aceitou". */
 function CompanionAnswer({ entryId, status }: { entryId: string; status: AppNotification['companionStatus'] }) {
+  const styles = useStyles();
   const t = strings.social.companions;
   const respond = useRespondToCompanion(entryId);
   const accepting = respond.variables === 'accept';
@@ -343,12 +368,12 @@ function CompanionAnswer({ entryId, status }: { entryId: string; status: AppNoti
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   answer: { flexDirection: 'row', gap: space.sm, marginTop: space.xs },
   content: { paddingHorizontal: space.screenX },
   section: { paddingTop: space.lg, paddingBottom: space.xs },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: palette.border, marginLeft: 46 + space.md },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginLeft: 46 + space.md },
   detail: { gap: 4, marginTop: 2 },
   signals: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   snippet: { fontStyle: 'italic', lineHeight: 18 },
@@ -356,9 +381,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     paddingVertical: 6,
     borderRadius: radius.pill,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.borderStrong,
+    borderColor: c.borderStrong,
   },
-  pillText: { fontFamily: fonts.bodyHeavy, color: palette.ink900 },
-});
+  pillText: { fontFamily: fonts.bodyHeavy, color: c.ink900 },
+}));

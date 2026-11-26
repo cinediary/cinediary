@@ -1,8 +1,9 @@
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { ActionSheet, Avatar, Button, Skeleton, Text, TextField, useToast } from '@/shared/ui';
-import { fonts, palette, radius, semantic, space, touch, type as typeScale } from '@/shared/theme';
+import { ActionSheet, Avatar, Button, markImageBroken, Skeleton, Text, TextField, useToast, useWorkingImageUrl } from '@/shared/ui';
+import { fonts, radius, space, touch, type as typeScale, makeStyles, useColors, lightColors } from '@/shared/theme';
 import { Camera, CaretDown, EnvelopeSimple, ImageSquare, Trash } from 'phosphor-react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
 import { strings } from '@/shared/i18n';
 import { nav } from '@/shared/ui/navigation/nav';
 import { useState } from 'react';
@@ -10,6 +11,7 @@ import { useState } from 'react';
 import { isValidEmail, isValidUsername, normalizeUsername } from '../../domain/credentials';
 import { useUsernameAvailability } from '../../application/useUsernameAvailability';
 import { useEditProfile } from '../../application/useEditProfile';
+import { useProfileHeader } from '../../application/profileHeader';
 import { AuthFormLayout } from '../components/AuthFormLayout';
 import { useMe } from '../../application/profileQueries';
 import { BIO_MAX, isPronounCode, NAME_MAX, PRONOUN_CODES, type UserProfile } from '../../domain/profile';
@@ -19,6 +21,7 @@ import { BIO_MAX, isPronounCode, NAME_MAX, PRONOUN_CODES, type UserProfile } fro
  * (cada um com o próprio passo); nome e @ vão juntos no "Salvar alterações", fixo acima do teclado.
  */
 export function EditProfileScreen() {
+  const styles = useStyles();
   const me = useMe();
   const a = strings.account;
   if (!me.data) {
@@ -37,6 +40,8 @@ export function EditProfileScreen() {
 }
 
 function EditProfileForm({ profile }: { profile: UserProfile }) {
+  const styles = useStyles();
+  const colors = useColors();
   const a = strings.account;
   const au = strings.auth;
   const toast = useToast();
@@ -86,6 +91,7 @@ function EditProfileForm({ profile }: { profile: UserProfile }) {
       footer={<Button label={a.save} loading={edit.busy === 'profile'} disabled={!canSave} onPress={onSave} />}
     >
       <PhotoPicker profile={profile} edit={edit} />
+      <CoverSection profile={profile} />
 
       <Text variant="overline" tone="secondary" accessibilityRole="header">
         {a.sectionIdentity}
@@ -154,7 +160,7 @@ function EditProfileForm({ profile }: { profile: UserProfile }) {
           style={({ pressed }) => [styles.select, pressed && styles.selectPressed]}
         >
           <Text style={[styles.flex, !pronouns && styles.placeholder]}>{pronouns ? a.pronounOptions[pronouns] : a.pronounNone}</Text>
-          <CaretDown size={18} color={palette.ink500} />
+          <CaretDown size={18} color={colors.ink500} />
         </Pressable>
       </View>
       <ActionSheet
@@ -180,7 +186,7 @@ function EditProfileForm({ profile }: { profile: UserProfile }) {
           value={bio}
           onChangeText={setBio}
           placeholder={a.bioPlaceholder}
-          placeholderTextColor={palette.ink500}
+          placeholderTextColor={colors.ink500}
           accessibilityLabel={a.bio}
           maxLength={BIO_MAX}
           multiline
@@ -205,6 +211,8 @@ type Edit = ReturnType<typeof useEditProfile>;
 
 /** Foto grande no topo: tocar abre as opções (galeria, câmera, remover). */
 function PhotoPicker({ profile, edit }: { profile: UserProfile; edit: Edit }) {
+  const styles = useStyles();
+  const colors = useColors();
   const a = strings.account;
   const toast = useToast();
   const busy = edit.busy === 'photo';
@@ -242,11 +250,11 @@ function PhotoPicker({ profile, edit }: { profile: UserProfile; edit: Edit }) {
         <Avatar name={profile.displayName || profile.username} imageUrl={profile.avatarUrl} size={104} />
         {busy ? (
           <View style={styles.photoBusy}>
-            <ActivityIndicator color={palette.surface} />
+            <ActivityIndicator color={lightColors.surface} />
           </View>
         ) : null}
         <View style={styles.cameraBadge}>
-          <Camera size={18} color={semantic.onPrimary} weight="fill" />
+          <Camera size={18} color={colors.onPrimary} weight="fill" />
         </View>
       </Pressable>
       <Pressable accessibilityRole="button" onPress={openOptions} disabled={busy} hitSlop={8}>
@@ -262,13 +270,13 @@ function PhotoPicker({ profile, edit }: { profile: UserProfile; edit: Edit }) {
           {
             key: 'library',
             label: a.photoFromLibrary,
-            icon: <ImageSquare size={20} color={palette.ink900} />,
+            icon: <ImageSquare size={20} color={colors.ink900} />,
             onPress: () => void pick('library'),
           },
           {
             key: 'camera',
             label: a.photoFromCamera,
-            icon: <Camera size={20} color={palette.ink900} />,
+            icon: <Camera size={20} color={colors.ink900} />,
             onPress: () => void pick('camera'),
           },
           ...(profile.avatarUrl
@@ -277,7 +285,7 @@ function PhotoPicker({ profile, edit }: { profile: UserProfile; edit: Edit }) {
                   key: 'remove',
                   label: a.removePhoto,
                   destructive: true,
-                  icon: <Trash size={20} color={semantic.danger} />,
+                  icon: <Trash size={20} color={colors.danger} />,
                   onPress: () => void remove(),
                 },
               ]
@@ -289,10 +297,85 @@ function PhotoPicker({ profile, edit }: { profile: UserProfile; edit: Edit }) {
 }
 
 /**
+ * Capa do perfil: uma cena (backdrop do TMDB) de um filme ou série. Escolher abre a tela de busca + cenas;
+ * remover salva na hora. Não tem upload: a imagem fica no TMDB.
+ */
+function CoverSection({ profile }: { profile: UserProfile }) {
+  const styles = useStyles();
+  const colors = useColors();
+  const a = strings.account;
+  const toast = useToast();
+  const { remove } = useProfileHeader();
+  // Capa que não carrega: a prévia fica vazia (dá para trocar ou remover normalmente).
+  const preview = useWorkingImageUrl(profile.headerUrl);
+  const open = () => nav.push('/profile/header');
+  const onRemove = () =>
+    remove.mutate(undefined, {
+      onSuccess: () => toast(a.coverRemoved),
+      onError: () => toast(a.coverError),
+    });
+
+  return (
+    <View style={styles.field}>
+      <Text variant="bodyStrong" tone="secondary">
+        {a.cover}
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={profile.headerUrl ? a.coverChange : a.coverChoose}
+        onPress={open}
+        // Enquanto a remoção não termina, não abre o seletor (uma capa nova poderia ser sobrescrita por ela).
+        disabled={remove.isPending}
+        style={({ pressed }) => [styles.cover, preview ? null : styles.coverEmptyFrame, pressed && styles.selectPressed]}
+      >
+        {preview ? (
+          <>
+            <Image
+              source={{ uri: preview }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              transition={150}
+              onError={() => markImageBroken(preview)}
+            />
+            {/* Contorno por cima da foto, no mesmo raio: a borda de antes ficava por fora, a foto por dentro
+                dela com cantos de outro raio, e sobrava uma fresta clara entre as duas. */}
+            <View pointerEvents="none" style={styles.coverOutline} />
+          </>
+        ) : (
+          // Sem capa, a própria moldura é o botão: ícone, a ação e a explicação, centralizados.
+          <View style={styles.coverEmpty}>
+            <ImageSquare size={26} color={colors.terracota500} weight="duotone" />
+            <Text variant="bodyStrong" tone="link">
+              {a.coverChoose}
+            </Text>
+            <Text variant="caption" tone="muted" style={styles.coverHint}>
+              {a.coverHint}
+            </Text>
+          </View>
+        )}
+      </Pressable>
+      {/* Com capa: trocar e remover numa linha só, com respiro da foto (antes colados nela, a 4 px). */}
+      {profile.headerUrl ? (
+        <View style={styles.coverActions}>
+          <View style={styles.flex}>
+            <Button label={a.coverChange} size="sm" variant="secondary" disabled={remove.isPending} onPress={open} />
+          </View>
+          <View style={styles.flex}>
+            <Button label={a.coverRemove} size="sm" variant="danger" loading={remove.isPending} onPress={onRemove} />
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/**
  * E-mail da conta (login). Trocar pede o código que o Clerk manda para o endereço novo: só depois de
  * confirmado ele vira o principal e o antigo sai.
  */
 function EmailSection({ edit }: { edit: Edit }) {
+  const styles = useStyles();
+  const colors = useColors();
   const a = strings.account;
   const toast = useToast();
   const [step, setStep] = useState<'view' | 'enter' | 'code'>('view');
@@ -333,7 +416,7 @@ function EmailSection({ edit }: { edit: Edit }) {
   return (
     <View style={styles.emailBox}>
       <View style={styles.emailRow}>
-        <EnvelopeSimple size={20} color={palette.ink700} />
+        <EnvelopeSimple size={20} color={colors.ink700} />
         <View style={styles.flex}>
           <Text variant="caption" tone="muted">
             {a.email}
@@ -389,7 +472,7 @@ function EmailSection({ edit }: { edit: Edit }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   center: { alignItems: 'center', gap: space.sm },
   pair: { flexDirection: 'row', gap: space.md },
   field: { gap: space.xs },
@@ -401,23 +484,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: palette.borderStrong,
-    backgroundColor: palette.surface,
+    borderColor: c.borderStrong,
+    backgroundColor: c.surface,
   },
-  selectPressed: { backgroundColor: palette.surfaceSunken },
-  placeholder: { color: palette.ink500 },
+  selectPressed: { backgroundColor: c.surfaceSunken },
+  placeholder: { color: c.ink500 },
   bio: {
     ...typeScale.body,
     minHeight: 96,
     padding: space.md,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: palette.borderStrong,
-    backgroundColor: palette.surface,
-    color: palette.ink900,
+    borderColor: c.borderStrong,
+    backgroundColor: c.surface,
+    color: c.ink900,
     textAlignVertical: 'top',
   },
   count: { textAlign: 'right' },
+  cover: { aspectRatio: 16 / 9, borderRadius: radius.md, overflow: 'hidden', backgroundColor: c.surfaceSunken },
+  // Sem capa: a moldura de "escolha aqui".
+  coverEmptyFrame: { borderWidth: 1.5, borderColor: c.borderStrong, backgroundColor: c.surface },
+  coverOutline: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.imageOutline,
+  },
+  coverEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.xs, paddingHorizontal: space.xl },
+  coverHint: { textAlign: 'center', marginTop: 2 },
+  // 16 px da foto (4 do campo + 12), na grade de 8 do iOS; 12 entre os dois botões.
+  coverActions: { flexDirection: 'row', gap: space.md, marginTop: space.md },
   flex: { flex: 1 },
   photoBusy: {
     ...StyleSheet.absoluteFill,
@@ -435,26 +531,26 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: semantic.primary,
+    backgroundColor: c.primary,
     borderWidth: 3,
-    borderColor: semantic.background,
+    borderColor: c.background,
   },
   emailBox: {
     gap: space.md,
     padding: space.lg,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   emailRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   pill: {
     paddingHorizontal: space.md,
     paddingVertical: 6,
     borderRadius: radius.pill,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.borderStrong,
+    borderColor: c.borderStrong,
   },
-  pillText: { color: palette.ink900, fontFamily: fonts.bodyHeavy },
-});
+  pillText: { color: c.ink900, fontFamily: fonts.bodyHeavy },
+}));

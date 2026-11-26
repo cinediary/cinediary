@@ -25,6 +25,7 @@ class NotificationsAdapter implements NotificationsPort
         return new Notification(rs.getObject("id", UUID.class), rs.getObject("recipient_id", UUID.class),
                 rs.getObject("actor_id", UUID.class), NotificationKind.valueOf(rs.getString("kind")),
                 rs.getObject("entry_id", UUID.class), rs.getObject("comment_id", UUID.class),
+                rs.getObject("list_id", UUID.class), rs.getString("list_name"),
                 rs.getTimestamp("created_at").toInstant(), seen == null ? null : seen.toInstant());
     }
 
@@ -64,6 +65,25 @@ class NotificationsAdapter implements NotificationsPort
     }
 
     @Override
+    public void addListLike(UUID recipientId, UUID actorId, UUID listId)
+    {
+        if (recipientId.equals(actorId)) {
+            return;
+        }
+        jdbc.sql("""
+                        INSERT INTO notifications (recipient_id, actor_id, kind, list_id)
+                        VALUES (:r, :a, 'LIST_LIKED', :l) ON CONFLICT DO NOTHING""")
+                .param("r", recipientId).param("a", actorId).param("l", listId).update();
+    }
+
+    @Override
+    public void removeListLike(UUID recipientId, UUID actorId, UUID listId)
+    {
+        jdbc.sql("DELETE FROM notifications WHERE recipient_id = :r AND actor_id = :a AND kind = 'LIST_LIKED' AND list_id = :l")
+                .param("r", recipientId).param("a", actorId).param("l", listId).update();
+    }
+
+    @Override
     public void requestsAccepted(UUID ownerId, UUID requesterId)
     {
         // Um "te seguiu" antigo da mesma pessoa (seguiu, saiu, pediu de novo) dá lugar ao novo.
@@ -85,7 +105,8 @@ class NotificationsAdapter implements NotificationsPort
     public List<Notification> latest(UUID recipientId, int limit)
     {
         return jdbc.sql("""
-                        SELECT n.* FROM notifications n JOIN users u ON u.id = n.actor_id
+                        SELECT n.*, l.name AS list_name FROM notifications n JOIN users u ON u.id = n.actor_id
+                          LEFT JOIN lists l ON l.id = n.list_id
                          WHERE n.recipient_id = :r AND u.deleted_at IS NULL
                          ORDER BY n.created_at DESC LIMIT :limit""")
                 .param("r", recipientId).param("limit", limit)
@@ -96,7 +117,8 @@ class NotificationsAdapter implements NotificationsPort
     public long countUnseen(UUID recipientId)
     {
         return jdbc.sql("""
-                        SELECT COUNT(DISTINCT CASE WHEN n.kind = 'ENTRY_LIKED' THEN 'like:' || n.entry_id ELSE n.id::text END)
+                        SELECT COUNT(DISTINCT CASE WHEN n.kind = 'ENTRY_LIKED' THEN 'like:' || n.entry_id
+                                                     WHEN n.kind = 'LIST_LIKED' THEN 'list:' || n.list_id ELSE n.id::text END)
                           FROM notifications n JOIN users u ON u.id = n.actor_id
                          WHERE n.recipient_id = :r AND n.seen_at IS NULL AND u.deleted_at IS NULL""")
                 .param("r", recipientId).query(Long.class).single();

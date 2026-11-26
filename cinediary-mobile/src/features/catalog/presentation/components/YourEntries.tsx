@@ -1,12 +1,12 @@
 import { ArrowCounterClockwise, CaretRight, Heart } from 'phosphor-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useTitleEntries } from '@/features/diary/application/diaryQueries';
 
 import { openEntry } from '@/features/diary/presentation/navigation';
 import { SpoilerReview } from '@/features/diary/presentation/components/SpoilerReview';
 import { relativeDayLabel, parseIsoDate, strings } from '@/shared/i18n';
-import { palette, radius, semantic, space } from '@/shared/theme';
+import { radius, space, makeStyles, useColors } from '@/shared/theme';
 import { SectionHeader, SkeletonRows, StarRating, Text } from '@/shared/ui';
 import { scopeLabel } from '@/features/diary/presentation/scopeLabel';
 
@@ -16,6 +16,8 @@ import { scopeLabel } from '@/features/diary/presentation/scopeLabel';
  * filme registrado há mais tempo não aparecia) e o texto da review não era mostrado.
  */
 export function YourEntries({ titleId }: { titleId: number }) {
+  const styles = useStyles();
+  const colors = useColors();
   const t = strings.catalog;
   const entries = useTitleEntries(titleId);
 
@@ -42,15 +44,15 @@ export function YourEntries({ titleId }: { titleId: number }) {
               ) : null}
               <Text variant="bodyStrong">{e.watchedDate ? relativeDayLabel(parseIsoDate(e.watchedDate)) : strings.common.noDate}</Text>
               {e.rating ? <StarRating value={e.rating} size="mini" /> : null}
-              {e.liked ? <Heart size={14} weight="fill" color={semantic.liked} /> : null}
+              {e.liked ? <Heart size={14} weight="fill" color={colors.liked} /> : null}
               {e.isRewatch ? (
                 <View style={styles.badge}>
-                  <ArrowCounterClockwise size={12} color={palette.ink700} />
+                  <ArrowCounterClockwise size={12} color={colors.ink700} />
                   <Text variant="caption">{t.rewatchBadge}</Text>
                 </View>
               ) : null}
               <View style={styles.flex} />
-              <CaretRight size={16} color={palette.ink500} />
+              <CaretRight size={16} color={colors.ink500} />
             </View>
             {/* Até 4 linhas, como as reviews dos outros (ReviewCard): a review inteira fica na tela do registro. */}
             {e.reviewText ? <SpoilerReview key={`${e.id}-${e.containsSpoilers}`} entry={e} numberOfLines={4} /> : null}
@@ -61,18 +63,18 @@ export function YourEntries({ titleId }: { titleId: number }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: { gap: space.sm },
   entry: {
     gap: space.xs,
     padding: space.md,
     borderRadius: radius.lg,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, flexWrap: 'wrap' },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   flex: { flex: 1 },
   pressed: { opacity: 0.7 },
-});
+}));

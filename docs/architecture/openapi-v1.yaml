@@ -16,6 +16,8 @@ security:
   - BearerAuth: []
 
 tags:
+  - name: Lists
+    description: Listas criadas pela pessoa, com ou sem ranking, públicas ou privadas
   - name: Users & Onboarding
     description: Sincronização Clerk via Svix, perfil, privacidade e onboarding cinematográfico sem mínimo obrigatório
   - name: Catalog (TMDB)
@@ -98,6 +100,38 @@ paths:
           description: Conta excluída (excluir de novo no Clerk também devolve 204)
         '503':
           description: O Clerk não respondeu; nada foi excluído e dá para tentar de novo
+
+  /api/v1/me/header:
+    put:
+      tags: [Users & Onboarding]
+      summary: "Define a capa do perfil: um backdrop do TMDB de um título (sem upload)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHeaderRequest'
+      responses:
+        '200':
+          description: Perfil com a capa nova
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '400':
+          description: "A imagem não é um dos backdrops do título"
+        '404':
+          description: "Título não encontrado no catálogo"
+    delete:
+      tags: [Users & Onboarding]
+      summary: Remove a capa do perfil
+      responses:
+        '200':
+          description: Perfil sem capa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
 
   /api/v1/me/onboarding:
     post:
@@ -815,15 +849,45 @@ paths:
                 items:
                   $ref: '#/components/schemas/TitleCreditDto'
 
+  /api/v1/catalog/{mediaType}/{tmdbId}/backdrops:
+    get:
+      tags: [Catalog (TMDB)]
+      summary: "Backdrops sem texto do título, para escolher a capa do perfil (cache de 6 h)"
+      parameters:
+        - in: path
+          name: mediaType
+          required: true
+          schema:
+            $ref: '#/components/schemas/MediaType'
+        - in: path
+          name: tmdbId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: "Lista vazia quando o TMDB não tem imagens sem texto"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitleBackdropsResponse'
+
   /api/v1/catalog/{mediaType}/{tmdbId}/extras:
     get:
       tags: [Catalog (TMDB)]
-      summary: "Lançamento, país, produtoras, equipe, trailer, coleção e similares do título"
+      summary: "Lançamento, país, produtoras, equipe, trailer, coleção, similares e onde assistir do título"
       parameters:
         - in: query
           name: language
           required: false
           description: "Idioma do aparelho (BCP 47, ex.: pt-BR), para escolher o trailer; ausente = pt-BR"
+          schema:
+            type: string
+        - in: query
+          name: region
+          required: false
+          description: "País do aparelho (ISO 3166-1, ex.: BR), para o onde assistir; ausente = o país do idioma"
           schema:
             type: string
         - in: path
@@ -998,8 +1062,16 @@ paths:
   /api/v1/diary/entries:
     get:
       tags: [Diary & Series]
-      summary: Lista entradas cronológicas do diário do usuário
+      summary: Lista entradas cronológicas do diário do usuário, com filtros opcionais do "Meu diário"
       parameters:
+        - $ref: '#/components/parameters/DiaryYear'
+        - $ref: '#/components/parameters/DiaryMonth'
+        - $ref: '#/components/parameters/DiaryGenreId'
+        - $ref: '#/components/parameters/DiaryMinRating'
+        - $ref: '#/components/parameters/DiaryRewatch'
+        - $ref: '#/components/parameters/DiaryWithReview'
+        - $ref: '#/components/parameters/DiaryMediaType'
+        - $ref: '#/components/parameters/DiaryQuery'
         - in: query
           name: titleId
           required: false
@@ -1042,6 +1114,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiaryEntryResponse'
+
+  /api/v1/diary/entries/count:
+    get:
+      tags: [Diary & Series]
+      summary: Quantos registros do diário passam nos filtros
+      parameters:
+        - $ref: '#/components/parameters/DiaryYear'
+        - $ref: '#/components/parameters/DiaryMonth'
+        - $ref: '#/components/parameters/DiaryGenreId'
+        - $ref: '#/components/parameters/DiaryMinRating'
+        - $ref: '#/components/parameters/DiaryRewatch'
+        - $ref: '#/components/parameters/DiaryWithReview'
+        - $ref: '#/components/parameters/DiaryMediaType'
+        - $ref: '#/components/parameters/DiaryQuery'
+      responses:
+        '200':
+          description: Total de registros com esses filtros
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryCountResponse'
+
+  /api/v1/diary/filters:
+    get:
+      tags: [Diary & Series]
+      summary: Opções dos filtros do diário (só o que existe nele) — anos, gêneros com quantos registros e tipos
+      responses:
+        '200':
+          description: Anos com registro (do mais recente), gêneros (dos mais registrados) e totais de filmes e séries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryFiltersResponse'
 
   /api/v1/diary/entries/{entryId}:
     parameters:
@@ -1156,7 +1261,11 @@ paths:
   /api/v1/imports/{jobId}/confirm:
     post:
       tags: [Importing (Letterboxd)]
-      summary: Confirma a importação e persiste os registros de forma idempotente
+      summary: Confirma a importação e grava os registros em segundo plano, de forma idempotente
+      description: >
+        Responde na hora com o job em APPLYING; a gravação no diário roda em segundo plano e o job termina em
+        COMPLETED (ou FAILED). Acompanhe por GET /api/v1/imports/{jobId}. Confirmar de novo um job em APPLYING
+        ou COMPLETED devolve o job como está, sem duplicar nada.
       parameters:
         - in: path
           name: jobId
@@ -1172,11 +1281,245 @@ paths:
               $ref: '#/components/schemas/ConfirmImportRequest'
       responses:
         '200':
-          description: Importação aplicada sem duplicidades e projetada no Neo4j
+          description: Importação confirmada (APPLYING), ou o job como está se já estava em gravação ou concluído
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ImportJobResponse'
+
+  /api/v1/users/{username}/lists:
+    get:
+      tags: [Lists]
+      summary: Listas de um perfil (as privadas só para o dono; perfil privado que você não segue, 403)
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Listas, das atualizadas por último
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListSummaryResponse'
+        '403':
+          description: Perfil privado que você não segue
+        '404':
+          description: Perfil não encontrado
+
+  /api/v1/lists:
+    post:
+      tags: [Lists]
+      summary: Cria uma lista (nome obrigatório; ranking e visibilidade opcionais)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ListRequest'
+                - type: object
+                  required: [name]
+                  properties:
+                    name: { type: string, maxLength: 100 }
+      responses:
+        '201':
+          description: Lista criada (sem títulos)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '400':
+          description: Nome vazio ou longo demais, descrição longa demais ou visibilidade inválida
+
+  /api/v1/lists/{listId}:
+    parameters:
+      - in: path
+        name: listId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Lists]
+      summary: Uma lista com os títulos, na ordem
+      responses:
+        '200':
+          description: A lista
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '403':
+          description: Lista privada, ou de um perfil privado que você não segue
+        '404':
+          description: Lista não encontrada
+    patch:
+      tags: [Lists]
+      summary: Edita uma lista (só o dono; o que não vier fica como está, descrição vazia apaga)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListRequest'
+      responses:
+        '200':
+          description: A lista editada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '403':
+          description: Não é o dono
+    delete:
+      tags: [Lists]
+      summary: Exclui uma lista (só o dono)
+      responses:
+        '204':
+          description: Excluída
+        '403':
+          description: Não é o dono
+
+  /api/v1/lists/{listId}/items:
+    parameters:
+      - in: path
+        name: listId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Lists]
+      summary: Adiciona um título no fim da lista (só o dono)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListItemRequest'
+      responses:
+        '201':
+          description: A lista com o título novo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '404':
+          description: Título não encontrado
+        '409':
+          description: O título já está na lista
+
+  /api/v1/lists/{listId}/items/order:
+    parameters:
+      - in: path
+        name: listId
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [Lists]
+      summary: Reordena a lista (só o dono; todos os títulos, cada um uma vez)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListOrderRequest'
+      responses:
+        '200':
+          description: A lista na ordem nova
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '400':
+          description: A ordem não tem exatamente os títulos da lista
+
+  /api/v1/lists/{listId}/items/{titleId}:
+    parameters:
+      - in: path
+        name: listId
+        required: true
+        schema: { type: string, format: uuid }
+      - in: path
+        name: titleId
+        required: true
+        schema: { type: integer, format: int64 }
+    patch:
+      tags: [Lists]
+      summary: Muda a nota do título na lista (só o dono; vazia apaga)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListItemRequest'
+      responses:
+        '200':
+          description: A lista com a nota nova
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+    delete:
+      tags: [Lists]
+      summary: Tira o título da lista (só o dono); as posições seguintes sobem
+      responses:
+        '200':
+          description: A lista sem o título
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailResponse'
+        '404':
+          description: O título não está na lista
+
+  /api/v1/lists/{listId}/like:
+    parameters:
+      - in: path
+        name: listId
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [Lists]
+      summary: Curte a lista (de novo não duplica; o dono ganha o aviso no sino)
+      responses:
+        '200':
+          description: Curtida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListLikeResponse'
+        '403':
+          description: Lista que você não pode ver
+    delete:
+      tags: [Lists]
+      summary: Descurte a lista (o aviso some)
+      responses:
+        '200':
+          description: Descurtida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListLikeResponse'
+
+  /api/v1/titles/{titleId}/my-lists:
+    get:
+      tags: [Lists]
+      summary: As suas listas, cada uma dizendo se tem o título (folha "Adicionar à lista")
+      parameters:
+        - in: path
+          name: titleId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: As suas listas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MyListResponse'
 
   /api/v1/users/{username}/stats:
     get:
@@ -1367,6 +1710,55 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
+  parameters:
+    DiaryYear:
+      in: query
+      name: year
+      required: false
+      description: Ano em que assistiu
+      schema: { type: integer }
+    DiaryMonth:
+      in: query
+      name: month
+      required: false
+      description: Mês (1–12), só junto com o ano
+      schema: { type: integer, minimum: 1, maximum: 12 }
+    DiaryGenreId:
+      in: query
+      name: genreId
+      required: false
+      description: Gênero do TMDB do título
+      schema: { type: integer }
+    DiaryMinRating:
+      in: query
+      name: minRating
+      required: false
+      description: Nota a partir de (0,5–5)
+      schema: { type: number, minimum: 0.5, maximum: 5 }
+    DiaryRewatch:
+      in: query
+      name: rewatch
+      required: false
+      description: Só revistos
+      schema: { type: boolean, default: false }
+    DiaryWithReview:
+      in: query
+      name: withReview
+      required: false
+      description: Só com review
+      schema: { type: boolean, default: false }
+    DiaryMediaType:
+      in: query
+      name: mediaType
+      required: false
+      description: MOVIE ou SERIES (sem o parâmetro, os dois)
+      schema: { type: string, enum: [MOVIE, SERIES] }
+    DiaryQuery:
+      in: query
+      name: q
+      required: false
+      description: Parte do título, sem diferenciar maiúsculas nem acentos (até 100 caracteres)
+      schema: { type: string, maxLength: 100 }
   schemas:
     ActivityResponse:
       type: object
@@ -1379,7 +1771,7 @@ components:
             required: [id, kind, actor, createdAt]
             properties:
               id: { type: string }
-              kind: { type: string, enum: [LOGGED, FOLLOWED, LIKED_ENTRY, REPLIED_ENTRY, WATCHLISTED] }
+              kind: { type: string, enum: [LOGGED, FOLLOWED, LIKED_ENTRY, REPLIED_ENTRY, WATCHLISTED, LIKED_LIST] }
               actor: { $ref: '#/components/schemas/FeedAuthor' }
               target:
                 allOf: [{ $ref: '#/components/schemas/FeedAuthor' }]
@@ -1393,6 +1785,10 @@ components:
                 allOf: [{ $ref: '#/components/schemas/CatalogTitleSummary' }]
                 nullable: true
                 description: "Só em WATCHLISTED (quer ver)"
+              list:
+                allOf: [{ $ref: '#/components/schemas/ListRef' }]
+                nullable: true
+                description: "Só em LIKED_LIST (curtiu a lista de alguém; só listas públicas que você pode ver)"
               createdAt: { type: string, format: date-time }
         nextBefore: { type: string, format: date-time, nullable: true }
     TitleReview:
@@ -1453,7 +1849,7 @@ components:
       required: [id, kind, actors, actorCount, createdAt, unseen, relationship]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [FOLLOWED, FOLLOW_REQUESTED, FOLLOW_APPROVED, ENTRY_LIKED, ENTRY_REPLIED, ENTRY_COMPANION] }
+        kind: { type: string, enum: [FOLLOWED, FOLLOW_REQUESTED, FOLLOW_APPROVED, ENTRY_LIKED, ENTRY_REPLIED, ENTRY_COMPANION, LIST_LIKED] }
         actors: { type: array, items: { $ref: '#/components/schemas/FeedAuthor' }, description: "Mais recentes primeiro (até 3)" }
         actorCount: { type: integer }
         entry:
@@ -1472,6 +1868,16 @@ components:
           nullable: true
           enum: [PENDING, ACCEPTED]
           description: "Só no ENTRY_COMPANION: PENDING mostra Aceitar e Recusar; ACCEPTED, já aceito"
+        list:
+          allOf: [{ $ref: '#/components/schemas/ListRef' }]
+          nullable: true
+          description: "Só no LIST_LIKED: a lista curtida (curtidas de várias pessoas na mesma lista vêm agrupadas)"
+    ListRef:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
     CompanionStatus:
       type: string
       enum: [PENDING, ACCEPTED, DECLINED]
@@ -1552,6 +1958,7 @@ components:
         pendingRequestsCount: { type: integer, format: int64, description: "Só no seu perfil" }
         bio: { type: string, nullable: true }
         pronouns: { type: string, nullable: true }
+        headerUrl: { type: string, nullable: true, description: "Capa do perfil (backdrop do TMDB); nulo = sem capa. Pública, como a foto" }
     SocialPersonResponse:
       type: object
       required: [id, username, displayName, isPrivate, relationship]
@@ -1637,6 +2044,26 @@ components:
         lastName: { type: string, nullable: true, description: "Só no /me (espelho do Clerk)" }
         showSpoilers: { type: boolean, description: "Só no /me. Preferência: reviews dos outros sem desfoque" }
         approveCompanions: { type: boolean, description: "Só no /me. \"Aprovar marcações\": true = você aceita ou recusa quando te marcam; false = já entra aceita" }
+        headerUrl: { type: string, nullable: true, description: "Capa do perfil (backdrop do TMDB); nulo = sem capa" }
+    UpdateHeaderRequest:
+      type: object
+      required: [titleId, backdropPath]
+      properties:
+        titleId: { type: integer, format: int64, description: "ID interno do título no catálogo" }
+        backdropPath: { type: string, maxLength: 100, description: "Um dos `path` de /catalog/{mediaType}/{tmdbId}/backdrops" }
+    TitleBackdropsResponse:
+      type: object
+      required: [backdrops]
+      properties:
+        backdrops:
+          type: array
+          description: "Sem texto (sem o nome do título escrito), os mais votados primeiro; até 30"
+          items:
+            type: object
+            required: [path, url]
+            properties:
+              path: { type: string, description: "O que se manda em PUT /me/header (ex.: /abc.jpg)" }
+              url: { type: string, description: "A imagem pronta (1280 px)" }
 
     UpdateProfileRequest:
       type: object
@@ -1706,6 +2133,79 @@ components:
           format: uuid
           nullable: true
 
+    ListRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 100 }
+        description: { type: string, maxLength: 1000, nullable: true }
+        ranked: { type: boolean }
+        visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+    ListItemRequest:
+      type: object
+      properties:
+        titleId: { type: integer, format: int64, description: Ao adicionar (ignorado ao editar a nota) }
+        note: { type: string, maxLength: 1000, nullable: true }
+    ListOrderRequest:
+      type: object
+      required: [titleIds]
+      properties:
+        titleIds:
+          type: array
+          items: { type: integer, format: int64 }
+    ListLikeResponse:
+      type: object
+      required: [liked, likesCount]
+      properties:
+        liked: { type: boolean }
+        likesCount: { type: integer }
+    MyListResponse:
+      type: object
+      required: [list, containsTitle]
+      properties:
+        list: { $ref: '#/components/schemas/ListSummaryResponse' }
+        containsTitle: { type: boolean }
+    ListOwnerResponse:
+      type: object
+      required: [id, username]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        displayName: { type: string, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+    ListSummaryResponse:
+      type: object
+      required: [id, owner, name, ranked, visibility, itemsCount, likesCount, likedByMe, coverPosters, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        owner: { $ref: '#/components/schemas/ListOwnerResponse' }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        ranked: { type: boolean }
+        visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+        itemsCount: { type: integer }
+        likesCount: { type: integer }
+        likedByMe: { type: boolean }
+        coverPosters:
+          type: array
+          description: Os pôsteres dos primeiros títulos (até 4), na ordem da lista
+          items: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ListDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/ListSummaryResponse'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                required: [position, title]
+                properties:
+                  position: { type: integer }
+                  title: { $ref: '#/components/schemas/CatalogTitleSummary' }
+                  note: { type: string, nullable: true }
     CatalogTitleSummary:
       type: object
       required: [id, tmdbId, mediaType, titlePt, originalTitle]
@@ -1926,6 +2426,50 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CatalogTitleSummary'
+        watchProviders:
+          type: object
+          nullable: true
+          description: "Onde assistir no país do aparelho, dados do JustWatch (crédito obrigatório); nulo quando não há assinatura, aluguel nem compra"
+          required: [region, regionName, stream, rent, buy]
+          properties:
+            region:
+              type: string
+              description: "ISO 3166-1 (ex.: BR)"
+            regionName:
+              type: string
+              description: "O país por extenso, no idioma do conteúdo (ex.: Brasil)"
+            link:
+              type: string
+              nullable: true
+              description: "Página do TMDB com todas as opções no país"
+            stream:
+              type: array
+              description: "Assinatura, na ordem do JustWatch"
+              items:
+                $ref: '#/components/schemas/WatchProvider'
+            rent:
+              type: array
+              description: "Aluguel"
+              items:
+                $ref: '#/components/schemas/WatchProvider'
+            buy:
+              type: array
+              description: "Compra"
+              items:
+                $ref: '#/components/schemas/WatchProvider'
+
+    WatchProvider:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
 
     CompanyResponse:
       type: object
@@ -2100,6 +2644,29 @@ components:
         containsSpoilers:
           type: boolean
 
+    DiaryCountResponse:
+      type: object
+      required: [total]
+      properties:
+        total: { type: integer, format: int64 }
+    DiaryFiltersResponse:
+      type: object
+      required: [years, genres, moviesCount, seriesCount]
+      properties:
+        years:
+          type: array
+          items: { type: integer }
+        genres:
+          type: array
+          items:
+            type: object
+            required: [id, name, entriesCount]
+            properties:
+              id: { type: integer }
+              name: { type: string }
+              entriesCount: { type: integer, format: int64 }
+        moviesCount: { type: integer, format: int64 }
+        seriesCount: { type: integer, format: int64 }
     DiaryEntryResponse:
       type: object
       required: [id, userId, title, watchedDate, liked, isRewatch, createdAt]
@@ -2197,6 +2764,9 @@ components:
           type: integer
         reviewsCount:
           type: integer
+        listsCount:
+          type: integer
+          description: As listas do Letterboxd que entram com a importação (novas nascem privadas; reimportar atualiza)
         diaryEntriesCount:
           type: integer
         diaryEntriesCreated:

@@ -29,6 +29,7 @@ public class CatalogModuleFacade implements CatalogModulePort
     private final TitleSummaryAssembler assembler;
     private final GenreNamesService genreNames;
     private final TmdbGatewayPort tmdb;
+    private final GetTitleBackdropsUseCase backdrops;
 
     @Override
     public Optional<TitleView> findTitle(long titleId)
@@ -76,6 +77,18 @@ public class CatalogModuleFacade implements CatalogModulePort
     {
         return repository.tmdbRating(titleId)
                 .map(r -> new com.cinediary.api.modules.catalog.api.TmdbRatingView(r.average(), r.count()));
+    }
+
+    @Override
+    public List<String> backdropPaths(long titleId)
+    {
+        return repository.findById(titleId).map(t -> backdrops.paths(t.mediaType(), t.tmdbId())).orElse(List.of());
+    }
+
+    @Override
+    public String backdropUrl(String path)
+    {
+        return tmdb.backdropUrl(path);
     }
 
     @Override

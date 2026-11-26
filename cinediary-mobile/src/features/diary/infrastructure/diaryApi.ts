@@ -2,6 +2,7 @@ import type { SeriesStatus, TitleState, TitleSummary } from '@/features/catalog/
 import { toTitleState, toTitleStateDto, toTitleSummary } from '@/features/catalog/infrastructure/titleMapper';
 import { api, unwrap, unwrapVoid, type Schemas } from '@/shared/api/client';
 import type { DiaryEntry, EntryChanges, EntryScope } from '../domain/diary';
+import { filtersToQuery, NO_FILTERS, type DiaryFilterOptions, type DiaryFilters } from '../domain/diaryFilters';
 
 export const toDiaryEntry = (dto: Schemas['DiaryEntryResponse']): DiaryEntry => ({
   id: dto.id,
@@ -39,12 +40,28 @@ export interface SeriesProgressResult {
 
 /** Gateway HTTP do módulo diary (diário, estado do título, watchlist e séries). */
 export const diaryApi = {
-  async entries(page = 0, size = 20): Promise<DiaryEntry[]> {
-    const dto = await unwrap(api.GET('/api/v1/diary/entries', { params: { query: { page, size } } }));
+  /** O diário, paginado; com filtros (#147), só o que passa neles, na mesma ordem. */
+  async entries(page = 0, size = 20, filters: DiaryFilters = NO_FILTERS): Promise<DiaryEntry[]> {
+    const dto = await unwrap(api.GET('/api/v1/diary/entries', { params: { query: { page, size, ...filtersToQuery(filters) } } }));
     return dto.map(toDiaryEntry);
   },
 
   /** Todas as entradas de um título (página do filme), mais recentes primeiro. */
+  async count(filters: DiaryFilters): Promise<number> {
+    const dto = await unwrap(api.GET('/api/v1/diary/entries/count', { params: { query: filtersToQuery(filters) } }));
+    return dto.total;
+  },
+
+  async filterOptions(): Promise<DiaryFilterOptions> {
+    const dto = await unwrap(api.GET('/api/v1/diary/filters'));
+    return {
+      years: dto.years,
+      genres: dto.genres.map((g) => ({ id: g.id, name: g.name, entries: g.entriesCount })),
+      movies: dto.moviesCount,
+      series: dto.seriesCount,
+    };
+  },
+
   async entriesOfTitle(titleId: number): Promise<DiaryEntry[]> {
     const dto = await unwrap(api.GET('/api/v1/diary/entries', { params: { query: { titleId, page: 0, size: 100 } } }));
     return dto.map(toDiaryEntry);

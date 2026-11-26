@@ -3,7 +3,7 @@ import { Heart } from 'phosphor-react-native';
 import { Pressable } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
 
-import { palette, semantic, touch } from '@/shared/theme';
+import { touch, useColors } from '@/shared/theme';
 
 export interface LikeButtonProps {
   liked: boolean;
@@ -11,6 +11,7 @@ export interface LikeButtonProps {
 }
 
 export function LikeButton({ liked, onToggle }: LikeButtonProps) {
+  const colors = useColors();
   const scale = useSharedValue(1);
   const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -31,7 +32,7 @@ export function LikeButton({ liked, onToggle }: LikeButtonProps) {
       }}
     >
       <Animated.View style={animated}>
-        <Heart size={28} weight={liked ? 'fill' : 'regular'} color={liked ? semantic.liked : palette.ink400} />
+        <Heart size={28} weight={liked ? 'fill' : 'regular'} color={liked ? colors.liked : colors.ink400} />
       </Animated.View>
     </Pressable>
   );

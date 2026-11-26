@@ -1,9 +1,9 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { Pressable, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { palette, radius, space, touch } from '@/shared/theme';
+import { radius, space, touch, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
 
 export interface SegmentedControlProps<T extends string> {
@@ -21,6 +21,7 @@ const SLIDE = { duration: 260, easing: Easing.bezier(0.25, 0.1, 0.25, 1) };
  * quadro) cada aba pinta o próprio fundo, para não piscar vazio.
  */
 export function SegmentedControl<T extends string>({ options, value, onChange }: SegmentedControlProps<T>) {
+  const styles = useStyles();
   const index = Math.max(
     0,
     options.findIndex((o) => o.value === value),
@@ -68,10 +69,10 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: {
     flexDirection: 'row',
-    backgroundColor: palette.surfaceSunken,
+    backgroundColor: c.surfaceSunken,
     borderRadius: radius.pill,
     padding: PAD,
   },
@@ -81,9 +82,9 @@ const styles = StyleSheet.create({
     bottom: PAD,
     left: PAD,
     borderRadius: radius.pill,
-    backgroundColor: palette.surface,
+    backgroundColor: c.surface,
     borderWidth: 1,
-    borderColor: palette.border,
+    borderColor: c.border,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 4,
@@ -97,5 +98,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: space.sm,
   },
-  activeFallback: { backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.border },
-});
+  activeFallback: { backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
+}));

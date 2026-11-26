@@ -4,15 +4,16 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   type ScrollViewInstance,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-import { semantic, space } from '@/shared/theme';
+import { space, useColors, makeStyles } from '@/shared/theme';
 import { useKeepAboveKeyboard, type KeyboardTargetRef } from './useKeepAboveKeyboard';
 import { usePullToRefresh } from './usePullToRefresh';
 
@@ -28,6 +29,8 @@ export interface ScreenProps extends PropsWithChildren {
   /** Conteúdo fixo abaixo da rolagem (ex.: rodapé do onboarding). */
   footer?: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
+  /** Rolagem (com scroll): ex.: o perfil com capa troca a cor da barra de status quando a capa sai. */
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   /**
    * Com teclado aberto, a tela rola até este elemento ficar inteiro acima dele (ex.: o botão de
    * enviar do formulário). Sem isso, só a linha do cursor fica visível.
@@ -39,7 +42,18 @@ export interface ScreenProps extends PropsWithChildren {
  * Moldura padrão de tela. Com scroll, o conteúdo passa por baixo da barra
  * nativa de abas (Liquid Glass) via contentInsetAdjustmentBehavior (UX-01 §7.1).
  */
-export function Screen({ children, scroll = false, edges = ['top'], onRefresh, footer, contentStyle, keyboardTarget }: ScreenProps) {
+export function Screen({
+  children,
+  scroll = false,
+  edges = ['top'],
+  onRefresh,
+  footer,
+  contentStyle,
+  keyboardTarget,
+  onScroll,
+}: ScreenProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const scrollRef = useRef<ScrollViewInstance>(null);
   const keyboard = useKeepAboveKeyboard(scrollRef, keyboardTarget);
   // O spinner vem do gesto, não da query; com tempo mínimo (ver usePullToRefresh).
@@ -62,10 +76,13 @@ export function Screen({ children, scroll = false, edges = ['top'], onRefresh, f
           automaticallyAdjustKeyboardInsets
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
-          onScroll={keyboard.onScroll}
+          onScroll={(e) => {
+            keyboard.onScroll(e);
+            onScroll?.(e);
+          }}
           scrollEventThrottle={32}
           refreshControl={
-            onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={semantic.primary} /> : undefined
+            onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} /> : undefined
           }
         >
           {children}
@@ -81,9 +98,9 @@ export function Screen({ children, scroll = false, edges = ['top'], onRefresh, f
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: semantic.background },
+const useStyles = makeStyles((c) => ({
+  root: { flex: 1, backgroundColor: c.background },
   fill: { flex: 1 },
   content: { paddingHorizontal: space.screenX, paddingVertical: space.lg, gap: space.lg },
   footer: { paddingHorizontal: space.screenX, paddingBottom: space.lg, paddingTop: space.md, gap: space.sm },
-});
+}));

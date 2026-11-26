@@ -2,7 +2,7 @@ import { Button, Host, Image, Menu, type ButtonProps } from '@expo/ui/swift-ui';
 import { accessibilityLabel, background, contentShape, font, frame, shapes } from '@expo/ui/swift-ui/modifiers';
 import { StyleSheet } from 'react-native';
 
-import { palette, touch } from '@/shared/theme';
+import { touch, useColors } from '@/shared/theme';
 import type { NativeMoreMenuProps } from './types';
 
 /**
@@ -11,17 +11,18 @@ import type { NativeMoreMenuProps } from './types';
  * círculo do React Native por trás ficaria parado enquanto só os pontinhos viram o menu.
  */
 export function NativeMoreMenu({ options, accessibilityLabel: label }: NativeMoreMenuProps) {
+  const colors = useColors();
   return (
     <Host style={StyleSheet.absoluteFill}>
       <Menu
         label={
           <Image
             systemName="ellipsis"
-            color={palette.ink900}
+            color={colors.ink900}
             modifiers={[
               font({ size: 18, weight: 'bold' }),
               frame({ width: touch.minTarget, height: touch.minTarget }),
-              background(palette.surface, shapes.circle()),
+              background(colors.surface, shapes.circle()),
               // Sem isso só o desenho do ícone recebe o toque, não o círculo inteiro.
               contentShape(shapes.circle()),
             ]}
